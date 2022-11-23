@@ -1,15 +1,13 @@
-import 'dart:async';
 import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
-import 'TabelPanelViewPort.dart';
-import 'TableDragDetails.dart';
-import 'TableNotifier.dart';
-import 'DataFlexTable.dart';
-import 'TableMultiPanelPortView.dart';
-import 'TableScroll.dart';
-import 'TableScrollbar.dart';
+import 'tabel_panel_viewport.dart';
+import 'table_drag_details.dart';
+import 'table_notifier.dart';
+import 'data_flexfable.dart';
+import 'table_multi_panel_portview.dart';
+import 'table_scroll.dart';
+import 'table_scrollbar.dart';
 
 const int KEEPSEARCHING = -5;
 
@@ -709,7 +707,11 @@ class TableModel with TableScrollMetrics, TableChangeNotifier {
       }
     } else {
       if (stateSplitX == SplitState.FREEZE_SPLIT) {
-        mainScrollX = scrollX1pY0 - (getX(topLeftCellPaneColumn) - scrollX0pY0);
+        // mainScrollX = scrollX0pY0 =
+        //     scrollX1pY0 - (getX(topLeftCellPaneColumn) - scrollX0pY0);
+
+        mainScrollX = scrollX0pY0 =
+            scrollX1pY0 - widthLayoutList[1].panelLength / tableScale;
 
         switchXFreeze();
       } else if (stateSplitX == SplitState.SPLIT) {
@@ -845,7 +847,12 @@ class TableModel with TableScrollMetrics, TableChangeNotifier {
       }
     } else {
       if (stateSplitY == SplitState.FREEZE_SPLIT) {
-        mainScrollY = scrollY1pX0 - (getY(topLeftCellPaneRow) - scrollY0pX0);
+        // mainScrollY = scrollY0pX0 =
+        //     scrollY1pX0 - (getY(topLeftCellPaneRow) - scrollY0pX0);
+
+        mainScrollY = scrollY0pX0 =
+            scrollY1pX0 - heightLayoutList[1].panelLength / tableScale;
+
         switchYFreeze();
       } else if (stateSplitY == SplitState.SPLIT) {
         switchYSplit();
@@ -2542,12 +2549,9 @@ class TableModel with TableScrollMetrics, TableChangeNotifier {
   ///
   ///
 
-  bool hitFreeze(
-    Offset position,
-    double kSlope,
-  ) {
+  bool hitFreeze(Offset position, {double kSlope = 18.0}) {
     if ((stateSplitX == SplitState.SPLIT && stateSplitY == SplitState.SPLIT) ||
-        (widthFits && heightFits)) {
+        (tableFitWidth && tableFitHeight)) {
       return false;
     }
     // print('table freeze hit');
@@ -2568,7 +2572,7 @@ class TableModel with TableScrollMetrics, TableChangeNotifier {
       final column = findIntersectionIndex(
           (position.dx +
                   getScrollX(0, 0) * tableScale -
-                  widthLayoutList[0].panelLength) /
+                  widthLayoutList[1].panelPosition) /
               tableScale,
           _specificWidth,
           maximumColumns,
@@ -2588,7 +2592,7 @@ class TableModel with TableScrollMetrics, TableChangeNotifier {
       final row = findIntersectionIndex(
           (position.dy +
                   getScrollY(0, 0) * tableScale -
-                  heightLayoutList[0].panelLength) /
+                  heightLayoutList[1].panelPosition) /
               tableScale,
           _specificHeight,
           maximumRows,
@@ -2633,14 +2637,14 @@ class TableModel with TableScrollMetrics, TableChangeNotifier {
 
     int column = noSplitX &&
             !autoFreezePossibleX &&
-            !widthFits &&
+            !tableFitWidth &&
             cellIndex.column > 0 &&
             cellIndex.column < maximumColumns - 1
         ? cellIndex.column
         : -1;
     int row = noSplitY &&
             !autoFreezePossibleY &&
-            !heightFits &&
+            !tableFitHeight &&
             cellIndex.row > 0 &&
             cellIndex.row < maximumRows - 1
         ? cellIndex.row
@@ -2686,11 +2690,11 @@ class TableModel with TableScrollMetrics, TableChangeNotifier {
     return FreezeChange();
   }
 
-  bool get widthFits =>
+  bool get tableFitWidth =>
       !(widthLayoutList[2].panelEndPosition - widthLayoutList[1].panelPosition <
           sheetWidth * tableScale);
 
-  bool get heightFits => !(heightLayoutList[2].panelEndPosition -
+  bool get tableFitHeight => !(heightLayoutList[2].panelEndPosition -
           heightLayoutList[1].panelPosition <
       sheetHeight * tableScale);
 
@@ -2716,13 +2720,15 @@ class TableModel with TableScrollMetrics, TableChangeNotifier {
       }
     } else if (freezeChange.row != -1 &&
         freezeChange.action == FreezeAction.UNFREEZE) {
-      setYsplit(splitView: SplitState.NO_SPLITE);
-
       if (sliverScrollPosition != null) {
-        final correct = scrollY0pX0 * tableScale;
+        final pixels = scrollY1pX0 - getY(topLeftCellPaneRow);
+        setYsplit(splitView: SplitState.NO_SPLITE);
+        final correct = (scrollY0pX0 - pixels) * tableScale;
 
         sliverScrollPosition!.correctBy(correct);
         sliverScrollPosition!.notifyListeners();
+      } else {
+        setYsplit(splitView: SplitState.NO_SPLITE);
       }
     }
   }

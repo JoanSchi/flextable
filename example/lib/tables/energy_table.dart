@@ -1,10 +1,9 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'package:example/about.dart';
+import 'package:flextable/FlexTable/body_layout.dart';
+import 'package:flextable/FlexTable/table_bottombar.dart';
+import 'package:flextable/FlexTable/table_multi_panel_portview.dart';
 import 'package:flutter/material.dart';
-
-import 'package:flextable/FlexTable/BodyLayout.dart';
-import 'package:flextable/FlexTable/TableBottomBar.dart';
-import 'package:flextable/FlexTable/TableMultiPanelPortView.dart';
 import 'dart:math' as math;
 
 import '../data/energie.dart';
@@ -54,6 +53,10 @@ class _EnergyTableState extends State<EnergyTable> {
         break;
     }
 
+    const double sizeAbout = 24.0;
+    const double sizeHeader = 18.0;
+    const double sizeParagraph = 16.0;
+
     return About(
       notification: widget.notification(),
       about: Padding(
@@ -67,7 +70,8 @@ class _EnergyTableState extends State<EnergyTable> {
                 const Center(
                   child: Text(
                     'About',
-                    style: TextStyle(color: Colors.black87, fontSize: 24),
+                    style:
+                        TextStyle(color: Colors.black87, fontSize: sizeAbout),
                   ),
                 ),
                 const SizedBox(
@@ -79,8 +83,9 @@ class _EnergyTableState extends State<EnergyTable> {
                         'The energy table is about design and is using a customized tablebuilder to draw a bar in percentage columns.'
                         '\n\n'
                         'Autofreeze is not enabled in this example, therefore manual freeze can be used by pressing long on a intersection or cross intersection of the line. Freezing the top left intersection of the first green cell should make sense.'
-                        ' Unlike autofreeze manual freeze can be repositioned. The illustration below shows the dragging areas, the pink areas are only available if one direction is frozen and the yellow area is only available if both directions are frozen.',
-                    style: TextStyle(color: Colors.black),
+                        ' Unlike autofreeze manual freeze can be repositioned. The illustration below shows the dragging areas (a square of 50.0)',
+                    style:
+                        TextStyle(color: Colors.black, fontSize: sizeParagraph),
                   ),
                 ),
                 const SizedBox(
@@ -106,12 +111,13 @@ class _EnergyTableState extends State<EnergyTable> {
                     text:
                         'If freeze is not enabled, the split function can be applied by dragging from top/left.'
                         '\n\n',
-                    style: const TextStyle(color: Colors.black),
+                    style: const TextStyle(
+                        color: Colors.black, fontSize: sizeParagraph),
                     children: [
                       TextSpan(
                         text: 'Android:',
                         style: TextStyle(
-                          fontSize: 18,
+                          fontSize: sizeHeader,
                           color: theme.primaryColor,
                         ),
                       ),
@@ -122,7 +128,7 @@ class _EnergyTableState extends State<EnergyTable> {
                       TextSpan(
                         text: 'Linux/Windows:',
                         style: TextStyle(
-                          fontSize: 18,
+                          fontSize: sizeHeader,
                           color: theme.primaryColor,
                         ),
                       ),
@@ -133,7 +139,7 @@ class _EnergyTableState extends State<EnergyTable> {
                       TextSpan(
                         text: 'Linux/Windows:',
                         style: TextStyle(
-                          fontSize: 18,
+                          fontSize: sizeHeader,
                           color: theme.primaryColor,
                         ),
                       ),

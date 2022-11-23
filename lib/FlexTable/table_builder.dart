@@ -1,10 +1,10 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'TabelHeaderViewPort.dart';
-import 'TabelPanelViewPort.dart';
-import 'TableModel.dart';
-import 'TableTools.dart';
+import 'tabel_header_viewport.dart';
+import 'tabel_panel_viewport.dart';
+import 'table_model.dart';
+import 'table_tools.dart';
 import 'dart:math' as math;
 
 abstract class TableBuilder {

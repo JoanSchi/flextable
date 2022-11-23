@@ -1,12 +1,12 @@
 import 'dart:collection';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'TableBuilder.dart';
+import 'table_builder.dart';
 import 'TableItems/Cells.dart';
-import 'TableIterations.dart';
-import 'TableLine.dart';
-import 'TableMultiPanelPortView.dart';
-import 'TableModel.dart';
+import 'table_iterations.dart';
+import 'table_line.dart';
+import 'table_multi_panel_portview.dart';
+import 'table_model.dart';
 
 class TablePanelViewport extends RenderObjectWidget {
   final TableModel tableModel;

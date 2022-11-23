@@ -1,14 +1,14 @@
-import 'package:flextable/FlexTable/DataFlexTable.dart';
-import 'package:flextable/FlexTable/TabelPanelViewPort.dart';
-import 'package:flextable/FlexTable/TableBuilder.dart';
 import 'package:flextable/FlexTable/TableItems/Cells.dart';
-import 'package:flextable/FlexTable/TableLine.dart';
-import 'package:flextable/FlexTable/TableModel.dart';
+import 'package:flextable/FlexTable/data_flexfable.dart';
+import 'package:flextable/FlexTable/tabel_panel_viewport.dart';
+import 'package:flextable/FlexTable/table_builder.dart';
+import 'package:flextable/FlexTable/table_line.dart';
+import 'package:flextable/FlexTable/table_model.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 import 'package:intl/intl.dart';
-import 'package:flextable/FlexTable/FlexTableConstants.dart' as constants;
+import 'package:flextable/FlexTable/flextable_constants.dart' as constants;
 
 class HypotheekTableModel {
   final data = DataFlexTableCR();

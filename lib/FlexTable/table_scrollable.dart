@@ -3,12 +3,12 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
-import 'TableGesture.dart';
-import 'TableDragDetails.dart';
-import 'TableModel.dart';
-import 'TableMultiPanelPortView.dart';
-import 'TableScroll.dart';
-import 'TableScrollPhysics.dart';
+import 'table_gesture.dart';
+import 'table_drag_details.dart';
+import 'table_model.dart';
+import 'table_multi_panel_portview.dart';
+import 'table_scroll.dart';
+import 'table_scroll_physics.dart';
 import 'dart:math' as math;
 
 const Set<PointerDeviceKind> kTouchLikeDeviceTypes = <PointerDeviceKind>{
@@ -21,7 +21,8 @@ const Set<PointerDeviceKind> kTouchLikeDeviceTypes = <PointerDeviceKind>{
   PointerDeviceKind.unknown,
 };
 
-typedef TableViewportBuilder = Widget Function(BuildContext context, TableScrollPosition position);
+typedef TableViewportBuilder = Widget Function(
+    BuildContext context, TableScrollPosition position);
 
 class TableScrollable extends StatefulWidget {
   /// Creates a widget that scrolls.
@@ -61,7 +62,8 @@ class TableScrollable extends StatefulWidget {
   }
 
   static TableScrollableState? of(BuildContext context) {
-    final _ScrollableScope? widget = context.dependOnInheritedWidgetOfExactType<_ScrollableScope>();
+    final _ScrollableScope? widget =
+        context.dependOnInheritedWidgetOfExactType<_ScrollableScope>();
     return widget?.scrollable;
   }
 
@@ -127,7 +129,9 @@ class _ScrollableScope extends InheritedWidget {
 ///
 /// This class is not intended to be subclassed. To specialize the behavior of a
 /// [TableScrollable], provide it with a [ScrollPhysics].
-class TableScrollableState extends State<TableScrollable> with TickerProviderStateMixin implements ScrollContext {
+class TableScrollableState extends State<TableScrollable>
+    with TickerProviderStateMixin
+    implements ScrollContext {
   /// The manager for this [TableScrollable] widget's viewport position.
   ///
   /// To control what kind of [ScrollPosition] is created for a [TableScrollable],
@@ -157,9 +161,13 @@ class TableScrollableState extends State<TableScrollable> with TickerProviderSta
       scheduleMicrotask(oldPosition.dispose);
     }
 
-    _tablePosition = controller?.createScrollPosition(_physics!, this, oldPosition, widget.tableModel) ??
+    _tablePosition = controller?.createScrollPosition(
+            _physics!, this, oldPosition, widget.tableModel) ??
         TableScrollPositionWithSingleContext(
-            physics: _physics!, context: this, oldPosition: oldPosition, tableModel: widget.tableModel);
+            physics: _physics!,
+            context: this,
+            oldPosition: oldPosition,
+            tableModel: widget.tableModel);
     assert(_tablePosition != null);
 
     controller?.attach(tablePosition);
@@ -219,16 +227,19 @@ class TableScrollableState extends State<TableScrollable> with TickerProviderSta
   @override
   @protected
   void setSemanticsActions(Set<SemanticsAction> actions) {
-    if (_gestureDetectorKey.currentState != null) _gestureDetectorKey.currentState!.replaceSemanticsActions(actions);
+    if (_gestureDetectorKey.currentState != null)
+      _gestureDetectorKey.currentState!.replaceSemanticsActions(actions);
   }
 
   // GESTURE RECOGNITION AND POINTER IGNORING
 
-  final GlobalKey<RawGestureDetectorState> _gestureDetectorKey = GlobalKey<RawGestureDetectorState>();
+  final GlobalKey<RawGestureDetectorState> _gestureDetectorKey =
+      GlobalKey<RawGestureDetectorState>();
   final GlobalKey _ignorePointerKey = GlobalKey();
 
   // This field is set during layout, and then reused until the next time it is set.
-  Map<Type, GestureRecognizerFactory> _gestureRecognizers = const <Type, GestureRecognizerFactory>{};
+  Map<Type, GestureRecognizerFactory> _gestureRecognizers =
+      const <Type, GestureRecognizerFactory>{};
   bool _shouldIgnorePointer = false;
 
   bool? _lastCanDrag;
@@ -295,8 +306,10 @@ class TableScrollableState extends State<TableScrollable> with TickerProviderSta
       _gestureRecognizers = const <Type, GestureRecognizerFactory>{};
     } else {
       _gestureRecognizers = <Type, GestureRecognizerFactory>{
-        TableGestureRecognizer: GestureRecognizerFactoryWithHandlers<TableGestureRecognizer>(
-          () => TableGestureRecognizer(supportedDevices: _configuration.dragDevices),
+        TableGestureRecognizer:
+            GestureRecognizerFactoryWithHandlers<TableGestureRecognizer>(
+          () => TableGestureRecognizer(
+              supportedDevices: _configuration.dragDevices),
           (TableGestureRecognizer instance) {
             instance
               ..onDown = _handleDragDown
@@ -316,7 +329,8 @@ class TableScrollableState extends State<TableScrollable> with TickerProviderSta
     _lastCanDrag = canDrag;
 
     if (_gestureDetectorKey.currentState != null)
-      _gestureDetectorKey.currentState!.replaceGestureRecognizers(_gestureRecognizers);
+      _gestureDetectorKey.currentState!
+          .replaceGestureRecognizers(_gestureRecognizers);
   }
 
   @override
@@ -329,8 +343,8 @@ class TableScrollableState extends State<TableScrollable> with TickerProviderSta
     _shouldIgnorePointer = value;
     if (_ignorePointerKey.currentContext != null) {
       // print('ignorepointer $_shouldIgnorePointer');
-      final RenderIgnorePointer renderBox =
-          _ignorePointerKey.currentContext!.findRenderObject()! as RenderIgnorePointer;
+      final RenderIgnorePointer renderBox = _ignorePointerKey.currentContext!
+          .findRenderObject()! as RenderIgnorePointer;
       renderBox.ignoring = _shouldIgnorePointer;
     }
   }
@@ -352,7 +366,8 @@ class TableScrollableState extends State<TableScrollable> with TickerProviderSta
     _hold = tablePosition.hold(_disposeHold);
   }
 
-  TableScrollDirection _selectDragDirection(DragDownDetails details) => tablePosition.selectScrollDirection(details);
+  TableScrollDirection _selectDragDirection(DragDownDetails details) =>
+      tablePosition.selectScrollDirection(details);
 
   void _handleDragStart(DragStartDetails details) {
     // It's possible for _hold to become null between _handleDragDown and
@@ -479,7 +494,8 @@ class TableScrollableState extends State<TableScrollable> with TickerProviderSta
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(DiagnosticsProperty<TableScrollPosition>('position', _tablePosition));
+    properties.add(
+        DiagnosticsProperty<TableScrollPosition>('position', _tablePosition));
   }
 
   @override
@@ -491,13 +507,15 @@ class TableScrollableState extends State<TableScrollable> with TickerProviderSta
       //   return;
       // }
 
-      if (_tablePosition!.tableModel.tableScrollDirection != TableScrollDirection.horizontal) {
+      if (_tablePosition!.tableModel.tableScrollDirection !=
+          TableScrollDirection.horizontal) {
         final double delta = _pointerSignalEventDelta(event);
         // final double targetScrollOffset = _targetScrollOffsetForPointerScroll(delta);
         // Only express interest in the event if it would actually result in a scroll.
 
         if (delta != 0.0) {
-          GestureBinding.instance.pointerSignalResolver.register(event, _handlePointerScroll);
+          GestureBinding.instance.pointerSignalResolver
+              .register(event, _handlePointerScroll);
         }
       }
     }
@@ -516,19 +534,32 @@ class TableScrollableState extends State<TableScrollable> with TickerProviderSta
 
     final model = position.tableModel;
 
-    final scrollIndexX = model.stateSplitX == SplitState.FREEZE_SPLIT ? 1 : si.xIndex;
-    final scrollIndexY = model.stateSplitY == SplitState.FREEZE_SPLIT ? 1 : si.yIndex;
+    final scrollIndexX =
+        model.stateSplitX == SplitState.FREEZE_SPLIT ? 1 : si.xIndex;
+    final scrollIndexY =
+        model.stateSplitY == SplitState.FREEZE_SPLIT ? 1 : si.yIndex;
 
-    final double targetScrollOffset = _targetScrollOffsetForPointerScroll(delta, scrollIndexX, scrollIndexY);
+    final double targetScrollOffset =
+        _targetScrollOffsetForPointerScroll(delta, scrollIndexX, scrollIndexY);
 
-    _tablePosition?.setPixelsY(scrollIndexX, scrollIndexY,
-        _tablePosition!.tableModel.getScrollScaledY(scrollIndexX, scrollIndexY, scrollActivity: true) + delta);
+    _tablePosition?.setPixelsY(
+        scrollIndexX,
+        scrollIndexY,
+        _tablePosition!.tableModel.getScrollScaledY(scrollIndexX, scrollIndexY,
+                scrollActivity: true) +
+            delta);
 
-    final pixelsY = model.getScrollScaledY(scrollIndexX, scrollIndexY, scrollActivity: true);
+    final pixelsY = model.getScrollScaledY(scrollIndexX, scrollIndexY,
+        scrollActivity: true);
 
     if (delta != 0.0 && targetScrollOffset != pixelsY) {
-      _tablePosition?.setPixelsY(scrollIndexX, scrollIndexY,
-          _tablePosition!.tableModel.getScrollScaledY(scrollIndexX, scrollIndexY, scrollActivity: true) + delta);
+      _tablePosition?.setPixelsY(
+          scrollIndexX,
+          scrollIndexY,
+          _tablePosition!.tableModel.getScrollScaledY(
+                  scrollIndexX, scrollIndexY,
+                  scrollActivity: true) +
+              delta);
     }
   }
 
@@ -541,11 +572,15 @@ class TableScrollableState extends State<TableScrollable> with TickerProviderSta
     return event.scrollDelta.dy;
   }
 
-  double _targetScrollOffsetForPointerScroll(double delta, int scrollIndexX, int scrollIndexY) {
+  double _targetScrollOffsetForPointerScroll(
+      double delta, int scrollIndexX, int scrollIndexY) {
     final model = _tablePosition!.tableModel;
 
     return math.min(
-      math.max(model.getScrollScaledY(scrollIndexX, scrollIndexY, scrollActivity: true) + delta,
+      math.max(
+          model.getScrollScaledY(scrollIndexX, scrollIndexY,
+                  scrollActivity: true) +
+              delta,
           model.minScrollExtentY(scrollIndexY)),
       model.maxScrollExtentY(scrollIndexY),
     );
@@ -696,7 +731,8 @@ class TableScrollBehavior {
   /// For example, on Android, this method wraps the given widget with a
   /// [GlowingOverscrollIndicator] to provide visual feedback when the user
   /// overscrolls.
-  Widget buildViewportChrome(BuildContext context, Widget child, AxisDirection axisDirection) {
+  Widget buildViewportChrome(
+      BuildContext context, Widget child, AxisDirection axisDirection) {
     // When modifying this function, consider modifying the implementation in
     // _MaterialScrollBehavior as well.
     switch (getPlatform(context)) {

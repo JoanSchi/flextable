@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'TableModel.dart';
+import 'table_model.dart';
 
 class TableBottomBar extends StatefulWidget {
   final TableModel tableModel;
@@ -61,7 +61,8 @@ class TableBottomBarState extends State<TableBottomBar> {
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
         widget.maxWidthSlider != null
-            ? SizedBox(width: widget.maxWidthSlider, child: buildSlider(context))
+            ? SizedBox(
+                width: widget.maxWidthSlider, child: buildSlider(context))
             : Expanded(child: buildSlider(context)),
         if (widget.showScaleValue)
           Container(
@@ -84,9 +85,11 @@ class TableBottomBarState extends State<TableBottomBar> {
         // inactiveTrackColor: Colors.orange,
         trackHeight: widget.trackHeight,
         // thumbColor: Colors.yellow,
-        thumbShape: RoundSliderThumbShape(enabledThumbRadius: widget.thumbRadius),
+        thumbShape:
+            RoundSliderThumbShape(enabledThumbRadius: widget.thumbRadius),
         // overlayColor: Colors.purple.withAlpha(32),
-        overlayShape: RoundSliderOverlayShape(overlayRadius: widget.overlayRadius),
+        overlayShape:
+            RoundSliderOverlayShape(overlayRadius: widget.overlayRadius),
       ),
       child: Slider(
         value: scale < 1.0 ? 2.0 - 1.0 / scale : scale,

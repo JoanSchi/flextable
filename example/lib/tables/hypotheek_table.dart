@@ -1,7 +1,7 @@
 import 'package:example/about.dart';
-import 'package:flextable/FlexTable/BodyLayout.dart';
-import 'package:flextable/FlexTable/TableBottomBar.dart';
-import 'package:flextable/FlexTable/TableMultiPanelPortView.dart';
+import 'package:flextable/FlexTable/body_layout.dart';
+import 'package:flextable/FlexTable/table_bottombar.dart';
+import 'package:flextable/FlexTable/table_multi_panel_portview.dart';
 import 'package:flutter/material.dart';
 
 import '../data/hypotheek.dart';
@@ -50,6 +50,10 @@ class _HypotheekTableState extends State<HypotheekTable> {
         break;
     }
 
+    const double sizeAbout = 24.0;
+    const double sizeHeader = 18.0;
+    const double sizeParagraph = 16.0;
+
     return About(
       notification: widget.notification(),
       about: Padding(
@@ -63,7 +67,8 @@ class _HypotheekTableState extends State<HypotheekTable> {
                 const Center(
                   child: Text(
                     'About',
-                    style: TextStyle(color: Colors.black87, fontSize: 24),
+                    style:
+                        TextStyle(color: Colors.black87, fontSize: sizeAbout),
                   ),
                 ),
                 const SizedBox(
@@ -78,12 +83,13 @@ class _HypotheekTableState extends State<HypotheekTable> {
                         'The autofreezes locks the row header (date) and the colum header until the scroll passes the defined end of the autofreeze. As long the start, freeze and the end of the autofreeze does not overlap another autofreeze, multiple autofreezes can be added.'
                         '''The split function can be applied by dragging from the left top corner. Autofreeze is deactivated.'''
                         '\n\n',
-                    style: const TextStyle(color: Colors.black),
+                    style: const TextStyle(
+                        color: Colors.black, fontSize: sizeParagraph),
                     children: [
                       TextSpan(
                         text: 'Android:',
                         style: TextStyle(
-                          fontSize: 18,
+                          fontSize: sizeHeader,
                           color: theme.primaryColor,
                         ),
                       ),
@@ -94,7 +100,7 @@ class _HypotheekTableState extends State<HypotheekTable> {
                       TextSpan(
                         text: 'Linux/Windows:',
                         style: TextStyle(
-                          fontSize: 18,
+                          fontSize: sizeHeader,
                           color: theme.primaryColor,
                         ),
                       ),
@@ -105,7 +111,7 @@ class _HypotheekTableState extends State<HypotheekTable> {
                       TextSpan(
                         text: 'Linux/Windows:',
                         style: TextStyle(
-                          fontSize: 18,
+                          fontSize: sizeHeader,
                           color: theme.primaryColor,
                         ),
                       ),

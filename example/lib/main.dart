@@ -4,11 +4,9 @@ import 'package:example/tables/hypotheek_table.dart';
 import 'package:example/tables/sliver_tables.dart';
 import 'package:example/tables/stress_table.dart';
 import 'package:example/tables/trade_table.dart';
-import 'package:flextable/FlexTable/TableMultiPanelPortView.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'about.dart';
-import 'data/basic_data.dart';
 
 void main() {
   setOverlayStyle();

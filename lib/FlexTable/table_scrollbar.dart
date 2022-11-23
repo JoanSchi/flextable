@@ -3,11 +3,11 @@ import 'dart:ui';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
-import 'TableDragDetails.dart';
-import 'TableGesture.dart';
-import 'TableModel.dart';
-import 'TableScroll.dart';
-import 'TableScrollNotification.dart';
+import 'table_drag_details.dart';
+import 'table_gesture.dart';
+import 'table_model.dart';
+import 'table_scroll.dart';
+import 'table_scroll_notification.dart';
 import 'dart:math' as math;
 
 const double _kMinThumbExtent = 18.0;

@@ -1,18 +1,18 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
-import 'HitAndDrag.dart';
-import 'TableDragDetails.dart';
-import 'TableModel.dart';
-import 'TableScroll.dart';
-import 'TableScrollActivity.dart';
+import 'hit_and_drag.dart';
+import 'table_drag_details.dart';
+import 'table_model.dart';
+import 'table_scroll.dart';
+import 'table_scroll_activity.dart';
 
-class TableSplit extends StatefulWidget {
+class AdjustTableSplit extends StatefulWidget {
   final TableScrollPosition tableScrollPosition;
   final TableModel tableModel;
   final SplitPositionProperties properties;
 
-  const TableSplit({
+  const AdjustTableSplit({
     Key? key,
     required this.tableScrollPosition,
     required this.tableModel,
@@ -20,10 +20,10 @@ class TableSplit extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<StatefulWidget> createState() => TableSplitState();
+  State<StatefulWidget> createState() => AdjustTableSplitState();
 }
 
-class TableSplitState extends State<TableSplit> {
+class AdjustTableSplitState extends State<AdjustTableSplit> {
   late SplitPosition _splitPosition;
 
   @override
@@ -38,7 +38,7 @@ class TableSplitState extends State<TableSplit> {
   }
 
   @override
-  void didUpdateWidget(TableSplit oldWidget) {
+  void didUpdateWidget(AdjustTableSplit oldWidget) {
     super.didUpdateWidget(oldWidget);
 
     _splitPosition
@@ -63,8 +63,10 @@ class SplitPositionProperties {
 
   const SplitPositionProperties(
       {this.useSplitPosition: true,
-      this.xSplitSelectArea: const SelectArea(width: 50.0, height: 100.0, horizontalAlignment: HitAlignment.start),
-      this.ySplitSelectArea: const SelectArea(width: 100.0, height: 50.0, horizontalAlignment: HitAlignment.start),
+      this.xSplitSelectArea: const SelectArea(
+          width: 50.0, height: 100.0, horizontalAlignment: HitAlignment.start),
+      this.ySplitSelectArea: const SelectArea(
+          width: 100.0, height: 50.0, horizontalAlignment: HitAlignment.start),
       this.marginSplit: 20.0});
 }
 
@@ -74,7 +76,10 @@ class SplitPosition implements HitAndDragDelegate {
   TableScrollPosition tableScrollPosition;
   SplitPositionProperties? adjust;
 
-  SplitPosition({required this.tableScrollPosition, required TableModel tableModel, required this.properties})
+  SplitPosition(
+      {required this.tableScrollPosition,
+      required TableModel tableModel,
+      required this.properties})
       : _tableModel = tableModel;
 
   dispose() {}
@@ -91,16 +96,18 @@ class SplitPosition implements HitAndDragDelegate {
 
   List<GridLayout> get _layoutY => tableModel.heightLayoutList;
 
-  TableDrag dragSplit(DragStartDetails details, VoidCallback dragCancelCallback) {
+  TableDrag drag(DragStartDetails details, VoidCallback dragCancelCallback) {
     var hitSplit = (
         {required SplitState splitState,
         required GridLayout layout2,
         required SelectArea area,
         required Offset position,
         required Function(Offset) splitPosition}) {
-      if ((noSplit(splitState) || splitState == SplitState.AUTO_FREEZE_SPLIT) && area.contains(tableModel, position)) {
+      if ((noSplit(splitState) || splitState == SplitState.AUTO_FREEZE_SPLIT) &&
+          area.contains(tableModel, position)) {
         return SplitChange.start;
-      } else if (splitState == SplitState.SPLIT && hitExistingSplit(layout2, splitPosition(position))) {
+      } else if (splitState == SplitState.SPLIT &&
+          hitExistingSplit(layout2, splitPosition(position))) {
         return SplitChange.edit;
       } else {
         return SplitChange.no;
@@ -127,36 +134,41 @@ class SplitPosition implements HitAndDragDelegate {
       delegate: tableScrollPosition,
       details: details,
       onDragCanceled: dragCancelCallback,
-      xSplitchanger: tableModel.tableScrollDirection == TableScrollDirection.vertical
-          ? SplitHandler()
-          : SplitChanger(
-              position: localPosition.dx,
-              change: xSplitChange,
-              vsync: tableScrollPosition.context.vsync,
-              setSplit: applySplitX,
-              startTable: () => tableModel.initiateSplitLeft,
-              endTable: () => tableModel.initiateSplitRight,
-              initiateSplitAtBegin: tableModel.minimalSplitPositionFromLeft,
-              initiateSplitAtEnd: tableModel.minimalSplitPositionFromRight,
-              changeRatioSize: (double ratio) => tableModel.ratioSizeAnimatedSplitChangeX = ratio,
-              split: () => tableModel.splitX),
-      ySplitchanger: tableModel.tableScrollDirection == TableScrollDirection.horizontal
-          ? SplitHandler()
-          : SplitChanger(
-              position: localPosition.dy,
-              change: ySplitChange,
-              vsync: tableScrollPosition.context.vsync,
-              setSplit: applySplitY,
-              startTable: () => tableModel.initiateSplitTop,
-              endTable: () => tableModel.initiateSplitBottom,
-              initiateSplitAtBegin: tableModel.minimalSplitPositionFromTop,
-              initiateSplitAtEnd: tableModel.minimalSplitPositionFromBottom,
-              changeRatioSize: (double ratio) => tableModel.ratioSizeAnimatedSplitChangeY = ratio,
-              split: () => tableModel.splitY),
+      xSplitchanger:
+          tableModel.tableScrollDirection == TableScrollDirection.vertical
+              ? SplitHandler()
+              : SplitChanger(
+                  position: localPosition.dx,
+                  change: xSplitChange,
+                  vsync: tableScrollPosition.context.vsync,
+                  setSplit: applySplitX,
+                  startTable: () => tableModel.initiateSplitLeft,
+                  endTable: () => tableModel.initiateSplitRight,
+                  initiateSplitAtBegin: tableModel.minimalSplitPositionFromLeft,
+                  initiateSplitAtEnd: tableModel.minimalSplitPositionFromRight,
+                  changeRatioSize: (double ratio) =>
+                      tableModel.ratioSizeAnimatedSplitChangeX = ratio,
+                  split: () => tableModel.splitX),
+      ySplitchanger:
+          tableModel.tableScrollDirection == TableScrollDirection.horizontal
+              ? SplitHandler()
+              : SplitChanger(
+                  position: localPosition.dy,
+                  change: ySplitChange,
+                  vsync: tableScrollPosition.context.vsync,
+                  setSplit: applySplitY,
+                  startTable: () => tableModel.initiateSplitTop,
+                  endTable: () => tableModel.initiateSplitBottom,
+                  initiateSplitAtBegin: tableModel.minimalSplitPositionFromTop,
+                  initiateSplitAtEnd: tableModel.minimalSplitPositionFromBottom,
+                  changeRatioSize: (double ratio) =>
+                      tableModel.ratioSizeAnimatedSplitChangeY = ratio,
+                  split: () => tableModel.splitY),
       tableModel: tableModel,
     );
 
-    tableScrollPosition.beginActivity(DragTableSplitActivity(tableScrollPosition));
+    tableScrollPosition
+        .beginActivity(DragTableSplitActivity(tableScrollPosition));
 
     assert(tableScrollPosition.currentDrag == null);
     tableScrollPosition.currentDrag = drag;
@@ -165,13 +177,21 @@ class SplitPosition implements HitAndDragDelegate {
   }
 
   void applySplitX({double? split, double? delta}) {
-    tableModel.setXsplit(sizeSplit: split, deltaSplit: delta, splitView: SplitState.SPLIT, animateSplit: true);
+    tableModel.setXsplit(
+        sizeSplit: split,
+        deltaSplit: delta,
+        splitView: SplitState.SPLIT,
+        animateSplit: true);
     tableModel.markNeedsLayout();
     _tableModel.notifyScrollBarListeners();
   }
 
   void applySplitY({double? split, double? delta}) {
-    tableModel.setYsplit(sizeSplit: split, deltaSplit: delta, splitView: SplitState.SPLIT, animateSplit: true);
+    tableModel.setYsplit(
+        sizeSplit: split,
+        deltaSplit: delta,
+        splitView: SplitState.SPLIT,
+        animateSplit: true);
     tableModel.markNeedsLayout();
     _tableModel.notifyScrollBarListeners();
   }
@@ -186,9 +206,13 @@ class SplitPosition implements HitAndDragDelegate {
         required double changeStart,
         required double changeEnd}) {
       final p = splitPosition(position);
-      if ((noSplit(splitState) || splitState == SplitState.AUTO_FREEZE_SPLIT) && area.contains(tableModel, position)) {
+      if ((noSplit(splitState) || splitState == SplitState.AUTO_FREEZE_SPLIT) &&
+          area.contains(tableModel, position)) {
         return true;
-      } else if (splitState == SplitState.SPLIT && p > changeStart && p < changeEnd && hitExistingSplit(layout2, p)) {
+      } else if (splitState == SplitState.SPLIT &&
+          p > changeStart &&
+          p < changeEnd &&
+          hitExistingSplit(layout2, p)) {
         return true;
       } else {
         return false;
@@ -221,7 +245,9 @@ class SplitPosition implements HitAndDragDelegate {
   }
 
   bool hitExistingSplit(GridLayout gridLayout2, double position) {
-    return (gridLayout2.inUse && gridLayout2.gridPosition - 25 < position && gridLayout2.gridPosition + 25 > position);
+    return (gridLayout2.inUse &&
+        gridLayout2.gridPosition - 25 < position &&
+        gridLayout2.gridPosition + 25 > position);
   }
 
   @override
@@ -253,10 +279,16 @@ class SelectArea {
         break;
       case HitAlignment.center:
         left = tableModel.sizeScrollBarLeft +
-            (tableModel.widthMainPanel - _width - tableModel.sizeScrollBarLeft - tableModel.sizeScrollBarRight) / 2.0;
+            (tableModel.widthMainPanel -
+                    _width -
+                    tableModel.sizeScrollBarLeft -
+                    tableModel.sizeScrollBarRight) /
+                2.0;
         break;
       case HitAlignment.end:
-        left = (tableModel.widthMainPanel - tableModel.sizeScrollBarRight - _width);
+        left = (tableModel.widthMainPanel -
+            tableModel.sizeScrollBarRight -
+            _width);
         break;
     }
     right = left + _width;
@@ -267,22 +299,32 @@ class SelectArea {
         break;
       case HitAlignment.center:
         top = tableModel.sizeScrollBarTop +
-            (tableModel.heightMainPanel - _height - tableModel.sizeScrollBarTop - tableModel.sizeScrollBarBottom) / 2.0;
+            (tableModel.heightMainPanel -
+                    _height -
+                    tableModel.sizeScrollBarTop -
+                    tableModel.sizeScrollBarBottom) /
+                2.0;
         break;
       case HitAlignment.end:
-        top = (tableModel.heightMainPanel - _height - tableModel.sizeScrollBarBottom);
+        top = (tableModel.heightMainPanel -
+            _height -
+            tableModel.sizeScrollBarBottom);
         break;
     }
     bottom = top + _height;
 
-    return offset.dx >= left && offset.dx < right && offset.dy >= top && offset.dy < bottom;
+    return offset.dx >= left &&
+        offset.dx < right &&
+        offset.dy >= top &&
+        offset.dy < bottom;
   }
 }
 
 class DragTableSplitActivity extends TableScrollActivity {
   /// Initializes [delegate] for subclasses.
 
-  DragTableSplitActivity(TableScrollActivityDelegate delegate) : super(0, 0, delegate, false);
+  DragTableSplitActivity(TableScrollActivityDelegate delegate)
+      : super(0, 0, delegate, false);
 
   void dispose() {
     super.dispose();
@@ -409,14 +451,16 @@ class SplitChanger extends SplitHandler {
     required this.changeRatioSize,
     required this.split,
   }) {
-    animationController =
-        AnimationController(value: split() ? 1.0 : 0.0, vsync: vsync, duration: Duration(milliseconds: 300))
-          ..addListener(go)
-          ..addListener(() {
-            final value = animationController.value;
+    animationController = AnimationController(
+        value: split() ? 1.0 : 0.0,
+        vsync: vsync,
+        duration: Duration(milliseconds: 300))
+      ..addListener(go)
+      ..addListener(() {
+        final value = animationController.value;
 
-            changeRatioSize(value);
-          });
+        changeRatioSize(value);
+      });
 
     oldAnimationValue = split() ? 1.0 : 0.0;
   }
@@ -431,7 +475,8 @@ class SplitChanger extends SplitHandler {
     switch (change) {
       case SplitChange.start:
         {
-          if (position > initiateSplitAtBegin && position < initiateSplitAtEnd) {
+          if (position > initiateSplitAtBegin &&
+              position < initiateSplitAtEnd) {
             if (position < startTable + (endTable - startTable) / 2.0) {
               animationStatus = AnimateSplit.FromBegin;
               from = startTable;
@@ -451,19 +496,22 @@ class SplitChanger extends SplitHandler {
           // print(' V ${animationController.value} ${splitState()}  $splitStatus');
           // print('from $from to $to start $_startTable $_endTable $_startSplit $_endSplit');
 
-          if (position < initiateSplitAtBegin && animationStatus != AnimateSplit.GoToBegin) {
+          if (position < initiateSplitAtBegin &&
+              animationStatus != AnimateSplit.GoToBegin) {
             to = split;
             from = startTable;
             lastToNoSplit = animationStatus = AnimateSplit.GoToBegin;
             animationController.reverse();
-          } else if (position > initiateSplitAtEnd && animationStatus != AnimateSplit.GoToEnd) {
+          } else if (position > initiateSplitAtEnd &&
+              animationStatus != AnimateSplit.GoToEnd) {
             from = endTable;
             to = position;
             lastToNoSplit = animationStatus = AnimateSplit.GoToEnd;
             animationController.reverse();
           } else if (position >= initiateSplitAtBegin &&
               lastToNoSplit == AnimateSplit.GoToBegin &&
-              !(animationStatus == AnimateSplit.FromBegin || animationStatus == AnimateSplit.FromEnd)) {
+              !(animationStatus == AnimateSplit.FromBegin ||
+                  animationStatus == AnimateSplit.FromEnd)) {
             from = split > startTable && split < position ? split : startTable;
             to = position;
             animationController.forward();
@@ -471,8 +519,10 @@ class SplitChanger extends SplitHandler {
             delta = 0;
           } else if (position <= initiateSplitAtEnd &&
               lastToNoSplit == AnimateSplit.GoToEnd &&
-              !(animationStatus == AnimateSplit.FromBegin || animationStatus == AnimateSplit.FromEnd)) {
-            from = (1.0 < split && split > initiateSplitAtEnd) ? split : endTable;
+              !(animationStatus == AnimateSplit.FromBegin ||
+                  animationStatus == AnimateSplit.FromEnd)) {
+            from =
+                (1.0 < split && split > initiateSplitAtEnd) ? split : endTable;
             to = position;
             animationController.forward();
             animationStatus = AnimateSplit.FromEnd;
@@ -496,7 +546,8 @@ class SplitChanger extends SplitHandler {
               default:
                 {}
             }
-          } else if (position > initiateSplitAtBegin && position < initiateSplitAtEnd) {
+          } else if (position > initiateSplitAtBegin &&
+              position < initiateSplitAtEnd) {
             to = position;
             setSplit(delta: updateDelta);
           }
@@ -512,8 +563,10 @@ class SplitChanger extends SplitHandler {
     final deltaAnimationValue = oldAnimationValue - animationController.value;
 
     if (deltaAnimationValue != 0.0 && deltaAnimationValue == 1.0) {
-      final differents = (deltaAnimationValue / animationController.value).abs();
-      assert(differents < 0.1, 'Differents in animation value > is $differents');
+      final differents =
+          (deltaAnimationValue / animationController.value).abs();
+      assert(
+          differents < 0.1, 'Differents in animation value > is $differents');
     }
 
     oldAnimationValue = animationController.value;

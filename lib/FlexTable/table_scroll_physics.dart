@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'dart:math' as math;
 
-import 'TableAnimationSimulation.dart';
+import 'table_animation_simulation.dart';
 
 class TableScrollPhysics {
   /// Creates an object with the default scroll physics.
@@ -12,34 +12,44 @@ class TableScrollPhysics {
   final TableScrollPhysics? parent;
 
   @protected
-  TableScrollPhysics? buildParent(TableScrollPhysics? ancestor) => parent?.applyTo(ancestor) ?? ancestor;
+  TableScrollPhysics? buildParent(TableScrollPhysics? ancestor) =>
+      parent?.applyTo(ancestor) ?? ancestor;
 
   TableScrollPhysics applyTo(TableScrollPhysics? ancestor) {
     return TableScrollPhysics(parent: buildParent(ancestor));
   }
 
-  double applyPhysicsToUserOffset(double offset, double pixels, double minScrollExtent, double maxScrollExtent) {
+  double applyPhysicsToUserOffset(double offset, double pixels,
+      double minScrollExtent, double maxScrollExtent) {
     if (parent == null) return offset;
-    return parent!.applyPhysicsToUserOffset(offset, pixels, minScrollExtent, maxScrollExtent);
+    return parent!.applyPhysicsToUserOffset(
+        offset, pixels, minScrollExtent, maxScrollExtent);
   }
 
-  bool shouldAcceptUserOffset(double pixels, double minScrollExtent, double maxScrollExtent) {
-    if (parent == null) return pixels != 0.0 || minScrollExtent != maxScrollExtent;
-    return parent!.shouldAcceptUserOffset(pixels, minScrollExtent, maxScrollExtent);
+  bool shouldAcceptUserOffset(
+      double pixels, double minScrollExtent, double maxScrollExtent) {
+    if (parent == null)
+      return pixels != 0.0 || minScrollExtent != maxScrollExtent;
+    return parent!
+        .shouldAcceptUserOffset(pixels, minScrollExtent, maxScrollExtent);
   }
 
-  double applyBoundaryConditions(double value, double pixels, double minScrollExtent, double maxScrollExtent) {
+  double applyBoundaryConditions(double value, double pixels,
+      double minScrollExtent, double maxScrollExtent) {
     if (parent == null) return 0.0;
-    return parent!.applyBoundaryConditions(value, pixels, minScrollExtent, maxScrollExtent);
+    return parent!.applyBoundaryConditions(
+        value, pixels, minScrollExtent, maxScrollExtent);
   }
 
-  Simulation? createBallisticSimulation(
-      double pixels, double minScrollExtent, double maxScrollExtent, bool outOfRange, double velocity) {
+  Simulation? createBallisticSimulation(double pixels, double minScrollExtent,
+      double maxScrollExtent, bool outOfRange, double velocity) {
     if (parent == null) return noBallisticSimulation;
-    return parent!.createBallisticSimulation(pixels, minScrollExtent, maxScrollExtent, outOfRange, velocity);
+    return parent!.createBallisticSimulation(
+        pixels, minScrollExtent, maxScrollExtent, outOfRange, velocity);
   }
 
-  static final SpringDescription _kDefaultSpring = SpringDescription.withDampingRatio(
+  static final SpringDescription _kDefaultSpring =
+      SpringDescription.withDampingRatio(
     mass: 0.5,
     stiffness: 100.0,
     ratio: 1.1,
@@ -50,8 +60,12 @@ class TableScrollPhysics {
 
   /// The default accuracy to which scrolling is computed.
   static final Tolerance _kDefaultTolerance = Tolerance(
-    velocity: 1.0 / (0.050 * WidgetsBinding.instance.window.devicePixelRatio), // logical pixels per second
-    distance: 1.0 / WidgetsBinding.instance.window.devicePixelRatio, // logical pixels
+    velocity: 1.0 /
+        (0.050 *
+            WidgetsBinding
+                .instance.window.devicePixelRatio), // logical pixels per second
+    distance:
+        1.0 / WidgetsBinding.instance.window.devicePixelRatio, // logical pixels
   );
 
   /// The tolerance to use for ballistic simulations.
@@ -89,7 +103,8 @@ class TableScrollPhysics {
     return parent!.carriedMomentum(existingVelocity);
   }
 
-  double? get dragStartDistanceMotionThreshold => parent?.dragStartDistanceMotionThreshold;
+  double? get dragStartDistanceMotionThreshold =>
+      parent?.dragStartDistanceMotionThreshold;
 
   bool get allowImplicitScrolling => true;
 
@@ -103,7 +118,8 @@ class TableScrollPhysics {
 class TableClampingScrollPhysics extends TableScrollPhysics {
   /// Creates scroll physics that prevent the scroll offset from exceeding the
   /// bounds of the content..
-  const TableClampingScrollPhysics({TableScrollPhysics? parent}) : super(parent: parent);
+  const TableClampingScrollPhysics({TableScrollPhysics? parent})
+      : super(parent: parent);
 
   @override
   TableClampingScrollPhysics applyTo(TableScrollPhysics? ancestor) {
@@ -111,16 +127,20 @@ class TableClampingScrollPhysics extends TableScrollPhysics {
   }
 
   @override
-  double applyBoundaryConditions(double value, double pixels, double minScrollExtent, double maxScrollExtent) {
+  double applyBoundaryConditions(double value, double pixels,
+      double minScrollExtent, double maxScrollExtent) {
     assert(() {
       if (value == pixels) {
         throw FlutterError.fromParts(<DiagnosticsNode>[
-          ErrorSummary('$runtimeType.applyBoundaryConditions() was called redundantly.'),
-          ErrorDescription('The proposed new position, $value, is exactly equal to the current position of the '
+          ErrorSummary(
+              '$runtimeType.applyBoundaryConditions() was called redundantly.'),
+          ErrorDescription(
+              'The proposed new position, $value, is exactly equal to the current position of the '
               'given $pixels.\n'
               'The applyBoundaryConditions method should only be called when the value is '
               'going to actually change the pixels, otherwise it is redundant.'),
-          DiagnosticsProperty<TableScrollPhysics>('The physics object in question was', this,
+          DiagnosticsProperty<TableScrollPhysics>(
+              'The physics object in question was', this,
               style: DiagnosticsTreeStyle.errorProperty),
           //DiagnosticsProperty<TableScrollMetrics>('The position object in question was', position, style: DiagnosticsTreeStyle.errorProperty)
         ]);
@@ -140,8 +160,8 @@ class TableClampingScrollPhysics extends TableScrollPhysics {
   }
 
   @override
-  Simulation createBallisticSimulation(
-      double pixels, double minScrollExtent, double maxScrollExtent, bool outOfRange, double velocity) {
+  Simulation createBallisticSimulation(double pixels, double minScrollExtent,
+      double maxScrollExtent, bool outOfRange, double velocity) {
     final Tolerance tolerance = this.tolerance;
     if (outOfRange) {
       double? end;
@@ -164,8 +184,10 @@ class TableClampingScrollPhysics extends TableScrollPhysics {
       );
     }
     if (velocity.abs() < tolerance.velocity) return noBallisticSimulation;
-    if (velocity > 0.0 && pixels >= maxScrollExtent) return noBallisticSimulation;
-    if (velocity < 0.0 && pixels <= minScrollExtent) return noBallisticSimulation;
+    if (velocity > 0.0 && pixels >= maxScrollExtent)
+      return noBallisticSimulation;
+    if (velocity < 0.0 && pixels <= minScrollExtent)
+      return noBallisticSimulation;
     return ClampingScrollSimulation(
       position: pixels,
       velocity: velocity,

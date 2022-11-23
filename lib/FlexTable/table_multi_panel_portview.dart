@@ -2,20 +2,21 @@ import 'dart:collection';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import '../SliverToViewPortBox.dart';
-import 'TabelHeaderViewPort.dart';
-import 'TabelPanelViewPort.dart';
-import 'TableScroll.dart';
-import 'TableScrollable.dart';
-import 'TableScrollbar.dart';
-import 'AdjustTableFreeze.dart';
-import 'AdjustTableZoom.dart';
-import 'BodyLayout.dart';
-import 'CombiKey.dart';
-import 'MultiHitStack.dart';
-import 'TableBuilder.dart';
-import 'TableModel.dart';
-import 'AdjustTableSplit.dart';
+import '../sliver_to_viewportbox.dart';
+import 'tabel_header_viewport.dart';
+import 'tabel_panel_viewport.dart';
+import 'table_scroll.dart';
+import 'table_scrollable.dart';
+import 'table_scrollbar.dart';
+import 'adjust_table_freeze.dart';
+import 'adjust_table_zoom.dart';
+import 'body_layout.dart';
+import 'combi_key.dart';
+import 'multi_hit_stack.dart';
+import 'table_builder.dart';
+import 'table_model.dart';
+import 'adjust_table_split.dart';
+import 'adjust_table_move_freeze.dart';
 
 typedef SidePanelWidget = Widget Function(TableModel tableModel);
 
@@ -158,17 +159,22 @@ class FlexTableState extends State<FlexTable> {
               tableModel: _tableModel,
               tableBuilder: widget.tableBuilder,
             ),
-            if (widget.freezePositionProperties.useFreezePosition)
-              TableFreeze(
-                freezePositionProperties: widget.freezePositionProperties,
+            if (widget.moveFreezePositionProperties.useMoveFreezePosition)
+              TableMoveFreeze(
                 moveFreezePositionProperties:
                     widget.moveFreezePositionProperties,
                 tableModel: _tableModel,
                 tableScrollPosition: position,
               ),
+            if (widget.freezePositionProperties.useFreezePosition)
+              TableFreeze(
+                freezePositionProperties: widget.freezePositionProperties,
+                tableModel: _tableModel,
+                tableScrollPosition: position,
+              ),
             tableZoom,
             if (widget.splitPositionProperties.useSplitPosition)
-              TableSplit(
+              AdjustTableSplit(
                 tableModel: _tableModel,
                 properties: widget.splitPositionProperties,
                 tableScrollPosition: position,

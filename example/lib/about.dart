@@ -74,23 +74,28 @@ class _AboutState extends State<About> with SingleTickerProviderStateMixin {
                   LayoutId(
                       key: const Key('about'),
                       id: 'about',
-                      child: widget.about),
+                      child: Opacity(
+                          opacity: 1.0 - _animation.value,
+                          child: widget.about)),
                 if (_animation.value != 1.0)
                   LayoutId(
                     key: const Key('show'),
                     id: 'show',
-                    child: Material(
-                        color: theme.primaryColor,
-                        clipBehavior: Clip.antiAlias,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(24.0)),
-                        child: InkWell(
-                            onTap: show,
-                            child: const Padding(
-                              padding: EdgeInsets.symmetric(
-                                  vertical: 12.0, horizontal: 16.0),
-                              child: Text('Show me'),
-                            ))),
+                    child: Opacity(
+                      opacity: 1.0 - _animation.value,
+                      child: Material(
+                          color: theme.primaryColor,
+                          clipBehavior: Clip.antiAlias,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(24.0)),
+                          child: InkWell(
+                              onTap: show,
+                              child: const Padding(
+                                padding: EdgeInsets.symmetric(
+                                    vertical: 12.0, horizontal: 16.0),
+                                child: Text('Show me'),
+                              ))),
+                    ),
                   ),
                 LayoutId(
                   key: const Key('body'),

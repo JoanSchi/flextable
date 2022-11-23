@@ -1,11 +1,9 @@
 import 'package:example/about.dart';
-import 'package:flextable/FlexTable/BodyLayout.dart';
-import 'package:flextable/FlexTable/TableBottomBar.dart';
-import 'package:flextable/FlexTable/TableMultiPanelPortView.dart';
+import 'package:flextable/FlexTable/body_layout.dart';
+import 'package:flextable/FlexTable/table_bottombar.dart';
+import 'package:flextable/FlexTable/table_multi_panel_portview.dart';
 import 'package:flutter/material.dart';
-
 import '../data/basic_data.dart';
-import '../data/hypotheek.dart';
 
 class StressTable extends StatefulWidget {
   final int tabIndex;
@@ -51,6 +49,10 @@ class _StressTableState extends State<StressTable> {
         break;
     }
 
+    const double sizeAbout = 24.0;
+    const double sizeHeader = 18.0;
+    const double sizeParagraph = 16.0;
+
     return About(
       notification: widget.notification(),
       about: Padding(
@@ -64,7 +66,8 @@ class _StressTableState extends State<StressTable> {
                 const Center(
                   child: Text(
                     'About',
-                    style: TextStyle(color: Colors.black87, fontSize: 24),
+                    style:
+                        TextStyle(color: Colors.black87, fontSize: sizeAbout),
                   ),
                 ),
                 const SizedBox(
@@ -77,12 +80,13 @@ class _StressTableState extends State<StressTable> {
                         '\n\n'
                         'Like the other tables the split function can be applied by dragging from the left top corner. In this table scroll lock is disabled for both directions, this will enable indepent scroll for each panel'
                         '\n\n',
-                    style: const TextStyle(color: Colors.black),
+                    style: const TextStyle(
+                        color: Colors.black, fontSize: sizeParagraph),
                     children: [
                       TextSpan(
                         text: 'Android:',
                         style: TextStyle(
-                          fontSize: 18,
+                          fontSize: sizeHeader,
                           color: theme.primaryColor,
                         ),
                       ),
@@ -93,7 +97,7 @@ class _StressTableState extends State<StressTable> {
                       TextSpan(
                         text: 'Linux/Windows:',
                         style: TextStyle(
-                          fontSize: 18,
+                          fontSize: sizeHeader,
                           color: theme.primaryColor,
                         ),
                       ),
@@ -104,7 +108,7 @@ class _StressTableState extends State<StressTable> {
                       TextSpan(
                         text: 'Linux/Windows:',
                         style: TextStyle(
-                          fontSize: 18,
+                          fontSize: sizeHeader,
                           color: theme.primaryColor,
                         ),
                       ),

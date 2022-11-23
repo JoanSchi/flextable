@@ -1,12 +1,12 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'dart:ui';
 
+import 'package:flextable/FlexTable/body_layout.dart';
+import 'package:flextable/FlexTable/table_bottombar.dart';
+import 'package:flextable/FlexTable/table_multi_panel_portview.dart';
+import 'package:flextable/sliver_to_viewportbox.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flextable/FlexTable/BodyLayout.dart';
-import 'package:flextable/FlexTable/TableBottomBar.dart';
-import 'package:flextable/FlexTable/TableMultiPanelPortView.dart';
-import 'package:flextable/SliverToViewPortBox.dart';
 import '../about.dart';
 import '../data/basic_data.dart';
 import '../data/energie.dart';
@@ -95,6 +95,10 @@ class _SliverTablesState extends State<SliverTables> {
         break;
     }
 
+    const double sizeAbout = 24.0;
+    const double sizeHeader = 18.0;
+    const double sizeParagraph = 16.0;
+
     return About(
         notification: widget.notification(),
         about: Padding(
@@ -108,7 +112,8 @@ class _SliverTablesState extends State<SliverTables> {
                   const Center(
                     child: Text(
                       'About',
-                      style: TextStyle(color: Colors.black87, fontSize: 24),
+                      style:
+                          TextStyle(color: Colors.black87, fontSize: sizeAbout),
                     ),
                   ),
                   const SizedBox(
@@ -117,8 +122,7 @@ class _SliverTablesState extends State<SliverTables> {
                   RichText(
                       text: const TextSpan(
                     style: TextStyle(
-                      color: Colors.black87,
-                    ),
+                        color: Colors.black87, fontSize: sizeParagraph),
                     text:
                         "Flextable's can be placed in CustomScrollView, by wrapping the flextable in a SliverToViewPortBox with FlexTableToViewPortBoxDelegate as delegate. This makes flextable ideal for a overview at the end of the customscrollview."
                         ' Almost all functions are availibe like zoom, freeze, autofreeze, except for horizontal split and the two way scroll. Two way scroll is not possible because the vertical scroll is controlled by delegate and the horizontal scroll is controllered by the controller of the table.'
@@ -142,12 +146,13 @@ class _SliverTablesState extends State<SliverTables> {
                   ),
                   RichText(
                     text: TextSpan(
-                      style: const TextStyle(color: Colors.black),
+                      style: const TextStyle(
+                          color: Colors.black, fontSize: sizeParagraph),
                       children: [
                         TextSpan(
                           text: 'Android:',
                           style: TextStyle(
-                            fontSize: 20,
+                            fontSize: sizeHeader,
                             color: theme.primaryColor,
                           ),
                         ),
@@ -158,7 +163,7 @@ class _SliverTablesState extends State<SliverTables> {
                         TextSpan(
                           text: 'Linux/Windows:',
                           style: TextStyle(
-                            fontSize: 20,
+                            fontSize: sizeHeader,
                             color: theme.primaryColor,
                           ),
                         ),
@@ -169,7 +174,7 @@ class _SliverTablesState extends State<SliverTables> {
                         TextSpan(
                           text: 'Linux/Windows:',
                           style: TextStyle(
-                            fontSize: 20,
+                            fontSize: sizeHeader,
                             color: theme.primaryColor,
                           ),
                         ),
@@ -470,9 +475,9 @@ class InfoCard extends StatelessWidget {
             style: const TextStyle(color: Colors.brown, fontSize: 24.0),
           ),
           const Divider(color: Colors.brown, indent: 8.0, endIndent: 8.0),
-          Text(
+          const Text(
             '{ spacer }',
-            style: const TextStyle(color: Colors.brown, fontSize: 24.0),
+            style: TextStyle(color: Colors.brown, fontSize: 24.0),
           ),
           Expanded(child: Center(child: info)),
           const SizedBox(

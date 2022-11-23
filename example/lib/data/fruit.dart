@@ -1,7 +1,8 @@
-import 'package:flextable/FlexTable/DataFlexTable.dart';
 import 'package:flextable/FlexTable/TableItems/Cells.dart';
-import 'package:flextable/FlexTable/TableLine.dart';
-import 'package:flextable/FlexTable/TableModel.dart';
+import 'package:flextable/FlexTable/data_flexfable.dart';
+import 'package:flextable/FlexTable/table_line.dart';
+import 'package:flextable/FlexTable/table_model.dart';
+
 import 'package:flutter/material.dart';
 
 class Fruit {

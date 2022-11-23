@@ -1,8 +1,8 @@
 import 'TableItems/Cells.dart';
-import 'TableModel.dart';
-import 'TableMultiPanelPortView.dart';
-import 'DataFlexTable.dart';
-import 'TabelPanelViewPort.dart';
+import 'table_model.dart';
+import 'table_multi_panel_portview.dart';
+import 'data_flexfable.dart';
+import 'tabel_panel_viewport.dart';
 
 class TableInterator {
   TableModel _tableModel;
@@ -17,7 +17,10 @@ class TableInterator {
   //     lastRowGridInfo,
   //     firstColumnGridInfo,
   //     lastColumnGridInfo;
-  int firstRowIndex = 0, lastRowIndex = 0, firstColumnIndex = 0, lastColumnIndex = 0;
+  int firstRowIndex = 0,
+      lastRowIndex = 0,
+      firstColumnIndex = 0,
+      lastColumnIndex = 0;
   Cell? cell;
   late GridInfo rowInfo, columnInfo;
 
@@ -34,8 +37,10 @@ class TableInterator {
   DataFlexTableBase get dataTable => _tableModel.dataTable;
 
   reset(TablePanelLayoutIndex tpli) {
-    rowInfoList = _tableModel.getRowInfoList(tpli.scrollIndexX, tpli.scrollIndexY);
-    columnInfoList = _tableModel.getColumnInfoList(tpli.scrollIndexX, tpli.scrollIndexY);
+    rowInfoList =
+        _tableModel.getRowInfoList(tpli.scrollIndexX, tpli.scrollIndexY);
+    columnInfoList =
+        _tableModel.getColumnInfoList(tpli.scrollIndexX, tpli.scrollIndexY);
 
     count = 0;
     lengthColumnInfoList = columnInfoList.length;
@@ -85,9 +90,12 @@ class TableInterator {
         final m = cell!.merged!;
         cell!
           ..width = m.columnsMerged()
-              ? findPositionColumn(m.lastColumn.index).endPosition - columnInfo.position
+              ? findPositionColumn(m.lastColumn.index).endPosition -
+                  columnInfo.position
               : columnInfo.length
-          ..height = m.rowsMerged() ? findPositionRow(m.lastRow.index).endPosition - rowInfo.position : rowInfo.length;
+          ..height = m.rowsMerged()
+              ? findPositionRow(m.lastRow.index).endPosition - rowInfo.position
+              : rowInfo.length;
       }
     } else if (rowIndex == firstRowIndex || columnIndex == firstColumnIndex) {
       rowMergeLayout() || columnMergeLayout();
@@ -100,7 +108,9 @@ class TableInterator {
 
   bool rowMergeLayout() {
     Merged? m = dataTable.mergedRows(columnIndex)?.findMerged(
-        find: rowIndex, firstIndex: (Merged m) => m.startRow.index, lastIndex: (Merged m) => m.lastRow.index);
+        find: rowIndex,
+        firstIndex: (Merged m) => m.startRow.index,
+        lastIndex: (Merged m) => m.lastRow.index);
 
     if (m != null) {
       rowIndex = m.startRow.index;
@@ -123,7 +133,9 @@ class TableInterator {
 
   bool columnMergeLayout() {
     Merged? m = dataTable.mergedColumns(rowIndex)?.findMerged(
-        find: columnIndex, firstIndex: (Merged m) => m.startColumn.index, lastIndex: (Merged m) => m.lastColumn.index);
+        find: columnIndex,
+        firstIndex: (Merged m) => m.startColumn.index,
+        lastIndex: (Merged m) => m.lastColumn.index);
 
     if (m != null) {
       rowIndex = m.startRow.index;
@@ -144,7 +156,8 @@ class TableInterator {
     }
   }
 
-  TableCellIndex get tableCellIndex => TableCellIndex(row: rowIndex, column: columnIndex);
+  TableCellIndex get tableCellIndex =>
+      TableCellIndex(row: rowIndex, column: columnIndex);
 
   GridInfo findPositionRow(int toIndex) {
     if (toIndex < firstRowIndex || toIndex > lastRowIndex) {

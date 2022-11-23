@@ -1,5 +1,5 @@
 import 'TableItems/Cells.dart';
-import 'TableLine.dart';
+import 'table_line.dart';
 
 class DataFlexTableCR extends DataFlexTableBase {
   List<TableColumn?> tableColumnList = [];
@@ -19,7 +19,12 @@ class DataFlexTableCR extends DataFlexTableBase {
   @override
   List<GridRibbon?> get rowIndices => _rowIndices;
 
-  addCell({required int row, required int column, int rows = 1, int columns = 1, required Cell cell}) {
+  addCell(
+      {required int row,
+      required int column,
+      int rows = 1,
+      int columns = 1,
+      required Cell cell}) {
     TableColumn tableColumn = retrieveColumnIndex(column) as TableColumn;
 
     placeCell(tableColumn, row, cell);
@@ -77,7 +82,12 @@ class DataFlexTable extends DataFlexTableBase {
   Index initiateRowIndex(int index) => TableRow(index);
 
   @override
-  addCell({required int row, required int column, int rows = 1, int columns = 1, required Cell cell}) {
+  addCell(
+      {required int row,
+      required int column,
+      int rows = 1,
+      int columns = 1,
+      required Cell cell}) {
     TableRow tableRow = retrieveRowIndex(row) as TableRow;
 
     placeCell(tableRow, column, cell);
@@ -123,12 +133,20 @@ abstract class DataFlexTableBase {
   late TableLineList verticalLineList;
 
   DataFlexTableBase() {
-    horizontalLineList =
-        TableLineList(requestLevelOneIndex: retrieveRowIndex, requestLevelTwoIndex: retrieveColumnIndex);
-    verticalLineList = TableLineList(requestLevelOneIndex: retrieveColumnIndex, requestLevelTwoIndex: retrieveRowIndex);
+    horizontalLineList = TableLineList(
+        requestLevelOneIndex: retrieveRowIndex,
+        requestLevelTwoIndex: retrieveColumnIndex);
+    verticalLineList = TableLineList(
+        requestLevelOneIndex: retrieveColumnIndex,
+        requestLevelTwoIndex: retrieveRowIndex);
   }
 
-  addCell({required int row, required int column, int rows = 1, int columns = 1, required Cell cell});
+  addCell(
+      {required int row,
+      required int column,
+      int rows = 1,
+      int columns = 1,
+      required Cell cell});
 
   List<GridRibbon?> get columnIndices;
 
@@ -168,14 +186,21 @@ abstract class DataFlexTableBase {
         lastColumn: indexOfExtendColumn(_columnIndex, columns));
 
     if (columns == 1) {
-      addMergeOneDirection(gridRibbon: retrieveColumnIndex(_columnIndex.index) as GridRibbon, merged: cell.merged!);
+      addMergeOneDirection(
+          gridRibbon: retrieveColumnIndex(_columnIndex.index) as GridRibbon,
+          merged: cell.merged!);
     } else if (rows == 1) {
-      addMergeOneDirection(gridRibbon: retrieveRowIndex(_rowIndex.index) as GridRibbon, merged: cell.merged!);
+      addMergeOneDirection(
+          gridRibbon: retrieveRowIndex(_rowIndex.index) as GridRibbon,
+          merged: cell.merged!);
     } else {}
   }
 
-  addMergeOneDirection({required GridRibbon gridRibbon, required Merged merged}) {
-    final startIndex = (merged.startRow == merged.lastRow) ? merged.startColumn : merged.startRow;
+  addMergeOneDirection(
+      {required GridRibbon gridRibbon, required Merged merged}) {
+    final startIndex = (merged.startRow == merged.lastRow)
+        ? merged.startColumn
+        : merged.startRow;
     final indexInList = (merged.startRow == merged.lastRow)
         ? (i) => gridRibbon.mergedList[i].startColumn
         : (i) => gridRibbon.mergedList[i].startRow;
@@ -208,13 +233,16 @@ abstract class DataFlexTableBase {
 
   Index initiateRowIndex(int index);
 
-  Index retrieveColumnIndex(int column) => index(column, columnIndices, initiateColumnIndex);
+  Index retrieveColumnIndex(int column) =>
+      index(column, columnIndices, initiateColumnIndex);
 
   Index retrieveRowIndex(int row) => index(row, rowIndices, initiateRowIndex);
 
-  GridRibbon? mergedRows(int column) => column < columnIndices.length ? columnIndices[column] : null;
+  GridRibbon? mergedRows(int column) =>
+      column < columnIndices.length ? columnIndices[column] : null;
 
-  GridRibbon? mergedColumns(int row) => row < rowIndices.length ? rowIndices[row] : null;
+  GridRibbon? mergedColumns(int row) =>
+      row < rowIndices.length ? rowIndices[row] : null;
 }
 
 class TableRow extends GridRibbon {

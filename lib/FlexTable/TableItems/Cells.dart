@@ -1,4 +1,4 @@
-import '../FlexTableConstants.dart';
+import '../flextable_constants.dart';
 
 mixin Index {
   int get index;
@@ -31,7 +31,8 @@ abstract class GridRibbon with Index {
       return null;
     }
 
-    final contains = (find, merged) => find >= firstIndex(merged) && find <= lastIndex(merged) ? merged : null;
+    final contains = (find, merged) =>
+        find >= firstIndex(merged) && find <= lastIndex(merged) ? merged : null;
 
     final length = mergedList.length;
 
@@ -93,10 +94,17 @@ class Merged {
   Index startColumn;
   Index lastColumn;
 
-  Merged({required this.startRow, required this.lastRow, required this.startColumn, required this.lastColumn});
+  Merged(
+      {required this.startRow,
+      required this.lastRow,
+      required this.startColumn,
+      required this.lastColumn});
 
   bool containCell(int row, int column) {
-    return (row >= startRow.index && row <= lastRow.index && column >= startColumn.index && column <= lastColumn.index);
+    return (row >= startRow.index &&
+        row <= lastRow.index &&
+        column >= startColumn.index &&
+        column <= lastColumn.index);
   }
 
   columnsMerged() => startColumn < lastColumn;

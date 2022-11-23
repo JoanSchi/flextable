@@ -1,11 +1,9 @@
 import 'package:example/about.dart';
-import 'package:flextable/FlexTable/BodyLayout.dart';
-import 'package:flextable/FlexTable/TableBottomBar.dart';
-import 'package:flextable/FlexTable/TableModel.dart';
-import 'package:flextable/FlexTable/TableMultiPanelPortView.dart';
+import 'package:flextable/FlexTable/body_layout.dart';
+import 'package:flextable/FlexTable/table_bottombar.dart';
+import 'package:flextable/FlexTable/table_model.dart';
+import 'package:flextable/FlexTable/table_multi_panel_portview.dart';
 import 'package:flutter/material.dart';
-
-import '../data/hypotheek.dart';
 import '../data/internationale_handel.dart';
 
 class TradeTable extends StatefulWidget {
@@ -52,6 +50,10 @@ class _TradeTableState extends State<TradeTable> {
         break;
     }
 
+    const double sizeAbout = 24.0;
+    const double sizeHeader = 18.0;
+    const double sizeParagraph = 16.0;
+
     return About(
       notification: widget.notification(),
       about: Padding(
@@ -65,7 +67,8 @@ class _TradeTableState extends State<TradeTable> {
                 const Center(
                   child: Text(
                     'About',
-                    style: TextStyle(color: Colors.black87, fontSize: 24),
+                    style:
+                        TextStyle(color: Colors.black87, fontSize: sizeAbout),
                   ),
                 ),
                 const SizedBox(
@@ -78,12 +81,13 @@ class _TradeTableState extends State<TradeTable> {
                         '''The split function can be applied by dragging from the left top corner. Vertical autofreeze is enabled and the horizontal autofreeze is disabled, therefore the vertical manual freeze can be used. Less intesting option: The horizontal autolock is also disabled, therefore if the horizontal split is applied the top and bottom panel can scroll independently in de horizontal direction.'''
                         ' It is not possible to use autofreeze and the scrollunlock together.'
                         '\n\n',
-                    style: const TextStyle(color: Colors.black),
+                    style: const TextStyle(
+                        color: Colors.black, fontSize: sizeParagraph),
                     children: [
                       TextSpan(
                         text: 'Android:',
                         style: TextStyle(
-                          fontSize: 18,
+                          fontSize: sizeHeader,
                           color: theme.primaryColor,
                         ),
                       ),
@@ -94,7 +98,7 @@ class _TradeTableState extends State<TradeTable> {
                       TextSpan(
                         text: 'Linux/Windows:',
                         style: TextStyle(
-                          fontSize: 18,
+                          fontSize: sizeHeader,
                           color: theme.primaryColor,
                         ),
                       ),
@@ -105,7 +109,7 @@ class _TradeTableState extends State<TradeTable> {
                       TextSpan(
                         text: 'Linux/Windows:',
                         style: TextStyle(
-                          fontSize: 18,
+                          fontSize: sizeHeader,
                           color: theme.primaryColor,
                         ),
                       ),

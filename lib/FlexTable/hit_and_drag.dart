@@ -1,9 +1,9 @@
-import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
-import 'TableDragDetails.dart';
-import 'TableGesture.dart';
-import 'TableScroll.dart';
-import 'TableScrollable.dart';
+import 'table_drag_details.dart';
+import 'table_gesture.dart';
+import 'table_scroll.dart';
+import 'table_scrollable.dart';
+import 'hit_container.dart';
 
 class HitAndDrag extends StatefulWidget {
   final HitAndDragDelegate hitAndDragDelegate;
@@ -20,7 +20,7 @@ class HitAndDragState extends State<HitAndDrag> {
   Map<Type, GestureRecognizerFactory> _gestureRecognizers =
       const <Type, GestureRecognizerFactory>{};
 
-  var _lastCanDrag = false;
+  bool _lastCanDrag = false;
   TableDrag? _drag;
   late HitAndDragDelegate _hitAndDragDelegate;
 
@@ -49,7 +49,7 @@ class HitAndDragState extends State<HitAndDrag> {
     return RawGestureDetector(
         gestures: _gestureRecognizers,
         child: HitContainer(
-          hitDelegate: _hitAndDragDelegate,
+          hit: _hitAndDragDelegate.hit,
           child: widget.child,
         ));
   }
@@ -83,7 +83,7 @@ class HitAndDragState extends State<HitAndDrag> {
   }
 
   void _handleDragStart(DragStartDetails details) {
-    _drag = _hitAndDragDelegate.dragSplit(details, disposeDrag);
+    _drag = _hitAndDragDelegate.drag(details, disposeDrag);
   }
 
   void _handleDragDown(DragDownDetails details) {
@@ -103,74 +103,8 @@ class HitAndDragState extends State<HitAndDrag> {
   }
 }
 
-class HitContainer extends SingleChildRenderObjectWidget {
-  final HitAndDragDelegate hitDelegate;
-
-  const HitContainer({
-    super.key,
-    required this.hitDelegate,
-    super.child,
-  });
-
-  @override
-  RenderHitContainer createRenderObject(BuildContext context) {
-    return RenderHitContainer(hitDelegate: hitDelegate);
-  }
-
-  @override
-  void updateRenderObject(
-      BuildContext context, RenderHitContainer renderObject) {
-    renderObject..hitDelegate = hitDelegate;
-  }
-}
-
-class RenderHitContainer extends RenderProxyBox {
-  HitAndDragDelegate _hitDelegate;
-
-  RenderHitContainer({
-    RenderBox? child,
-    required HitAndDragDelegate hitDelegate,
-  })  : _hitDelegate = hitDelegate,
-        super(child);
-
-  set hitDelegate(HitAndDragDelegate value) {
-    if (value == _hitDelegate) return;
-    _hitDelegate = value;
-  }
-
-  @override
-  void performLayout() {
-    if (child != null) {
-      final Constraints tight = BoxConstraints.tight(constraints.biggest);
-      child!.layout(tight, parentUsesSize: true);
-      size = child!.size;
-    } else {
-      size = constraints.biggest;
-    }
-  }
-
-  // @override
-  // bool hitTest(BoxHitTestResult result, {required Offset position}) {
-  //   if (_hitDelegate.hit(position) && hitTestChildren(result, position: position)) {
-  //     result.add(BoxHitTestEntry(this, position));
-  //     return true;
-  //   }
-
-  //   return false;
-  // }
-
-  @override
-  bool hitTestSelf(Offset position) => _hitDelegate.hit(position);
-
-  @override
-  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-    super.debugFillProperties(properties);
-  }
-}
-
 abstract class HitAndDragDelegate {
-  TableDrag dragSplit(
-      DragStartDetails details, VoidCallback dragCancelCallback);
+  TableDrag drag(DragStartDetails details, VoidCallback dragCancelCallback);
 
   down(DragDownDetails details);
 

@@ -1,9 +1,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
-import 'TableDragDetails.dart';
-import 'TableAnimationController.dart';
-import 'TableScroll.dart';
-import 'TableScrollNotification.dart';
+import 'table_drag_details.dart';
+import 'table_animation_controller.dart';
+import 'table_scroll.dart';
+import 'table_scroll_notification.dart';
 import 'dart:math' as math;
 
 class TableIdleScrollActivity extends TableScrollActivity {

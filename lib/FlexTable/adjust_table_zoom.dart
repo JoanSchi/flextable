@@ -4,12 +4,12 @@ import 'dart:ui';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'CombiKey.dart';
-import 'TableScroll.dart';
-import 'TableDragDetails.dart';
-import 'TableGesture.dart';
-import 'TableModel.dart';
-import 'TableScaleGesture.dart';
+import 'combi_key.dart';
+import 'table_scroll.dart';
+import 'table_drag_details.dart';
+import 'table_gesture.dart';
+import 'table_model.dart';
+import 'table_scale_gesture.dart';
 
 class TableZoomProperties {
   double lineWidth;
@@ -35,7 +35,9 @@ class TableZoomTouch extends StatefulWidget {
   final TableModel tableModel;
   final TableScrollPosition tableScrollPosition;
 
-  TableZoomTouch({Key? key, required this.tableModel, required this.tableScrollPosition}) : super(key: key);
+  TableZoomTouch(
+      {Key? key, required this.tableModel, required this.tableScrollPosition})
+      : super(key: key);
   @override
   State<StatefulWidget> createState() => TableZoomTouchState();
 }
@@ -65,7 +67,8 @@ class TableZoomTouchState extends State<TableZoomTouch> {
   Widget build(BuildContext context) {
     return RawGestureDetector(
       gestures: <Type, GestureRecognizerFactory>{
-        TableScaleGestureRecognizer: GestureRecognizerFactoryWithHandlers<TableScaleGestureRecognizer>(
+        TableScaleGestureRecognizer:
+            GestureRecognizerFactoryWithHandlers<TableScaleGestureRecognizer>(
           () => TableScaleGestureRecognizer(),
           (TableScaleGestureRecognizer instance) {
             instance
@@ -124,8 +127,9 @@ class TableZoomMouseState extends State<TableZoomMouse> {
 
   @override
   void initState() {
-    _tableZoomMouseNotifier =
-        TableZoomMouseNotifier(minTableScale: _tableModel.minTableScale, maxTableScale: _tableModel.maxTableScale);
+    _tableZoomMouseNotifier = TableZoomMouseNotifier(
+        minTableScale: _tableModel.minTableScale,
+        maxTableScale: _tableModel.maxTableScale);
     _zoomProperties = widget.zoomProperties;
     _combiKeyNotification = widget.combiKeyNotification..addListener(keyUpdate);
     super.initState();
@@ -139,10 +143,12 @@ class TableZoomMouseState extends State<TableZoomMouse> {
   void didUpdateWidget(TableZoomMouse oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.tableModel != _tableModel) _tableModel = widget.tableModel;
-    if (widget.zoomProperties != _zoomProperties) _zoomProperties = widget.zoomProperties;
+    if (widget.zoomProperties != _zoomProperties)
+      _zoomProperties = widget.zoomProperties;
     if (widget.combiKeyNotification != _combiKeyNotification) {
       _combiKeyNotification.removeListener(keyUpdate);
-      _combiKeyNotification = widget.combiKeyNotification..addListener(keyUpdate);
+      _combiKeyNotification = widget.combiKeyNotification
+        ..addListener(keyUpdate);
     }
   }
 
@@ -161,7 +167,8 @@ class TableZoomMouseState extends State<TableZoomMouse> {
       onHover: onHover,
       child: RawGestureDetector(
           gestures: <Type, GestureRecognizerFactory>{
-            TableZoomGestureRecognizer: GestureRecognizerFactoryWithHandlers<TableZoomGestureRecognizer>(
+            TableZoomGestureRecognizer: GestureRecognizerFactoryWithHandlers<
+                TableZoomGestureRecognizer>(
               () => TableZoomGestureRecognizer(),
               (TableZoomGestureRecognizer instance) {
                 instance
@@ -191,7 +198,8 @@ class TableZoomMouseState extends State<TableZoomMouse> {
     _tableZoomMouseNotifier
       ..scale = _tableModel.tableScale
       ..position = event.localPosition;
-    _tableZoomMouseNotifier.active = RawKeyboard.instance.keysPressed.contains(LogicalKeyboardKey.controlLeft);
+    _tableZoomMouseNotifier.active = RawKeyboard.instance.keysPressed
+        .contains(LogicalKeyboardKey.controlLeft);
   }
 
   onUpdate(TableDragUpdateDetails details) {
@@ -211,7 +219,8 @@ class TableZoomMouseState extends State<TableZoomMouse> {
   onEnd(TableDragEndDetails details) {
     _tableZoomMouseNotifier.isScaling = false;
 
-    _tableZoomMouseNotifier.active = RawKeyboard.instance.keysPressed.contains(LogicalKeyboardKey.controlLeft);
+    _tableZoomMouseNotifier.active = RawKeyboard.instance.keysPressed
+        .contains(LogicalKeyboardKey.controlLeft);
 
     widget.tableScrollPosition.correctOffScroll(0, 0);
     _tableModel.notifyScrollBarListeners();
@@ -231,7 +240,8 @@ class TableZoomGestureRecognizer extends MyDragGestureRecognizer {
   TableScrollDirection dragDirection = TableScrollDirection.both;
 
   @override
-  bool isFlingGesture(VelocityEstimate estimate, PointerDeviceKind kind) => false;
+  bool isFlingGesture(VelocityEstimate estimate, PointerDeviceKind kind) =>
+      false;
 
   @override
   String get debugDescription => 'both drag';
@@ -243,10 +253,12 @@ class TableZoomGestureRecognizer extends MyDragGestureRecognizer {
   double? getPrimaryValueFromOffset(Offset value) => value.dy;
 
   @override
-  Velocity getPrimaryVelocity(Velocity value) => Velocity(pixelsPerSecond: value.pixelsPerSecond);
+  Velocity getPrimaryVelocity(Velocity value) =>
+      Velocity(pixelsPerSecond: value.pixelsPerSecond);
 
   @override
-  bool hasSufficientGlobalDistanceToAccept(PointerDeviceKind pointerDeviceKind) =>
+  bool hasSufficientGlobalDistanceToAccept(
+          PointerDeviceKind pointerDeviceKind) =>
       tableZoomMouseNotifier?.active ?? false;
 }
 
@@ -260,7 +272,8 @@ class TableZoomMouseNotifier extends ChangeNotifier {
   Offset _position = Offset.zero;
   double distanceRatio = 0.0;
 
-  TableZoomMouseNotifier({required this.minTableScale, required this.maxTableScale});
+  TableZoomMouseNotifier(
+      {required this.minTableScale, required this.maxTableScale});
 
   set position(Offset value) {
     _position = value;
@@ -334,7 +347,10 @@ class MouseScalePaint extends StatefulWidget {
   final TableZoomProperties zoomProperties;
 
   const MouseScalePaint(
-      {Key? key, required this.tableZoomMouseNotifier, required this.child, required this.zoomProperties})
+      {Key? key,
+      required this.tableZoomMouseNotifier,
+      required this.child,
+      required this.zoomProperties})
       : super(key: key);
 
   @override
@@ -354,7 +370,8 @@ class _MouseScalePaintState extends State<MouseScalePaint> {
   void didUpdateWidget(MouseScalePaint oldWidget) {
     if (tableZoomMouseNotifier != widget.tableZoomMouseNotifier) {
       tableZoomMouseNotifier.removeListener(notify);
-      tableZoomMouseNotifier = widget.tableZoomMouseNotifier..addListener(notify);
+      tableZoomMouseNotifier = widget.tableZoomMouseNotifier
+        ..addListener(notify);
     }
     super.didUpdateWidget(oldWidget);
   }

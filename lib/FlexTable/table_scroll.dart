@@ -2,14 +2,14 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
-import 'TableAnimationController.dart';
-import 'TableMultiPanelPortView.dart';
-import 'AdjustTableFreeze.dart';
-import 'TableDragDetails.dart';
-import 'TableModel.dart';
-import 'TableScrollActivity.dart';
-import 'TableScrollPhysics.dart';
-import 'TableScrollbar.dart';
+import 'table_animation_controller.dart';
+import 'table_multi_panel_portview.dart';
+import 'table_drag_details.dart';
+import 'table_model.dart';
+import 'table_scroll_activity.dart';
+import 'table_scroll_physics.dart';
+import 'table_scrollbar.dart';
+import 'adjust_table_move_freeze.dart';
 
 enum SplitChange { start, edit, no }
 
@@ -77,8 +77,10 @@ class TableScrollController extends ChangeNotifier {
   ///
   /// Calling this is only valid when only a single position is attached.
   TableScrollPosition get position {
-    assert(_positions.isNotEmpty, 'ScrollController not attached to any scroll views.');
-    assert(_positions.length == 1, 'ScrollController attached to multiple scroll views.');
+    assert(_positions.isNotEmpty,
+        'ScrollController not attached to any scroll views.');
+    assert(_positions.length == 1,
+        'ScrollController attached to multiple scroll views.');
     return _positions.single;
   }
 
@@ -137,8 +139,10 @@ class TableScrollController extends ChangeNotifier {
   /// Immediately after the jump, a ballistic activity is started, in case the
   /// value was out of range.
   void jumpTo(double value) {
-    assert(_positions.isNotEmpty, 'ScrollController not attached to any scroll views.');
-    for (ScrollPosition position in List<ScrollPosition>.from(_positions)) position.jumpTo(value);
+    assert(_positions.isNotEmpty,
+        'ScrollController not attached to any scroll views.');
+    for (ScrollPosition position in List<ScrollPosition>.from(_positions))
+      position.jumpTo(value);
   }
 
   /// Register the given position with this controller.
@@ -163,7 +167,8 @@ class TableScrollController extends ChangeNotifier {
 
   @override
   void dispose() {
-    for (TableScrollPosition position in _positions) position.removeListener(notifyListeners);
+    for (TableScrollPosition position in _positions)
+      position.removeListener(notifyListeners);
     super.dispose();
   }
 
@@ -193,8 +198,11 @@ class TableScrollController extends ChangeNotifier {
   ///    This is used when the environment has changed and the [Scrollable]
   ///    needs to recreate the [ScrollPosition] object. It is null the first
   ///    time the [ScrollPosition] is created.
-  TableScrollPosition createScrollPosition(TableScrollPhysics physics, ScrollContext context,
-      TableScrollPosition? oldPosition, TableModel sheetModelDelegate) {
+  TableScrollPosition createScrollPosition(
+      TableScrollPhysics physics,
+      ScrollContext context,
+      TableScrollPosition? oldPosition,
+      TableModel sheetModelDelegate) {
     return TableScrollPositionWithSingleContext(
       physics: physics,
       context: context,
@@ -237,7 +245,8 @@ class TableScrollController extends ChangeNotifier {
   }
 }
 
-abstract class TableScrollPosition extends ChangeNotifier implements TableScrollActivityDelegate {
+abstract class TableScrollPosition extends ChangeNotifier
+    implements TableScrollActivityDelegate {
   final ScrollContext context;
   final TableScrollPhysics physics;
   final TableModel tableModel;
@@ -245,7 +254,10 @@ abstract class TableScrollPosition extends ChangeNotifier implements TableScroll
   bool gridIndexAvailable = false;
   bool scrollNotificationEnabled = false;
 
-  TableScrollPosition({required this.context, required this.physics, required this.tableModel}) {
+  TableScrollPosition(
+      {required this.context,
+      required this.physics,
+      required this.tableModel}) {
     context.setCanDrag(true);
   }
 
@@ -263,10 +275,11 @@ abstract class TableScrollPosition extends ChangeNotifier implements TableScroll
 
   List<GridLayout> get layoutY => tableModel.heightLayoutList;
 
-  TableScrollDirection get tableScrollDirection => tableModel.tableScrollDirection;
+  TableScrollDirection get tableScrollDirection =>
+      tableModel.tableScrollDirection;
 
-  bool applyContentDimensions(
-      double minScrollExtentX, double maxScrollExtentX, double minScrollExtentY, double maxScrollExtentY);
+  bool applyContentDimensions(double minScrollExtentX, double maxScrollExtentX,
+      double minScrollExtentY, double maxScrollExtentY);
 
   void correctBy(Offset value);
 
@@ -280,8 +293,8 @@ abstract class TableScrollPosition extends ChangeNotifier implements TableScroll
 
   TableDrag drag(DragStartDetails details, VoidCallback dragCancelCallback);
 
-  TableDrag dragScrollBar(
-      DragStartDetails details, VoidCallback dragCancelCallback, int scrollIndexX, int scrollIndexY);
+  TableDrag dragScrollBar(DragStartDetails details,
+      VoidCallback dragCancelCallback, int scrollIndexX, int scrollIndexY);
 
   /// Calls [jumpTo] if duration is null or [Duration.zero], otherwise
   /// [animateTo] is called.
@@ -324,7 +337,8 @@ abstract class TableScrollPosition extends ChangeNotifier implements TableScroll
     if (_activity != null) {
       oldIgnorePointer = _activity!.shouldIgnorePointer;
       wasScrolling = _activity!.isScrolling;
-      if (wasScrolling && !newActivity.isScrolling) didEndScroll(); // notifies and then saves the scroll offset
+      if (wasScrolling && !newActivity.isScrolling)
+        didEndScroll(); // notifies and then saves the scroll offset
       _activity!.dispose();
     } else {
       oldIgnorePointer = false;
@@ -334,7 +348,8 @@ abstract class TableScrollPosition extends ChangeNotifier implements TableScroll
 
     // print('TableScroll Activity');
 
-    if (oldIgnorePointer != activity!.shouldIgnorePointer) context.setIgnorePointer(activity!.shouldIgnorePointer);
+    if (oldIgnorePointer != activity!.shouldIgnorePointer)
+      context.setIgnorePointer(activity!.shouldIgnorePointer);
 
     isScrollingNotifier.value = activity!.isScrolling;
 
@@ -349,7 +364,9 @@ abstract class TableScrollPosition extends ChangeNotifier implements TableScroll
   /// Called by [beginActivity] to report when an activity has started.
   void didStartScroll() {
     tableModel.notifyScrollListeners('start');
-    if (scrollNotificationEnabled) activity!.dispatchScrollStartNotification(tableModel, context.notificationContext);
+    if (scrollNotificationEnabled)
+      activity!.dispatchScrollStartNotification(
+          tableModel, context.notificationContext);
   }
 
   void enableScrollNotification(enable) {
@@ -362,7 +379,8 @@ abstract class TableScrollPosition extends ChangeNotifier implements TableScroll
   void didUpdateScrollPositionBy(Offset value) {
     tableModel.notifyScrollListeners('update');
     if (scrollNotificationEnabled)
-      activity!.dispatchScrollUpdateNotification(tableModel, context.notificationContext, value);
+      activity!.dispatchScrollUpdateNotification(
+          tableModel, context.notificationContext, value);
   }
 
   /// Called by [beginActivity] to report when an activity has ended.
@@ -370,7 +388,9 @@ abstract class TableScrollPosition extends ChangeNotifier implements TableScroll
   /// This also saves the scroll offset using [saveScrollOffset].
   void didEndScroll() {
     tableModel.notifyScrollListeners('end');
-    if (scrollNotificationEnabled) activity!.dispatchScrollEndNotification(tableModel, context.notificationContext);
+    if (scrollNotificationEnabled)
+      activity!.dispatchScrollEndNotification(
+          tableModel, context.notificationContext);
   }
 
   void didOverscrollBy(Offset value) {
@@ -388,7 +408,8 @@ abstract class TableScrollPosition extends ChangeNotifier implements TableScroll
     //activity.dispatchOverscrollNotification(copyWith(), context.notificationContext, value);
   }
 
-  void didUpdateScrollDirection(ScrollDirection xScrollDirection, ScrollDirection yScrollDirection) {
+  void didUpdateScrollDirection(
+      ScrollDirection xScrollDirection, ScrollDirection yScrollDirection) {
     //UserScrollNotification(metrics: copyWith(), context: context.notificationContext, direction: direction).dispatch(context.notificationContext);
   }
 
@@ -404,7 +425,8 @@ abstract class TableScrollPosition extends ChangeNotifier implements TableScroll
 
   @override
   void dispose() {
-    activity?.dispose(); // it will be null if it got absorbed by another ScrollPosition
+    activity
+        ?.dispose(); // it will be null if it got absorbed by another ScrollPosition
     _activity = null;
     super.dispose();
   }
@@ -416,20 +438,25 @@ abstract class TableScrollPosition extends ChangeNotifier implements TableScroll
     double yOverscroll = 0.0;
 
     assert(activity!.isScrolling);
-    assert(SchedulerBinding.instance.schedulerPhase.index <= SchedulerPhase.transientCallbacks.index);
+    assert(SchedulerBinding.instance.schedulerPhase.index <=
+        SchedulerPhase.transientCallbacks.index);
 
-    double pixelsX = tableModel.getScrollScaledX(scrollIndexX, scrollIndexY, scrollActivity: true);
+    double pixelsX = tableModel.getScrollScaledX(scrollIndexX, scrollIndexY,
+        scrollActivity: true);
 
     // assert(pixelsX != null);
 
     if (newPixels.dx != pixelsX) {
-      xOverscroll = applyBoundaryConditionsX(scrollIndexX, scrollIndexY, newPixels.dx);
+      xOverscroll =
+          applyBoundaryConditionsX(scrollIndexX, scrollIndexY, newPixels.dx);
       assert(() {
         final double delta = newPixels.dx - pixelsX;
         if (xOverscroll.abs() > delta.abs()) {
           throw FlutterError.fromParts(<DiagnosticsNode>[
-            ErrorSummary('$runtimeType.applyBoundaryConditions X returned invalid overscroll value.'),
-            ErrorDescription('setPixels() was called to change the scroll offset from $pixelsX to ${newPixels.dx}.\n'
+            ErrorSummary(
+                '$runtimeType.applyBoundaryConditions X returned invalid overscroll value.'),
+            ErrorDescription(
+                'setPixels() was called to change the scroll offset from $pixelsX to ${newPixels.dx}.\n'
                 'That is a delta of $delta units.\n'
                 '$runtimeType.applyBoundaryConditions reported an overscroll of $xOverscroll units.')
           ]);
@@ -443,18 +470,22 @@ abstract class TableScrollPosition extends ChangeNotifier implements TableScroll
       tableModel.setScrollScaledX(scrollIndexX, scrollIndexY, pixelsX);
     }
 
-    double pixelsY = tableModel.getScrollScaledY(scrollIndexX, scrollIndexY, scrollActivity: true);
+    double pixelsY = tableModel.getScrollScaledY(scrollIndexX, scrollIndexY,
+        scrollActivity: true);
 
     // assert(pixelsY != null);
 
     if (newPixels.dy != pixelsY) {
-      yOverscroll = applyBoundaryConditionsY(scrollIndexX, scrollIndexY, newPixels.dy);
+      yOverscroll =
+          applyBoundaryConditionsY(scrollIndexX, scrollIndexY, newPixels.dy);
       assert(() {
         final double delta = newPixels.dy - pixelsY;
         if (yOverscroll.abs() > delta.abs()) {
           throw FlutterError.fromParts(<DiagnosticsNode>[
-            ErrorSummary('$runtimeType.applyBoundaryConditions  Y returned invalid overscroll value.'),
-            ErrorDescription('setPixels() was called to change the scroll offset from $pixelsY to ${newPixels.dy}.\n'
+            ErrorSummary(
+                '$runtimeType.applyBoundaryConditions  Y returned invalid overscroll value.'),
+            ErrorDescription(
+                'setPixels() was called to change the scroll offset from $pixelsY to ${newPixels.dy}.\n'
                 'That is a delta of $delta units.\n'
                 '$runtimeType.applyBoundaryConditions reported an overscroll of $yOverscroll units.')
           ]);
@@ -483,18 +514,23 @@ abstract class TableScrollPosition extends ChangeNotifier implements TableScroll
 
   @override
   double setPixelsX(int scrollIndexX, int scrollIndexY, double newPixels) {
-    double pixelsX = tableModel.getScrollScaledX(scrollIndexX, scrollIndexY, scrollActivity: true);
+    double pixelsX = tableModel.getScrollScaledX(scrollIndexX, scrollIndexY,
+        scrollActivity: true);
 
     // assert(pixelsX != null);
-    assert(SchedulerBinding.instance.schedulerPhase.index <= SchedulerPhase.transientCallbacks.index);
+    assert(SchedulerBinding.instance.schedulerPhase.index <=
+        SchedulerPhase.transientCallbacks.index);
     if (newPixels != pixelsX) {
-      final double overscroll = applyBoundaryConditionsX(scrollIndexX, scrollIndexY, newPixels);
+      final double overscroll =
+          applyBoundaryConditionsX(scrollIndexX, scrollIndexY, newPixels);
       assert(() {
         final double delta = newPixels - pixelsX;
         if (overscroll.abs() > delta.abs()) {
           throw FlutterError.fromParts(<DiagnosticsNode>[
-            ErrorSummary('$runtimeType.applyBoundaryConditions returned invalid overscroll value.'),
-            ErrorDescription('setPixels() was called to change the scroll offset from $pixelsX to $newPixels.\n'
+            ErrorSummary(
+                '$runtimeType.applyBoundaryConditions returned invalid overscroll value.'),
+            ErrorDescription(
+                'setPixels() was called to change the scroll offset from $pixelsX to $newPixels.\n'
                 'That is a delta of $delta units.\n'
                 '$runtimeType.applyBoundaryConditions reported an overscroll of $overscroll units.')
           ]);
@@ -521,18 +557,23 @@ abstract class TableScrollPosition extends ChangeNotifier implements TableScroll
 
   @override
   double setPixelsY(int scrollIndexX, int scrollIndexY, double newPixels) {
-    double pixelsY = tableModel.getScrollScaledY(scrollIndexX, scrollIndexY, scrollActivity: true);
+    double pixelsY = tableModel.getScrollScaledY(scrollIndexX, scrollIndexY,
+        scrollActivity: true);
 
     // assert(pixelsY != null);
-    assert(SchedulerBinding.instance.schedulerPhase.index <= SchedulerPhase.transientCallbacks.index);
+    assert(SchedulerBinding.instance.schedulerPhase.index <=
+        SchedulerPhase.transientCallbacks.index);
     if (newPixels != pixelsY) {
-      final double overscroll = applyBoundaryConditionsY(scrollIndexX, scrollIndexY, newPixels);
+      final double overscroll =
+          applyBoundaryConditionsY(scrollIndexX, scrollIndexY, newPixels);
       assert(() {
         final double delta = newPixels - pixelsY;
         if (overscroll.abs() > delta.abs()) {
           throw FlutterError.fromParts(<DiagnosticsNode>[
-            ErrorSummary('$runtimeType.applyBoundaryConditions returned invalid overscroll value.'),
-            ErrorDescription('setPixels() was called to change the scroll offset from $pixelsY to $newPixels.\n'
+            ErrorSummary(
+                '$runtimeType.applyBoundaryConditions returned invalid overscroll value.'),
+            ErrorDescription(
+                'setPixels() was called to change the scroll offset from $pixelsY to $newPixels.\n'
                 'That is a delta of $delta units.\n'
                 '$runtimeType.applyBoundaryConditions reported an overscroll of $overscroll units.')
           ]);
@@ -557,7 +598,8 @@ abstract class TableScrollPosition extends ChangeNotifier implements TableScroll
   }
 
   @protected
-  double applyBoundaryConditionsX(int scrollIndexX, int scrollIndexY, double value) {
+  double applyBoundaryConditionsX(
+      int scrollIndexX, int scrollIndexY, double value) {
     return applyBoundaryConditions(
         value,
         scrollPixelsX(scrollIndexX, scrollIndexY),
@@ -567,7 +609,8 @@ abstract class TableScrollPosition extends ChangeNotifier implements TableScroll
   }
 
   @protected
-  double applyBoundaryConditionsY(int scrollIndexX, int scrollIndexY, double value) {
+  double applyBoundaryConditionsY(
+      int scrollIndexX, int scrollIndexY, double value) {
     return applyBoundaryConditions(
         value,
         scrollPixelsY(scrollIndexX, scrollIndexY),
@@ -576,15 +619,18 @@ abstract class TableScrollPosition extends ChangeNotifier implements TableScroll
         tableModel.viewportDimensionY(scrollIndexY));
   }
 
-  double applyBoundaryConditions(
-      double value, pixels, double minScrollExtent, double maxScrollExtent, double viewportDimension) {
-    final double result = physics.applyBoundaryConditions(value, pixels, minScrollExtent, maxScrollExtent);
+  double applyBoundaryConditions(double value, pixels, double minScrollExtent,
+      double maxScrollExtent, double viewportDimension) {
+    final double result = physics.applyBoundaryConditions(
+        value, pixels, minScrollExtent, maxScrollExtent);
     assert(() {
       final double delta = value - pixels;
       if (result.abs() > delta.abs()) {
         throw FlutterError.fromParts(<DiagnosticsNode>[
-          ErrorSummary('${physics.runtimeType}.applyBoundaryConditions X or Y returned invalid overscroll value.'),
-          ErrorDescription('The method was called to consider a change from $pixels to $value, which is a '
+          ErrorSummary(
+              '${physics.runtimeType}.applyBoundaryConditions X or Y returned invalid overscroll value.'),
+          ErrorDescription(
+              'The method was called to consider a change from $pixels to $value, which is a '
               'delta of ${delta.toStringAsFixed(1)} units. However, it returned an overscroll of '
               '${result.toStringAsFixed(1)} units, which has a greater magnitude than the delta. '
               'The applyBoundaryConditions method is only supposed to reduce the possible range '
@@ -606,11 +652,11 @@ abstract class TableScrollPosition extends ChangeNotifier implements TableScroll
     return tableScrollDirection;
   }
 
-  double scrollPixelsX(int scrollIndexX, int scrollIndexY) =>
-      tableModel.getScrollScaledX(scrollIndexX, scrollIndexY, scrollActivity: true);
+  double scrollPixelsX(int scrollIndexX, int scrollIndexY) => tableModel
+      .getScrollScaledX(scrollIndexX, scrollIndexY, scrollActivity: true);
 
-  double scrollPixelsY(int scrollIndexX, int scrollIndexY) =>
-      tableModel.getScrollScaledY(scrollIndexX, scrollIndexY, scrollActivity: true);
+  double scrollPixelsY(int scrollIndexX, int scrollIndexY) => tableModel
+      .getScrollScaledY(scrollIndexX, scrollIndexY, scrollActivity: true);
 }
 
 class TableScrollPositionWithSingleContext extends TableScrollPosition {
@@ -668,8 +714,10 @@ class TableScrollPositionWithSingleContext extends TableScrollPosition {
   TableDrag drag(DragStartDetails details, VoidCallback dragCancelCallback) {
     TablePanelLayoutIndex si = findScrollIndex(details.localPosition);
 
-    final scrollIndexX = (tableModel.stateSplitX == SplitState.FREEZE_SPLIT) ? 1 : si.xIndex;
-    final scrollIndexY = (tableModel.stateSplitY == SplitState.FREEZE_SPLIT) ? 1 : si.yIndex;
+    final scrollIndexX =
+        (tableModel.stateSplitX == SplitState.FREEZE_SPLIT) ? 1 : si.xIndex;
+    final scrollIndexY =
+        (tableModel.stateSplitY == SplitState.FREEZE_SPLIT) ? 1 : si.yIndex;
 
     final TableScrollDragController drag = TableScrollDragController(
         delegate: this,
@@ -682,7 +730,8 @@ class TableScrollPositionWithSingleContext extends TableScrollPosition {
         scrollIndexY: scrollIndexY,
         adjustScroll: _adjustScroll);
 
-    beginActivity(TableDragScrollActivity(scrollIndexX, scrollIndexY, this, drag, scrollNotificationEnabled));
+    beginActivity(TableDragScrollActivity(
+        scrollIndexX, scrollIndexY, this, drag, scrollNotificationEnabled));
     assert(currentDrag == null);
     currentDrag = drag;
     return drag;
@@ -694,14 +743,16 @@ class TableScrollPositionWithSingleContext extends TableScrollPosition {
   // }
 
   TablePanelLayoutIndex findScrollIndex(Offset offset) {
-    final scrollIndexX = layoutX[2].inUse && layoutX[2].gridPosition < offset.dx ? 1 : 0;
-    final scrollIndexY = layoutY[2].inUse && layoutY[2].gridPosition < offset.dy ? 1 : 0;
+    final scrollIndexX =
+        layoutX[2].inUse && layoutX[2].gridPosition < offset.dx ? 1 : 0;
+    final scrollIndexY =
+        layoutY[2].inUse && layoutY[2].gridPosition < offset.dy ? 1 : 0;
 
     return TablePanelLayoutIndex(xIndex: scrollIndexX, yIndex: scrollIndexY);
   }
 
-  TableDrag dragScrollBar(
-      DragStartDetails details, VoidCallback dragCancelCallback, int scrollIndexX, int scrollIndexY) {
+  TableDrag dragScrollBar(DragStartDetails details,
+      VoidCallback dragCancelCallback, int scrollIndexX, int scrollIndexY) {
     final TableScrollBarDragController drag = TableScrollBarDragController(
         delegate: this,
         details: details,
@@ -709,14 +760,17 @@ class TableScrollPositionWithSingleContext extends TableScrollPosition {
         scrollIndexX: scrollIndexX,
         scrollIndexY: scrollIndexY);
 
-    beginActivity(TableDragScrollActivity(scrollIndexX, scrollIndexY, this, drag, scrollNotificationEnabled));
+    beginActivity(TableDragScrollActivity(
+        scrollIndexX, scrollIndexY, this, drag, scrollNotificationEnabled));
     assert(currentDrag == null);
     currentDrag = drag;
     return drag;
   }
 
-  void updateUserScrollDirection(ScrollDirection xScrollDirection, ScrollDirection yScrollDirection) {
-    if (userScrollDirectionX == xScrollDirection && userScrollDirectionY == yScrollDirection) return;
+  void updateUserScrollDirection(
+      ScrollDirection xScrollDirection, ScrollDirection yScrollDirection) {
+    if (userScrollDirectionX == xScrollDirection &&
+        userScrollDirectionY == yScrollDirection) return;
     _userScrollDirectionX = xScrollDirection;
     _userScrollDirectionY = yScrollDirection;
     didUpdateScrollDirection(xScrollDirection, yScrollDirection);
@@ -743,75 +797,111 @@ class TableScrollPositionWithSingleContext extends TableScrollPosition {
   }
 
   @override
-  bool applyContentDimensions(
-      double minScrollExtentX, double maxScrollExtentX, double minScrollExtentY, double maxScrollExtentY) {
+  bool applyContentDimensions(double minScrollExtentX, double maxScrollExtentX,
+      double minScrollExtentY, double maxScrollExtentY) {
     throw UnimplementedError();
   }
 
   @override
   void applyUserOffset(int scrollIndexX, int scrollIndexY, Offset delta) {
-    updateUserScrollDirection(delta.dx > 0.0 ? ScrollDirection.forward : ScrollDirection.reverse,
+    updateUserScrollDirection(
+        delta.dx > 0.0 ? ScrollDirection.forward : ScrollDirection.reverse,
         delta.dy > 0.0 ? ScrollDirection.forward : ScrollDirection.reverse);
 
-    final pixelsX = tableModel.getScrollScaledX(scrollIndexX, scrollIndexY, scrollActivity: true);
-    final pixelsY = tableModel.getScrollScaledY(scrollIndexX, scrollIndexY, scrollActivity: true);
+    final pixelsX = tableModel.getScrollScaledX(scrollIndexX, scrollIndexY,
+        scrollActivity: true);
+    final pixelsY = tableModel.getScrollScaledY(scrollIndexX, scrollIndexY,
+        scrollActivity: true);
 
     setPixels(
         scrollIndexX,
         scrollIndexY,
         Offset(
             pixelsX -
-                physics.applyPhysicsToUserOffset(delta.dx, pixelsX, tableModel.minScrollExtentX(scrollIndexX),
+                physics.applyPhysicsToUserOffset(
+                    delta.dx,
+                    pixelsX,
+                    tableModel.minScrollExtentX(scrollIndexX),
                     tableModel.maxScrollExtentX(scrollIndexX)),
             pixelsY -
-                physics.applyPhysicsToUserOffset(delta.dy, pixelsY, tableModel.minScrollExtentY(scrollIndexY),
+                physics.applyPhysicsToUserOffset(
+                    delta.dy,
+                    pixelsY,
+                    tableModel.minScrollExtentY(scrollIndexY),
                     tableModel.maxScrollExtentY(scrollIndexY))));
   }
 
   @override
   void applyUserOffsetX(int scrollIndexX, int scrollIndexY, double delta) {
-    updateUserScrollDirectionX(delta > 0.0 ? ScrollDirection.forward : ScrollDirection.reverse);
+    updateUserScrollDirectionX(
+        delta > 0.0 ? ScrollDirection.forward : ScrollDirection.reverse);
 
-    final pixelsX = tableModel.getScrollScaledX(scrollIndexX, scrollIndexY, scrollActivity: true);
+    final pixelsX = tableModel.getScrollScaledX(scrollIndexX, scrollIndexY,
+        scrollActivity: true);
 
     setPixelsX(
         scrollIndexX,
         scrollIndexY,
         pixelsX -
             physics.applyPhysicsToUserOffset(
-                delta, pixelsX, tableModel.minScrollExtentX(scrollIndexX), tableModel.maxScrollExtentX(scrollIndexX)));
+                delta,
+                pixelsX,
+                tableModel.minScrollExtentX(scrollIndexX),
+                tableModel.maxScrollExtentX(scrollIndexX)));
   }
 
   @override
   void applyUserOffsetY(int scrollIndexX, int scrollIndexY, double delta) {
-    final pixelsY = tableModel.getScrollScaledY(scrollIndexX, scrollIndexY, scrollActivity: true);
+    final pixelsY = tableModel.getScrollScaledY(scrollIndexX, scrollIndexY,
+        scrollActivity: true);
 
     setPixelsY(
         scrollIndexX,
         scrollIndexY,
         pixelsY -
             physics.applyPhysicsToUserOffset(
-                delta, pixelsY, tableModel.minScrollExtentY(scrollIndexY), tableModel.maxScrollExtentY(scrollIndexY)));
+                delta,
+                pixelsY,
+                tableModel.minScrollExtentY(scrollIndexY),
+                tableModel.maxScrollExtentY(scrollIndexY)));
   }
 
   @override
   void correctBy(Offset value) {}
 
   @override
-  void goBallistic(int scrollIndexX, int scrollIndexY, double velocityX, double velocityY) {
-    final pixelsX = tableModel.getScrollScaledX(scrollIndexX, scrollIndexY, scrollActivity: true);
-    final pixelsY = tableModel.getScrollScaledY(scrollIndexX, scrollIndexY, scrollActivity: true);
+  void goBallistic(
+      int scrollIndexX, int scrollIndexY, double velocityX, double velocityY) {
+    final pixelsX = tableModel.getScrollScaledX(scrollIndexX, scrollIndexY,
+        scrollActivity: true);
+    final pixelsY = tableModel.getScrollScaledY(scrollIndexX, scrollIndexY,
+        scrollActivity: true);
 
-    final Simulation xSimulation = physics.createBallisticSimulation(pixelsX, tableModel.minScrollExtentX(scrollIndexX),
-            tableModel.maxScrollExtentX(scrollIndexX), tableModel.outOfRangeX(scrollIndexX, scrollIndexY), velocityX) ??
+    final Simulation xSimulation = physics.createBallisticSimulation(
+            pixelsX,
+            tableModel.minScrollExtentX(scrollIndexX),
+            tableModel.maxScrollExtentX(scrollIndexX),
+            tableModel.outOfRangeX(scrollIndexX, scrollIndexY),
+            velocityX) ??
         noBallisticSimulation;
-    final Simulation ySimulation = physics.createBallisticSimulation(pixelsY, tableModel.minScrollExtentY(scrollIndexY),
-            tableModel.maxScrollExtentY(scrollIndexY), tableModel.outOfRangeY(scrollIndexX, scrollIndexY), velocityY) ??
+    final Simulation ySimulation = physics.createBallisticSimulation(
+            pixelsY,
+            tableModel.minScrollExtentY(scrollIndexY),
+            tableModel.maxScrollExtentY(scrollIndexY),
+            tableModel.outOfRangeY(scrollIndexX, scrollIndexY),
+            velocityY) ??
         noBallisticSimulation;
-    if (xSimulation != noBallisticSimulation || ySimulation != noBallisticSimulation) {
+    if (xSimulation != noBallisticSimulation ||
+        ySimulation != noBallisticSimulation) {
       // print('goBallistic');
       beginActivity(BallisticTableScrollActivity(
-          scrollIndexX, scrollIndexY, this, xSimulation, ySimulation, context.vsync, scrollNotificationEnabled));
+          scrollIndexX,
+          scrollIndexY,
+          this,
+          xSimulation,
+          ySimulation,
+          context.vsync,
+          scrollNotificationEnabled));
     } else {
       print('idle');
       goIdle(scrollIndexX, scrollIndexY);
@@ -820,31 +910,35 @@ class TableScrollPositionWithSingleContext extends TableScrollPosition {
 
   @override
   void goIdle(int scrollIndexX, int scrollIndexY) {
-    beginActivity(TableIdleScrollActivity(scrollIndexX, scrollIndexY, this, scrollNotificationEnabled));
+    beginActivity(TableIdleScrollActivity(
+        scrollIndexX, scrollIndexY, this, scrollNotificationEnabled));
   }
 
   void correctOffScroll(int scrollIndexX, int scrollIndexY) {
     List<ScrollSimulation> list = [];
 
-    final _SetPixels setPixelsX = tableModel.tableScrollDirection != TableScrollDirection.vertical
-        ? this.setPixelsX
-        : (scrollIndexX, scrollIndexY, value) {
-            //To do Aangepast is waarschijnlijk niet nodig voor CustomScrollView
-            //  return tableModel.sliverScrollPosition?.setPixels(value) ?? 0.0;
-            return 0.0;
-          };
+    final _SetPixels setPixelsX =
+        tableModel.tableScrollDirection != TableScrollDirection.vertical
+            ? this.setPixelsX
+            : (scrollIndexX, scrollIndexY, value) {
+                //To do Aangepast is waarschijnlijk niet nodig voor CustomScrollView
+                //  return tableModel.sliverScrollPosition?.setPixels(value) ?? 0.0;
+                return 0.0;
+              };
 
-    final _SetPixels setPixelsY = tableModel.tableScrollDirection != TableScrollDirection.horizontal
-        ? this.setPixelsY
-        : (scrollIndexX, scrollIndexY, value) {
-            //To do Aangepast is waarschijnlijk niet nodig voor CustomScrollView
-            // return tableModel.sliverScrollPosition?.setPixels(value) ?? 0.0;
-            return 0.0;
-          };
+    final _SetPixels setPixelsY =
+        tableModel.tableScrollDirection != TableScrollDirection.horizontal
+            ? this.setPixelsY
+            : (scrollIndexX, scrollIndexY, value) {
+                //To do Aangepast is waarschijnlijk niet nodig voor CustomScrollView
+                // return tableModel.sliverScrollPosition?.setPixels(value) ?? 0.0;
+                return 0.0;
+              };
 
     var xSimulation = (int scrollIndexX, int scrollIndexY) {
       Simulation? simulation = physics.createBallisticSimulation(
-          tableModel.getScrollScaledX(scrollIndexX, scrollIndexY, scrollActivity: true),
+          tableModel.getScrollScaledX(scrollIndexX, scrollIndexY,
+              scrollActivity: true),
           tableModel.minScrollExtentX(scrollIndexX),
           tableModel.maxScrollExtentX(scrollIndexX),
           true,
@@ -861,7 +955,8 @@ class TableScrollPositionWithSingleContext extends TableScrollPosition {
 
     var ySimulation = (int scrollIndexX, int scrollIndexY) {
       Simulation? simulation = physics.createBallisticSimulation(
-          tableModel.getScrollScaledY(scrollIndexX, scrollIndexY, scrollActivity: true),
+          tableModel.getScrollScaledY(scrollIndexX, scrollIndexY,
+              scrollActivity: true),
           tableModel.minScrollExtentY(scrollIndexY),
           tableModel.maxScrollExtentY(scrollIndexY),
           true,
@@ -889,28 +984,32 @@ class TableScrollPositionWithSingleContext extends TableScrollPosition {
     if (tableModel.anySplitY) {
       if (tableModel.outOfRangeY(0, 1)) ySimulation(0, 1);
 
-      if (tableModel.stateSplitY == SplitState.SPLIT && !tableModel.scrollLockX) {
+      if (tableModel.stateSplitY == SplitState.SPLIT &&
+          !tableModel.scrollLockX) {
         if (tableModel.outOfRangeX(0, 1)) xSimulation(0, 1);
 
-        if (tableModel.stateSplitX == SplitState.SPLIT && tableModel.outOfRangeX(1, 1)) xSimulation(1, 1);
+        if (tableModel.stateSplitX == SplitState.SPLIT &&
+            tableModel.outOfRangeX(1, 1)) xSimulation(1, 1);
       }
     }
 
     if (tableModel.anySplitX) {
       if (tableModel.outOfRangeX(1, 0)) xSimulation(1, 0);
 
-      if (tableModel.stateSplitX == SplitState.SPLIT && !tableModel.scrollLockY) {
+      if (tableModel.stateSplitX == SplitState.SPLIT &&
+          !tableModel.scrollLockY) {
         if (tableModel.outOfRangeY(1, 0)) ySimulation(1, 0);
 
-        if (tableModel.stateSplitY == SplitState.SPLIT && tableModel.outOfRangeY(1, 1)) ySimulation(1, 1);
+        if (tableModel.stateSplitY == SplitState.SPLIT &&
+            tableModel.outOfRangeY(1, 1)) ySimulation(1, 1);
       }
     }
 
     if (list.isEmpty) {
       goIdle(scrollIndexX, scrollIndexY);
     } else {
-      beginActivity(
-          CorrrectOffScrollActivity(scrollIndexX, scrollIndexY, this, list, context.vsync, scrollNotificationEnabled));
+      beginActivity(CorrrectOffScrollActivity(scrollIndexX, scrollIndexY, this,
+          list, context.vsync, scrollNotificationEnabled));
     }
   }
 
@@ -940,14 +1039,15 @@ class TableScrollPositionWithSingleContext extends TableScrollPosition {
   AxisDirection get axisDirectionY => context.axisDirection;
 
   @override
-  void alignCells(int scrollIndexX, int scrollIndexY, bool alignX, bool alignY) {
+  void alignCells(
+      int scrollIndexX, int scrollIndexY, bool alignX, bool alignY) {
     final scrollX = tableModel.getScrollScaledX(scrollIndexX, scrollIndexY);
     final scrollY = tableModel.getScrollScaledY(scrollIndexX, scrollIndexY);
     double suggestedScrollX = scrollX;
     double suggestedScrollY = scrollY;
 
-    assert(
-        scrollIndexX == 0 && scrollIndexY == 0, 'AlignCells only implements scrollIndexX == 0 and scrollIndexY == 0');
+    assert(scrollIndexX == 0 && scrollIndexY == 0,
+        'AlignCells only implements scrollIndexX == 0 and scrollIndexY == 0');
 
     if (alignX) {
       suggestedScrollX = tableModel.moveFreezeToStartColumnScaled(10);
@@ -1014,7 +1114,8 @@ abstract class TableScrollMetrics {
 
   DrawScrollBar drawVerticalScrollBarTrack(int scrollIndexX, int scrollIndexY);
 
-  DrawScrollBar drawHorizontalScrollBarTrack(int scrollIndexX, int scrollIndexY);
+  DrawScrollBar drawHorizontalScrollBarTrack(
+      int scrollIndexX, int scrollIndexY);
 
   double scrollPixelsX(int scrollIndexX, int scrollIndexY);
 
@@ -1055,13 +1156,15 @@ abstract class TableScrollMetrics {
   bool atEdgeX(int scrollIndexX, int scrollIndexY) {
     final pixelsX = scrollPixelsX(scrollIndexX, scrollIndexY);
 
-    return pixelsX == minScrollExtentX(scrollIndexX) || pixelsX == maxScrollExtentX(scrollIndexX);
+    return pixelsX == minScrollExtentX(scrollIndexX) ||
+        pixelsX == maxScrollExtentX(scrollIndexX);
   }
 
   bool atEdgeY(int scrollIndexX, int scrollIndexY) {
     final pixelsY = scrollPixelsY(scrollIndexX, scrollIndexY);
 
-    return pixelsY == minScrollExtentY(scrollIndexY) || pixelsY == maxScrollExtentY(scrollIndexY);
+    return pixelsY == minScrollExtentY(scrollIndexY) ||
+        pixelsY == maxScrollExtentY(scrollIndexY);
   }
 
   TableScrollDirection get tableScrollDirection;

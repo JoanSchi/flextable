@@ -1,8 +1,9 @@
 import 'package:flutter/widgets.dart';
-import 'TableDragDetails.dart';
-import 'TableScroll.dart';
+import 'table_drag_details.dart';
+import 'table_scroll.dart';
 
-abstract class TableScrollNotification extends LayoutChangedNotification with ViewportNotificationMixin {
+abstract class TableScrollNotification extends LayoutChangedNotification
+    with ViewportNotificationMixin {
   /// Initializes fields for subclasses.
   TableScrollNotification({
     required this.metrics,

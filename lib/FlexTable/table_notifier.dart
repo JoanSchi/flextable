@@ -1,7 +1,7 @@
 import 'dart:collection';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'TableScroll.dart';
+import 'table_scroll.dart';
 
 typedef TableScrollCallback = Function(String notification);
 typedef TableScaleCallback = Function(double scale);
@@ -16,7 +16,8 @@ class _ScrollListenerEntry extends LinkedListEntry<_ScrollListenerEntry> {
   final TableScrollCallback listener;
 }
 
-class _TableScaleListenerEntry extends LinkedListEntry<_TableScaleListenerEntry> {
+class _TableScaleListenerEntry
+    extends LinkedListEntry<_TableScaleListenerEntry> {
   _TableScaleListenerEntry(this.listener);
   final TableScaleCallback listener;
 }
@@ -25,8 +26,10 @@ class TableChangeNotifier {
   ScrollPosition? _sliverScrollPosition;
   late TableScrollPosition tableScrollPosition;
   LinkedList<_ListenerEntry> _listeners = LinkedList<_ListenerEntry>();
-  LinkedList<_ScrollListenerEntry> _scrollListeners = LinkedList<_ScrollListenerEntry>();
-  LinkedList<_TableScaleListenerEntry> _tableScaleListeners = LinkedList<_TableScaleListenerEntry>();
+  LinkedList<_ScrollListenerEntry> _scrollListeners =
+      LinkedList<_ScrollListenerEntry>();
+  LinkedList<_TableScaleListenerEntry> _tableScaleListeners =
+      LinkedList<_TableScaleListenerEntry>();
   VoidCallback? updateScrollBar;
 
   set sliverScrollPosition(ScrollPosition? value) {
@@ -90,8 +93,10 @@ class TableChangeNotifier {
   /// This method should only be called by the object's owner.
   @mustCallSuper
   void dispose() {
-    assert(_listeners.isEmpty, 'The list of _listeners contains ${_listeners.length} listeners');
-    assert(_scrollListeners.isEmpty, 'The list of _scrollListeners contains ${_scrollListeners.length} listeners');
+    assert(_listeners.isEmpty,
+        'The list of _listeners contains ${_listeners.length} listeners');
+    assert(_scrollListeners.isEmpty,
+        'The list of _scrollListeners contains ${_scrollListeners.length} listeners');
     // assert(
     //     _tableScaleListeners.isEmpty, 'The list of _zoomStateListeners contains ${_scrollListeners.length} listeners');
     _listeners.clear();
@@ -104,7 +109,8 @@ class TableChangeNotifier {
   void notifyListeners() {
     if (_listeners.isEmpty) return;
 
-    final List<_ListenerEntry> localListeners = List<_ListenerEntry>.from(_listeners);
+    final List<_ListenerEntry> localListeners =
+        List<_ListenerEntry>.from(_listeners);
 
     for (final _ListenerEntry entry in localListeners) {
       try {
@@ -114,7 +120,8 @@ class TableChangeNotifier {
           exception: exception,
           stack: stack,
           library: 'foundation library',
-          context: ErrorDescription('while dispatching notifications for $runtimeType'),
+          context: ErrorDescription(
+              'while dispatching notifications for $runtimeType'),
           informationCollector: () sync* {
             yield DiagnosticsProperty<TableChangeNotifier>(
               'The $runtimeType sending notification was',
@@ -130,7 +137,8 @@ class TableChangeNotifier {
   void notifyScrollListeners(String notifier) {
     if (_listeners.isEmpty) return;
 
-    final List<_ScrollListenerEntry> localListeners = List<_ScrollListenerEntry>.from(_scrollListeners);
+    final List<_ScrollListenerEntry> localListeners =
+        List<_ScrollListenerEntry>.from(_scrollListeners);
 
     for (final _ScrollListenerEntry entry in localListeners) {
       try {
@@ -140,7 +148,8 @@ class TableChangeNotifier {
           exception: exception,
           stack: stack,
           library: 'foundation library',
-          context: ErrorDescription('while dispatching notifications for $runtimeType'),
+          context: ErrorDescription(
+              'while dispatching notifications for $runtimeType'),
           informationCollector: () sync* {
             yield DiagnosticsProperty<TableChangeNotifier>(
               'The $runtimeType sending notification was',
@@ -156,7 +165,8 @@ class TableChangeNotifier {
   void notifyTableScaleListeners(double tableScale) {
     if (_listeners.isEmpty) return;
 
-    final List<_TableScaleListenerEntry> localListeners = List<_TableScaleListenerEntry>.from(_tableScaleListeners);
+    final List<_TableScaleListenerEntry> localListeners =
+        List<_TableScaleListenerEntry>.from(_tableScaleListeners);
 
     for (final _TableScaleListenerEntry entry in localListeners) {
       try {
@@ -166,7 +176,8 @@ class TableChangeNotifier {
           exception: exception,
           stack: stack,
           library: 'foundation library',
-          context: ErrorDescription('while dispatching notifications for $runtimeType'),
+          context: ErrorDescription(
+              'while dispatching notifications for $runtimeType'),
           informationCollector: () sync* {
             yield DiagnosticsProperty<TableChangeNotifier>(
               'The $runtimeType sending notification was',
