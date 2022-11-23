@@ -71,7 +71,7 @@ class FreezePositionProperties {
 
   const FreezePositionProperties({
     this.useFreezePosition: true,
-    this.freezeSlope: kTouchSlop,
+    this.freezeSlope: 32.0,
   });
 }
 

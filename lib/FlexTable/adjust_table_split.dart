@@ -64,9 +64,9 @@ class SplitPositionProperties {
   const SplitPositionProperties(
       {this.useSplitPosition: true,
       this.xSplitSelectArea: const SelectArea(
-          width: 50.0, height: 100.0, horizontalAlignment: HitAlignment.start),
+          width: 50.0, height: 100.0, horizontalAlignment: HitAlignment.end),
       this.ySplitSelectArea: const SelectArea(
-          width: 100.0, height: 50.0, horizontalAlignment: HitAlignment.start),
+          width: 100.0, height: 50.0, horizontalAlignment: HitAlignment.end),
       this.marginSplit: 20.0});
 }
 

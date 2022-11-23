@@ -135,7 +135,7 @@ class _SliverTablesState extends State<SliverTables> {
                   if (scrollerBarsDetected)
                     CheckboxListTile(
                       title: const Text('Disable scrollbar'),
-                      subtitle: const Text('to simulate phone/tabled'),
+                      subtitle: const Text('to simulate phone/tablet'),
                       onChanged: (value) {
                         widget.notification().disableScrollBar = value ?? false;
                       },
@@ -323,7 +323,8 @@ class DemoSliver extends StatelessWidget {
                       flexTable: FlexTable(
                 backgroundColor: Colors.grey[50],
                 tableModel: InternationaleHandel().makeTable(
-                    platform: platform, scrollLockX: false, scrollLockY: false),
+                  platform: platform,
+                ),
                 findSliverScrollPosition: true,
                 sidePanelWidget: [
                   if (scaleSlider)
@@ -351,8 +352,7 @@ class DemoSliver extends StatelessWidget {
                   delegate: FlexTableToViewPortBoxDelegate(
                       flexTable: FlexTable(
                 backgroundColor: Colors.grey[50],
-                tableModel: Fruit().makeTable(
-                    platform: platform, scrollLockX: false, scrollLockY: false),
+                tableModel: Fruit().makeTable(platform: platform),
                 findSliverScrollPosition: true,
                 sidePanelWidget: [
                   if (scaleSlider)

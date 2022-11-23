@@ -109,7 +109,7 @@ class _EnergyTableState extends State<EnergyTable> {
                 RichText(
                   text: TextSpan(
                     text:
-                        'If freeze is not enabled, the split function can be applied by dragging from top/left.'
+                        'If freeze is not enabled, the split function can be applied by dragging from top/right.'
                         '\n\n',
                     style: const TextStyle(
                         color: Colors.black, fontSize: sizeParagraph),

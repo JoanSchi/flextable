@@ -81,7 +81,7 @@ class _HypotheekTableState extends State<HypotheekTable> {
                         '\n\n'
                         'The flextable below shows several mortgage tables with merged colums, rows, different lines and predefined autofreezes.'
                         'The autofreezes locks the row header (date) and the colum header until the scroll passes the defined end of the autofreeze. As long the start, freeze and the end of the autofreeze does not overlap another autofreeze, multiple autofreezes can be added.'
-                        '''The split function can be applied by dragging from the left top corner. Autofreeze is deactivated.'''
+                        '''The split function can be applied by dragging from the right top corner. Autofreeze is deactivated.'''
                         '\n\n',
                     style: const TextStyle(
                         color: Colors.black, fontSize: sizeParagraph),

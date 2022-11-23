@@ -78,7 +78,7 @@ class _TradeTableState extends State<TradeTable> {
                   text: TextSpan(
                     text: 'Trade table with autofreeze.'
                         '\n\n'
-                        '''The split function can be applied by dragging from the left top corner. Vertical autofreeze is enabled and the horizontal autofreeze is disabled, therefore the vertical manual freeze can be used. Less intesting option: The horizontal autolock is also disabled, therefore if the horizontal split is applied the top and bottom panel can scroll independently in de horizontal direction.'''
+                        '''The split function can be applied by dragging from the right top corner. Vertical autofreeze is enabled and the horizontal autofreeze is disabled, therefore the vertical manual freeze can be used. Less intesting option: The horizontal autolock is also disabled, therefore if the horizontal split is applied the top and bottom panel can scroll independently in de horizontal direction.'''
                         ' It is not possible to use autofreeze and the scrollunlock together.'
                         '\n\n',
                     style: const TextStyle(

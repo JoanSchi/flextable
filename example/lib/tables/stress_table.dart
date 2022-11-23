@@ -78,7 +78,7 @@ class _StressTableState extends State<StressTable> {
                     text:
                         'The stress table can be slow. To increase speed, the zoom can be increased or the window can be narrowed.'
                         '\n\n'
-                        'Like the other tables the split function can be applied by dragging from the left top corner. In this table scroll lock is disabled for both directions, this will enable indepent scroll for each panel'
+                        'Like the other tables the split function can be applied by dragging from the right top corner. In this table scroll lock is disabled for both directions, this will enable indepent scroll for each panel'
                         '\n\n',
                     style: const TextStyle(
                         color: Colors.black, fontSize: sizeParagraph),
