@@ -159,14 +159,16 @@ class FlexTableState extends State<FlexTable> {
               tableModel: _tableModel,
               tableBuilder: widget.tableBuilder,
             ),
-            if (widget.moveFreezePositionProperties.useMoveFreezePosition)
+            if (_tableModel.manualFreezePossible &&
+                widget.moveFreezePositionProperties.useMoveFreezePosition)
               TableMoveFreeze(
                 moveFreezePositionProperties:
                     widget.moveFreezePositionProperties,
                 tableModel: _tableModel,
                 tableScrollPosition: position,
               ),
-            if (widget.freezePositionProperties.useFreezePosition)
+            if (_tableModel.manualFreezePossible &&
+                widget.freezePositionProperties.useFreezePosition)
               TableFreeze(
                 freezePositionProperties: widget.freezePositionProperties,
                 tableModel: _tableModel,

@@ -288,6 +288,12 @@ class TableModel with TableScrollMetrics, TableChangeNotifier {
   double get scaleColumnHeader =>
       (maxColumnHeaderScale < tableScale) ? maxColumnHeaderScale : tableScale;
 
+  bool get manualFreezePossible =>
+      !autoFreezeX ||
+      autoFreezeAreasX.isEmpty ||
+      !autoFreezeY ||
+      autoFreezeAreasY.isEmpty;
+
   bool get autoFreezePossibleX =>
       autoFreezeX &&
       stateSplitX != SplitState.SPLIT &&
@@ -2550,25 +2556,21 @@ class TableModel with TableScrollMetrics, TableChangeNotifier {
   ///
 
   bool hitFreeze(Offset position, {double kSlope = 18.0}) {
-    if ((stateSplitX == SplitState.SPLIT && stateSplitY == SplitState.SPLIT) ||
-        (tableFitWidth && tableFitHeight)) {
-      return false;
-    }
-    // print('table freeze hit');
-
-    bool inArea(double padding) =>
+    bool _inArea(double padding) =>
         position.dx >= widthLayoutList[1].panelPosition + padding &&
         position.dx <= widthLayoutList[2].panelEndPosition - padding &&
         position.dy >= heightLayoutList[1].panelPosition + padding &&
         position.dy <= heightLayoutList[2].panelEndPosition - padding;
 
-    bool inFreezeArea = inArea(freezePadding * tableScale);
+    bool inFreezeArea = _inArea(freezePadding * tableScale);
 
     bool inUnfreezeArea = (freezePadding == unfreezePadding)
         ? inFreezeArea
-        : inArea(unfreezePadding * tableScale);
+        : _inArea(unfreezePadding * tableScale);
 
-    if (!autoFreezePossibleX && stateSplitX != SplitState.SPLIT) {
+    if (!autoFreezePossibleX &&
+        stateSplitX != SplitState.SPLIT &&
+        !tableFitWidth) {
       final column = findIntersectionIndex(
           (position.dx +
                   getScrollX(0, 0) * tableScale -
@@ -2588,7 +2590,9 @@ class TableModel with TableScrollMetrics, TableChangeNotifier {
         return true;
       }
     }
-    if (!autoFreezePossibleY && stateSplitY != SplitState.SPLIT) {
+    if (!autoFreezePossibleY &&
+        stateSplitY != SplitState.SPLIT &&
+        !tableFitHeight) {
       final row = findIntersectionIndex(
           (position.dy +
                   getScrollY(0, 0) * tableScale -
