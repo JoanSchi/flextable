@@ -903,7 +903,7 @@ class TableScrollPositionWithSingleContext extends TableScrollPosition {
           context.vsync,
           scrollNotificationEnabled));
     } else {
-      print('idle');
+      debugPrint('idle');
       goIdle(scrollIndexX, scrollIndexY);
     }
   }
