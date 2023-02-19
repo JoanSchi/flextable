@@ -62,12 +62,12 @@ class SplitPositionProperties {
   final double marginSplit;
 
   const SplitPositionProperties(
-      {this.useSplitPosition: true,
-      this.xSplitSelectArea: const SelectArea(
+      {this.useSplitPosition = true,
+      this.xSplitSelectArea = const SelectArea(
           width: 50.0, height: 100.0, horizontalAlignment: HitAlignment.end),
-      this.ySplitSelectArea: const SelectArea(
+      this.ySplitSelectArea = const SelectArea(
           width: 100.0, height: 50.0, horizontalAlignment: HitAlignment.end),
-      this.marginSplit: 20.0});
+      this.marginSplit = 20.0});
 }
 
 class SplitPosition implements HitAndDragDelegate {
@@ -265,8 +265,8 @@ class SelectArea {
   const SelectArea(
       {required double width,
       required double height,
-      this.horizontalAlignment: HitAlignment.end,
-      this.verticalAlignment: HitAlignment.start})
+      this.horizontalAlignment = HitAlignment.end,
+      this.verticalAlignment = HitAlignment.start})
       : _width = width,
         _height = height;
 

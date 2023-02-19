@@ -759,7 +759,7 @@ class TableHeaderIndex extends Comparable<TableHeaderIndex> {
   int panelIndex;
 
   TableHeaderIndex({
-    this.panelIndex: -1,
+    this.panelIndex = -1,
     this.index = -1,
   });
 

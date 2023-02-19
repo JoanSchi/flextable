@@ -21,13 +21,13 @@ class TableZoomProperties {
   double fraction;
 
   TableZoomProperties({
-    this.lineWidth: 1.0,
-    this.lineColor: Colors.black38,
-    this.pointerSize: 48.0,
-    this.centerSize: 12.0,
-    this.pointerColor: Colors.black38,
-    this.pointerColorActive: Colors.black38,
-    this.fraction: 0.25,
+    this.lineWidth = 1.0,
+    this.lineColor = Colors.black38,
+    this.pointerSize = 48.0,
+    this.centerSize = 12.0,
+    this.pointerColor = Colors.black38,
+    this.pointerColorActive = Colors.black38,
+    this.fraction = 0.25,
   });
 }
 

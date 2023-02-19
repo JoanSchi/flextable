@@ -64,7 +64,7 @@ class MoveFreezePositionProperties {
   final double sizeMoveFreezeButton;
 
   const MoveFreezePositionProperties(
-      {this.useMoveFreezePosition: true, this.sizeMoveFreezeButton: 50.0});
+      {this.useMoveFreezePosition = true, this.sizeMoveFreezeButton = 50.0});
 }
 
 class MoveFreeze extends ChangeNotifier implements HitAndDragDelegate {

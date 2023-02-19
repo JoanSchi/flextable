@@ -176,14 +176,14 @@ class TableModel with TableScrollMetrics, TableChangeNotifier {
       required this.maximumRows,
       required this.defaultWidthCell,
       required this.defaultHeightCell,
-      this.stateSplitX: SplitState.NO_SPLITE,
-      this.stateSplitY: SplitState.NO_SPLITE,
+      this.stateSplitX = SplitState.NO_SPLITE,
+      this.stateSplitY = SplitState.NO_SPLITE,
       double xSplit = 0.0,
       double ySplit = 0.0,
-      rowHeader: false,
-      this.columnHeader: false,
-      this.scrollLockX: true,
-      this.scrollLockY: true,
+      rowHeader = false,
+      this.columnHeader = false,
+      this.scrollLockX = true,
+      this.scrollLockY = true,
       int freezeColumns = -1,
       int freezeRows = -1,
       List<PropertiesRange>? specificHeight,
@@ -528,11 +528,11 @@ class TableModel with TableScrollMetrics, TableChangeNotifier {
     return length;
   }
 
-  double getX(int column, {int pc: 0}) {
+  double getX(int column, {int pc = 0}) {
     return getPosition(column, pc, _specificWidth);
   }
 
-  double getY(int row, {int pc: 0}) {
+  double getY(int row, {int pc = 0}) {
     return getPosition(row, pc, _specificHeight);
   }
 
@@ -1037,7 +1037,7 @@ class TableModel with TableScrollMetrics, TableChangeNotifier {
       getScrollY(scrollIndexX, scrollIndexY, scrollActivity: scrollActivity) *
       tableScale;
 
-  double getScrollY(scrollIndexX, scrollIndexY, {bool scrollActivity: false}) {
+  double getScrollY(scrollIndexX, scrollIndexY, {bool scrollActivity = false}) {
     if (scrollActivity && autoFreezePossibleY) {
       return mainScrollY;
     } else if (scrollIndexX == 0 || scrollLockY || anyFreezeSplitX) {
@@ -3129,8 +3129,8 @@ class GridLayout {
       {this.index = -1,
       this.gridLength = 0.0,
       this.gridPosition = 0.0,
-      this.marginBegin: 0.0,
-      this.marginEnd: 0.0,
+      this.marginBegin = 0.0,
+      this.marginEnd = 0.0,
       double? preferredGridLength})
       : layoutGridLength = preferredGridLength ?? gridLength;
 
@@ -3138,8 +3138,8 @@ class GridLayout {
       {required int index,
       double gridLength = 0.0,
       double gridPosition = 0.0,
-      double marginBegin: 0.0,
-      double marginEnd: 0.0,
+      double marginBegin = 0.0,
+      double marginEnd = 0.0,
       double? preferredGridLength}) {
     this.index = index;
     this.gridLength = gridLength;
@@ -3258,10 +3258,10 @@ class FreezeChange {
   final int column;
 
   FreezeChange(
-      {this.action: FreezeAction.NOACTION,
-      this.position: Offset.zero,
-      this.row: -1,
-      this.column: -1});
+      {this.action = FreezeAction.NOACTION,
+      this.position = Offset.zero,
+      this.row = -1,
+      this.column = -1});
 
   @override
   String toString() {
@@ -3329,7 +3329,7 @@ class AutoFreezeArea {
   double get d => endPosition - freezePosition + startPosition;
 
   AutoFreezeArea.noArea(
-      {this.startIndex: -1, this.freezeIndex: -1, this.endIndex: -1});
+      {this.startIndex = -1, this.freezeIndex = -1, this.endIndex = -1});
 
   bool get freeze => freezeIndex > 0;
 

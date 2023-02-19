@@ -1166,8 +1166,8 @@ class TableCellIndex extends Comparable<TableCellIndex> {
   int panelIndexY;
 
   TableCellIndex({
-    this.panelIndexX: -1,
-    this.panelIndexY: -1,
+    this.panelIndexX = -1,
+    this.panelIndexY = -1,
     this.column = -1,
     this.row = -1,
     this.columns = 1,
