@@ -1,7 +1,22 @@
+// Copyright (C) 2023 Joan Schipper
+// 
+// This file is part of flextable.
+// 
+// flextable is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// flextable is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License
+// along with flextable.  If not, see <http://www.gnu.org/licenses/>.
+
 import 'package:example_flextable/about.dart';
-import 'package:flextable/FlexTable/body_layout.dart';
-import 'package:flextable/FlexTable/table_bottombar.dart';
-import 'package:flextable/FlexTable/table_multi_panel_portview.dart';
+import 'package:flextable/flextable.dart';
 import 'package:flutter/material.dart';
 import '../data/fruit.dart';
 
@@ -29,6 +44,21 @@ class FruitTable extends StatefulWidget {
 }
 
 class _FruitTableState extends State<FruitTable> {
+  late FlexTableController _flexTableController;
+  FlexTableScaleChangeNotifier? scaleChangeNotifier;
+
+  @override
+  void initState() {
+    _flexTableController = FlexTableController();
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    _flexTableController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
@@ -47,6 +77,33 @@ class _FruitTableState extends State<FruitTable> {
       case TargetPlatform.windows:
         scaleSlider = true;
         break;
+    }
+    if (scaleSlider) {
+      scaleChangeNotifier = FlexTableScaleChangeNotifier();
+    }
+
+    Widget table = FlexTable(
+      flexTableController: _flexTableController,
+      scaleChangeNotifier: scaleChangeNotifier,
+      backgroundColor: Colors.grey[50],
+      flexTableModel: Fruit().makeTable(
+          platform: platform, scrollLockX: false, scrollLockY: false),
+
+      //splitPositionProperties: const SplitPositionProperties(useSplitPosition: false),
+    );
+
+    if (scaleSlider) {
+      table = GridBorderLayout(children: [
+        table,
+        GridBorderLayoutPosition(
+            row: 2,
+            measureHeight: true,
+            squeezeRatio: 1.0,
+            child: TableBottomBar(
+                scaleChangeNotifier: scaleChangeNotifier!,
+                flexTableController: _flexTableController,
+                maxWidthSlider: 200.0))
+      ]);
     }
 
     const double sizeAbout = 24.0;
@@ -124,19 +181,6 @@ class _FruitTableState extends State<FruitTable> {
             ),
           ),
         ),
-        body: FlexTable(
-          backgroundColor: Colors.grey[50],
-          tableModel: Fruit().makeTable(
-              platform: platform, scrollLockX: false, scrollLockY: false),
-          sizeScrollBarTrack: 0.0,
-          //splitPositionProperties: const SplitPositionProperties(useSplitPosition: false),
-          sidePanelWidget: [
-            if (scaleSlider)
-              (tableModel) => FlexTableLayoutParentDataWidget(
-                  tableLayoutPosition: const FlexTableLayoutPosition.bottom(),
-                  child: TableBottomBar(
-                      tableModel: tableModel, maxWidthSlider: 200.0))
-          ],
-        ));
+        body: table);
   }
 }

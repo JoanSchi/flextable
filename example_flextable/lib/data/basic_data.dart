@@ -1,23 +1,32 @@
-import 'package:flextable/FlexTable/TableItems/Cells.dart';
-import 'package:flextable/FlexTable/data_flexfable.dart';
-import 'package:flextable/FlexTable/tabel_header_viewport.dart';
-import 'package:flextable/FlexTable/tabel_panel_viewport.dart';
-import 'package:flextable/FlexTable/table_builder.dart';
-import 'package:flextable/FlexTable/table_line.dart';
-import 'package:flextable/FlexTable/table_model.dart';
-import 'package:flextable/FlexTable/table_tools.dart';
+// Copyright (C) 2023 Joan Schipper
+// 
+// This file is part of flextable.
+// 
+// flextable is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// flextable is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License
+// along with flextable.  If not, see <http://www.gnu.org/licenses/>.
 
+import 'package:flextable/flextable.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 
 class BasicTable {
-  late DataFlexTableBase data;
+  late AbstractFlexTableDataModel data;
   final int rows;
   final int columns;
 
   BasicTable.positions({this.rows = 500, this.columns = 200}) {
-    data = DataFlexTable();
+    data = FlexTableDataModel();
     final lineColor = Colors.blueGrey[200]!;
 
     final h = data.horizontalLineList;
@@ -77,7 +86,7 @@ class BasicTable {
                   top: const Line.noLine(), bottom: Line(color: lineColor))));
   }
 
-  TableModel makeTable(
+  FlexTableModel makeTable(
       {double? xSplit,
       double? ySplit,
       scrollLockX = true,
@@ -102,9 +111,9 @@ class BasicTable {
         break;
     }
 
-    return TableModel(
-        stateSplitX: xSplit != null ? SplitState.SPLIT : SplitState.NO_SPLITE,
-        stateSplitY: ySplit != null ? SplitState.SPLIT : SplitState.NO_SPLITE,
+    return FlexTableModel(
+        stateSplitX: xSplit != null ? SplitState.split : SplitState.noSplit,
+        stateSplitY: ySplit != null ? SplitState.split : SplitState.noSplit,
         xSplit: xSplit ?? 0.0,
         ySplit: ySplit ?? 0.0,
         // freezeColumns: 3, freezeRows: 23,
@@ -122,8 +131,8 @@ class BasicTable {
         autoFreezeAreasX: autoFreezeAreasX,
         autoFreezeAreasY: autoFreezeAreasY,
         specificHeight: [
-          PropertiesRange(min: 9, max: 9, length: 100.0),
-          PropertiesRange(min: 10, max: 15, length: 50.0)
+          RangeProperties(min: 9, max: 9, length: 100.0),
+          RangeProperties(min: 10, max: 15, length: 50.0)
         ],
         dataTable: data);
   }
@@ -136,15 +145,11 @@ class BasicTableBuilder extends TableBuilder {
       : paintSplitLines = paintSplitLines ?? PaintSplitLines();
 
   @override
-  setTableModel(TableModel value) {
-    paintSplitLines.tableModel = value;
-  }
-
-  @override
-  Widget? buildCell(double scale, TableCellIndex tableCellIndex) {
+  Widget? buildCell(
+      FlexTableModel flexTableModel, TableCellIndex tableCellIndex) {
     //RepaintBoundary for canvas layer
 
-    final cell = tableModel.dataTable
+    final cell = flexTableModel.dataTable
         .cell(row: tableCellIndex.row, column: tableCellIndex.column);
 
     if (cell == null) {
@@ -154,7 +159,7 @@ class BasicTableBuilder extends TableBuilder {
     Widget text = Text(
       '${cell.value}',
       style: cell.attr['textStyle'],
-      textScaleFactor: scale,
+      textScaleFactor: flexTableModel.tableScale,
       textAlign: cell.attr['textAlign'],
     );
 
@@ -165,7 +170,7 @@ class BasicTableBuilder extends TableBuilder {
 
     Widget container = Container(
         padding: const EdgeInsets.symmetric(vertical: 2.0, horizontal: 5.0) *
-            tableModel.tableScale,
+            flexTableModel.tableScale,
         alignment: cell.attr['alignment'] ?? Alignment.center,
         color: cell.attr['background'],
         child: text);
@@ -209,15 +214,17 @@ class BasicTableBuilder extends TableBuilder {
   }
 
   @override
-  Widget? buildHeaderIndex(double tableScale, double headerScale,
-      TableHeaderIndex tableHeaderIndex) {
+  Widget? buildHeaderIndex(
+      FlexTableModel flexTableModel, TableHeaderIndex tableHeaderIndex) {
     if (tableHeaderIndex.panelIndex <= 3 || tableHeaderIndex.panelIndex >= 12) {
       return Center(
         child: Text(
           '${tableHeaderIndex.index + 1}',
           style: const TextStyle(color: Color.fromARGB(255, 38, 77, 95)),
           textScaleFactor:
-              (tableScale < headerScale) ? tableScale : headerScale,
+              (flexTableModel.tableScale < flexTableModel.scaleColumnHeader)
+                  ? flexTableModel.tableScale
+                  : flexTableModel.scaleColumnHeader,
         ),
       );
     } else {
@@ -225,19 +232,20 @@ class BasicTableBuilder extends TableBuilder {
         child: Text(
           numberToCharacter(tableHeaderIndex.index),
           style: const TextStyle(color: Color.fromARGB(255, 38, 77, 95)),
-          textScaleFactor: headerScale,
+          textScaleFactor: flexTableModel.scaleRowHeader,
         ),
       );
     }
   }
 
   @override
-  LineHeader lineHeader(int panelIndex) {
+  LineHeader lineHeader(FlexTableViewModel flexTableViewModel, int panelIndex) {
     return LineHeader(color: const Color.fromARGB(255, 38, 77, 95));
   }
 
   @override
-  drawPaintSplit(PaintingContext context, Offset offset, Size size) {
-    paintSplitLines.draw(context, offset, size);
+  drawPaintSplit(FlexTableViewModel flexTableViewModel, PaintingContext context,
+      Offset offset, Size size) {
+    paintSplitLines.draw(flexTableViewModel, context, offset, size);
   }
 }

@@ -1,12 +1,31 @@
+// Copyright (C) 2023 Joan Schipper
+// 
+// This file is part of flextable.
+// 
+// flextable is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// flextable is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License
+// along with flextable.  If not, see <http://www.gnu.org/licenses/>.
+
 import 'package:example_flextable/tables/energy_table.dart';
 import 'package:example_flextable/tables/fruit_table.dart';
 import 'package:example_flextable/tables/hypotheek_table.dart';
-import 'package:example_flextable/tables/sliver_tables.dart';
 import 'package:example_flextable/tables/stress_table.dart';
 import 'package:example_flextable/tables/trade_table.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'about.dart';
+import 'tables/sliver_tables.dart';
 
 void main() {
   setOverlayStyle();
@@ -73,40 +92,43 @@ class MyHomePageState extends State<MyHomePage>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        elevation: 0.0,
-        actions: [
-          IconButton(onPressed: about, icon: const Icon(Icons.info_outline))
-        ],
+    return ScrollConfiguration(
+      behavior: const MyMaterialScrollBehavior(),
+      child: Scaffold(
         backgroundColor: Colors.white,
-        centerTitle: true,
-        title: Text(widget.title),
-        bottom: TabBar(
+        appBar: AppBar(
+          elevation: 0.0,
+          actions: [
+            IconButton(onPressed: about, icon: const Icon(Icons.info_outline))
+          ],
+          backgroundColor: Colors.white,
+          centerTitle: true,
+          title: Text(widget.title),
+          bottom: TabBar(
+            controller: tabController,
+            isScrollable: true,
+            tabs: const <Widget>[
+              Tab(text: 'Mortgage'),
+              Tab(text: 'Energy'),
+              Tab(text: "Table's in sliver"),
+              Tab(text: 'Stress'),
+              Tab(text: 'Fruit'),
+              Tab(text: 'Handel'),
+            ],
+          ),
+        ),
+        body: TabBarView(
           controller: tabController,
-          isScrollable: true,
-          tabs: const <Widget>[
-            Tab(text: 'Mortgage'),
-            Tab(text: 'Energy'),
-            Tab(text: "Table's in sliver"),
-            Tab(text: 'Stress'),
-            Tab(text: 'Fruit'),
-            Tab(text: 'Handel'),
+          physics: const NeverScrollableScrollPhysics(),
+          children: [
+            HypotheekTable(tabIndex: 0, notificationMap: map),
+            EnergyTable(tabIndex: 1, notificationMap: map),
+            SliverTables(tabIndex: 2, notificationMap: map),
+            StressTable(tabIndex: 3, notificationMap: map),
+            FruitTable(tabIndex: 4, notificationMap: map),
+            TradeTable(tabIndex: 5, notificationMap: map),
           ],
         ),
-      ),
-      body: TabBarView(
-        controller: tabController,
-        physics: const NeverScrollableScrollPhysics(),
-        children: [
-          HypotheekTable(tabIndex: 0, notificationMap: map),
-          EnergyTable(tabIndex: 1, notificationMap: map),
-          SliverTables(tabIndex: 2, notificationMap: map),
-          StressTable(tabIndex: 3, notificationMap: map),
-          FruitTable(tabIndex: 4, notificationMap: map),
-          TradeTable(tabIndex: 5, notificationMap: map),
-        ],
       ),
     );
   }
@@ -124,4 +146,93 @@ setOverlayStyle() {
       statusBarIconBrightness: Brightness.dark,
       systemNavigationBarColor: Colors.white, //Color(0xFFf1f4fb),
       systemNavigationBarIconBrightness: Brightness.dark));
+}
+
+class MyMaterialScrollBehavior extends ScrollBehavior {
+  final bool useSwipe;
+
+  const MyMaterialScrollBehavior({this.useSwipe = false});
+
+  @override
+  TargetPlatform getPlatform(BuildContext context) {
+    final platform = defaultTargetPlatform;
+    switch (platform) {
+      case TargetPlatform.android:
+      case TargetPlatform.iOS:
+        return platform;
+      default:
+        return useSwipe ? TargetPlatform.android : platform;
+    }
+  }
+
+  @override
+  Set<PointerDeviceKind> get dragDevices => {
+        PointerDeviceKind.touch,
+        PointerDeviceKind.mouse,
+      };
+
+  @override
+  Widget buildScrollbar(
+      BuildContext context, Widget child, ScrollableDetails details) {
+    // When modifying this function, consider modifying the implementation in
+    // the base class ScrollBehavior as well.
+    switch (axisDirectionToAxis(details.direction)) {
+      case Axis.horizontal:
+      //Heel raar geen scrollbar
+      // return child;
+      case Axis.vertical:
+        switch (getPlatform(context)) {
+          case TargetPlatform.linux:
+          case TargetPlatform.macOS:
+          case TargetPlatform.windows:
+            return Scrollbar(
+              interactive: true,
+              controller: details.controller,
+              child: child,
+            );
+          case TargetPlatform.android:
+          case TargetPlatform.fuchsia:
+          case TargetPlatform.iOS:
+            return child;
+        }
+    }
+  }
+
+  @override
+  Widget buildOverscrollIndicator(
+      BuildContext context, Widget child, ScrollableDetails details) {
+    // When modifying this function, consider modifying the implementation in
+    // the base class ScrollBehavior as well.
+    late final AndroidOverscrollIndicator indicator;
+    if (Theme.of(context).useMaterial3) {
+      indicator = AndroidOverscrollIndicator.stretch;
+    } else {
+      indicator = AndroidOverscrollIndicator.glow;
+    }
+    switch (getPlatform(context)) {
+      case TargetPlatform.iOS:
+      case TargetPlatform.linux:
+      case TargetPlatform.macOS:
+      case TargetPlatform.windows:
+        return child;
+      case TargetPlatform.android:
+        switch (indicator) {
+          case AndroidOverscrollIndicator.stretch:
+            return StretchingOverscrollIndicator(
+              axisDirection: details.direction,
+              clipBehavior: details.decorationClipBehavior ?? Clip.hardEdge,
+              child: child,
+            );
+          case AndroidOverscrollIndicator.glow:
+            continue glow;
+        }
+      glow:
+      case TargetPlatform.fuchsia:
+        return GlowingOverscrollIndicator(
+          axisDirection: details.direction,
+          color: Theme.of(context).colorScheme.secondary,
+          child: child,
+        );
+    }
+  }
 }

@@ -1,0 +1,583 @@
+// Copyright (C) 2023 Joan Schipper
+// 
+// This file is part of flextable.
+// 
+// flextable is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// flextable is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License
+// along with flextable.  If not, see <http://www.gnu.org/licenses/>.
+
+import 'package:flextable/src/model/view_model.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+
+import '../gesture_scroll/table_drag_details.dart';
+import '../gesture_scroll/table_scroll_activity.dart';
+import '../hit_test/hit_and_drag.dart';
+import '../model/model.dart';
+import '../model/properties/flextable_grid_layout.dart';
+
+class AdjustTableSplit extends StatefulWidget {
+  final FlexTableViewModel flexTableViewModel;
+
+  final SplitPositionProperties properties;
+
+  const AdjustTableSplit({
+    Key? key,
+    required this.flexTableViewModel,
+    required this.properties,
+  }) : super(key: key);
+
+  @override
+  State<StatefulWidget> createState() => AdjustTableSplitState();
+}
+
+class AdjustTableSplitState extends State<AdjustTableSplit> {
+  late SplitPosition _splitPosition;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    _splitPosition = SplitPosition(
+      flexTableViewModel: widget.flexTableViewModel,
+      properties: widget.properties,
+    );
+  }
+
+  @override
+  void didUpdateWidget(AdjustTableSplit oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    _splitPosition
+      ..flexTableViewModel = widget.flexTableViewModel
+      ..properties = widget.properties;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return HitAndDrag(
+      hitAndDragDelegate: _splitPosition,
+    );
+  }
+}
+
+class SplitPositionProperties {
+  final bool useSplitPosition;
+  final SelectArea xSplitSelectArea;
+  final SelectArea ySplitSelectArea;
+  final double marginSplit;
+
+  const SplitPositionProperties(
+      {this.useSplitPosition = true,
+      this.xSplitSelectArea = const SelectArea(
+          width: 50.0, height: 100.0, horizontalAlignment: HitAlignment.end),
+      this.ySplitSelectArea = const SelectArea(
+          width: 100.0, height: 50.0, horizontalAlignment: HitAlignment.end),
+      this.marginSplit = 20.0});
+}
+
+class SplitPosition implements HitAndDragDelegate {
+  FlexTableViewModel flexTableViewModel;
+  SplitPositionProperties properties;
+  SplitPositionProperties? adjust;
+
+  SplitPosition({required this.flexTableViewModel, required this.properties});
+
+  dispose() {}
+
+  @override
+  TableDrag drag(DragStartDetails details, VoidCallback dragCancelCallback) {
+    SplitChange hitSplit(
+        {required SplitState splitState,
+        required GridLayout layout2,
+        required SelectArea area,
+        required Offset position,
+        required Function(Offset) splitPosition}) {
+      if ((noSplit(splitState) || splitState == SplitState.autoFreezeSplit) &&
+          area.contains(flexTableViewModel, position)) {
+        return SplitChange.start;
+      } else if (splitState == SplitState.split &&
+          hitExistingSplit(layout2, splitPosition(position))) {
+        return SplitChange.edit;
+      } else {
+        return SplitChange.no;
+      }
+    }
+
+    final localPosition = details.localPosition;
+
+    SplitChange xSplitChange = hitSplit(
+        splitState: flexTableViewModel.stateSplitX,
+        layout2: flexTableViewModel.layoutX[2],
+        area: properties.xSplitSelectArea,
+        position: localPosition,
+        splitPosition: (position) => localPosition.dx);
+
+    SplitChange ySplitChange = hitSplit(
+        splitState: flexTableViewModel.stateSplitY,
+        layout2: flexTableViewModel.layoutY[2],
+        area: properties.ySplitSelectArea,
+        position: localPosition,
+        splitPosition: (position) => localPosition.dy);
+
+    final SplitDragController drag = SplitDragController(
+      flexTableViewModel: flexTableViewModel,
+      details: details,
+      onDragCanceled: dragCancelCallback,
+      xSplitchanger: flexTableViewModel.tableScrollDirection ==
+              TableScrollDirection.vertical
+          ? SplitHandler()
+          : SplitChanger(
+              position: localPosition.dx,
+              change: xSplitChange,
+              vsync: flexTableViewModel.context.vsync,
+              setSplit: applySplitX,
+              startTable: () => flexTableViewModel.initiateSplitLeft,
+              endTable: () => flexTableViewModel.initiateSplitRight,
+              initiateSplitAtBegin:
+                  flexTableViewModel.minimalSplitPositionFromLeft,
+              initiateSplitAtEnd:
+                  flexTableViewModel.minimalSplitPositionFromRight,
+              changeRatioSizeHeader: (double ratio) =>
+                  flexTableViewModel.ratioSizeAnimatedSplitChangeX = ratio,
+              split: () => flexTableViewModel.splitX),
+      ySplitchanger: flexTableViewModel.tableScrollDirection ==
+              TableScrollDirection.horizontal
+          ? SplitHandler()
+          : SplitChanger(
+              position: localPosition.dy,
+              change: ySplitChange,
+              vsync: flexTableViewModel.context.vsync,
+              setSplit: applySplitY,
+              startTable: () => flexTableViewModel.initiateSplitTop,
+              endTable: () => flexTableViewModel.initiateSplitBottom,
+              initiateSplitAtBegin:
+                  flexTableViewModel.minimalSplitPositionFromTop,
+              initiateSplitAtEnd:
+                  flexTableViewModel.minimalSplitPositionFromBottom,
+              changeRatioSizeHeader: (double ratio) =>
+                  flexTableViewModel.ratioSizeAnimatedSplitChangeY = ratio,
+              split: () => flexTableViewModel.splitY),
+    );
+
+    flexTableViewModel
+        .beginActivity(DragTableSplitActivity(flexTableViewModel));
+
+    assert(flexTableViewModel.currentDrag == null);
+    flexTableViewModel.currentDrag = drag;
+
+    return drag;
+  }
+
+  void applySplitX({double? split, double? delta}) {
+    flexTableViewModel.setXsplit(
+        sizeSplit: split,
+        deltaSplit: delta,
+        splitView: SplitState.split,
+        animateSplit: true);
+    flexTableViewModel.markNeedsLayout();
+    // _tableModel.notifyScrollBarListeners();
+  }
+
+  void applySplitY({double? split, double? delta}) {
+    flexTableViewModel.setYsplit(
+        sizeSplit: split,
+        deltaSplit: delta,
+        splitView: SplitState.split,
+        animateSplit: true);
+    flexTableViewModel.markNeedsLayout();
+    // flexTableViewModel.notifyScrollBarListeners();
+  }
+
+  @override
+  bool hit(Offset position) {
+    bool hitSplit(
+        {required SplitState splitState,
+        required GridLayout layout2,
+        required SelectArea area,
+        required Offset position,
+        required Function(Offset) splitPosition,
+        required Function(Offset) oppositeSplitPosition,
+        required double oppositeStartPosition,
+        required double oppositeEndPosition}) {
+      if ((noSplit(splitState) || splitState == SplitState.autoFreezeSplit) &&
+          area.contains(flexTableViewModel, position)) {
+        return true;
+      } else if (splitState == SplitState.split &&
+          oppositeSplitPosition(position) > oppositeStartPosition &&
+          oppositeSplitPosition(position) < oppositeEndPosition &&
+          hitExistingSplit(layout2, splitPosition(position))) {
+        return true;
+      } else {
+        return false;
+      }
+    }
+
+    bool hit = hitSplit(
+            splitState: flexTableViewModel.stateSplitX,
+            layout2: flexTableViewModel.layoutX[2],
+            area: properties.xSplitSelectArea,
+            position: position,
+            splitPosition: (position) => position.dx,
+            oppositeSplitPosition: (position) => position.dy,
+            oppositeStartPosition:
+                flexTableViewModel.minimalSplitPositionFromTop,
+            oppositeEndPosition:
+                flexTableViewModel.minimalSplitPositionFromBottom) ||
+        hitSplit(
+            splitState: flexTableViewModel.stateSplitY,
+            layout2: flexTableViewModel.layoutY[2],
+            area: properties.ySplitSelectArea,
+            position: position,
+            splitPosition: (position) => position.dy,
+            oppositeSplitPosition: (position) => position.dx,
+            oppositeStartPosition:
+                flexTableViewModel.minimalSplitPositionFromLeft,
+            oppositeEndPosition:
+                flexTableViewModel.minimalSplitPositionFromRight);
+
+    return hit;
+  }
+
+  bool hitExistingSplit(GridLayout gridLayout2, double position) {
+    return (gridLayout2.inUse &&
+        gridLayout2.gridPosition - 25 < position &&
+        gridLayout2.gridPosition + 25 > position);
+  }
+
+  @override
+  down(DragDownDetails details) {}
+}
+
+enum HitAlignment { start, center, end }
+
+class SelectArea {
+  final double _width;
+  final double _height;
+  final HitAlignment horizontalAlignment;
+  final HitAlignment verticalAlignment;
+
+  const SelectArea(
+      {required double width,
+      required double height,
+      this.horizontalAlignment = HitAlignment.end,
+      this.verticalAlignment = HitAlignment.start})
+      : _width = width,
+        _height = height;
+
+  bool contains(FlexTableViewModel flexTableViewModel, Offset offset) {
+    double left, top, bottom, right;
+
+    switch (horizontalAlignment) {
+      case HitAlignment.start:
+        left = flexTableViewModel.sizeScrollBarLeft;
+        break;
+      case HitAlignment.center:
+        left = flexTableViewModel.sizeScrollBarLeft +
+            (flexTableViewModel.widthMainPanel -
+                    _width -
+                    flexTableViewModel.sizeScrollBarLeft -
+                    flexTableViewModel.sizeScrollBarRight) /
+                2.0;
+        break;
+      case HitAlignment.end:
+        left = (flexTableViewModel.widthMainPanel -
+            flexTableViewModel.sizeScrollBarRight -
+            _width);
+        break;
+    }
+    right = left + _width;
+
+    switch (verticalAlignment) {
+      case HitAlignment.start:
+        top = flexTableViewModel.sizeScrollBarTop;
+        break;
+      case HitAlignment.center:
+        top = flexTableViewModel.sizeScrollBarTop +
+            (flexTableViewModel.heightMainPanel -
+                    _height -
+                    flexTableViewModel.sizeScrollBarTop -
+                    flexTableViewModel.sizeScrollBarBottom) /
+                2.0;
+        break;
+      case HitAlignment.end:
+        top = (flexTableViewModel.heightMainPanel -
+            _height -
+            flexTableViewModel.sizeScrollBarBottom);
+        break;
+    }
+    bottom = top + _height;
+
+    return offset.dx >= left &&
+        offset.dx < right &&
+        offset.dy >= top &&
+        offset.dy < bottom;
+  }
+}
+
+class DragTableSplitActivity extends TableScrollActivity {
+  /// Initializes [delegate] for subclasses.
+
+  DragTableSplitActivity(TableScrollActivityDelegate delegate)
+      : super(0, 0, delegate, false);
+
+  @override
+  bool get isScrolling => true;
+
+  @override
+  bool get shouldIgnorePointer => false;
+
+  @override
+  double get xVelocity => 0.0;
+
+  @override
+  double get yVelocity => 0.0;
+}
+
+class SplitDragController implements TableDrag {
+  final VoidCallback? onDragCanceled;
+  final FlexTableViewModel flexTableViewModel;
+
+  SplitHandler? xSplitchanger;
+  SplitHandler? ySplitchanger;
+  bool dragEnd = false;
+
+  SplitDragController({
+    required this.flexTableViewModel,
+    required DragStartDetails details,
+    this.onDragCanceled,
+    this.xSplitchanger,
+    this.ySplitchanger,
+  }) {
+    xSplitchanger?.evaluateEnd = evaluateEnd;
+    ySplitchanger?.evaluateEnd = evaluateEnd;
+    flexTableViewModel.modifySplit = true;
+  }
+
+  @override
+  void cancel() {
+    flexTableViewModel
+      ..correctOffScroll(0, 0)
+      ..modifySplit = false;
+  }
+
+  @override
+  void end(TableDragEndDetails details) {
+    dragEnd = true;
+    flexTableViewModel
+      ..correctOffScroll(0, 0)
+      ..modifySplit = false;
+  }
+
+  void evaluateEnd() {
+    if (dragEnd &&
+        !(xSplitchanger?.isAnimating() ?? false) &&
+        !(ySplitchanger?.isAnimating() ?? false)) {
+      flexTableViewModel.correctOffScroll(0, 0);
+    }
+  }
+
+  @override
+  void update(TableDragUpdateDetails details) {
+    Offset delta = details.delta;
+    Offset position = details.globalPosition;
+
+    xSplitchanger?.update(position.dx, delta.dx, flexTableViewModel.xSplit);
+    ySplitchanger?.update(position.dy, delta.dy, flexTableViewModel.ySplit);
+  }
+
+  @override
+  @mustCallSuper
+  void dispose() {
+    onDragCanceled?.call();
+    xSplitchanger?.dispose();
+    ySplitchanger?.dispose();
+    flexTableViewModel.modifySplit = false;
+  }
+
+  @override
+  get lastDetails => null;
+}
+
+enum AnimateSplit { fromBegin, goToBegin, fromEnd, goToEnd, noAnimation }
+
+typedef SetSplit = void Function({double split, double delta});
+
+class SplitHandler {
+  VoidCallback evaluateEnd = () => {};
+
+  update(double updatePosition, double updateDelta, double? split) {}
+
+  go() {}
+
+  isAnimating() => false;
+
+  dispose() {}
+}
+
+class SplitChanger extends SplitHandler {
+  SplitChange change;
+  double Function() startTable;
+  double Function() endTable;
+  double initiateSplitAtBegin;
+  double initiateSplitAtEnd;
+  double position;
+  TickerProvider vsync;
+  late AnimationController animationController;
+  SetSplit setSplit;
+  double from = 0.0;
+  double to = 0.0;
+  AnimateSplit animationStatus = AnimateSplit.noAnimation;
+  final Function(double value) changeRatioSizeHeader;
+  final bool Function() split;
+
+  SplitChanger({
+    required this.position,
+    required this.startTable,
+    required this.endTable,
+    required this.initiateSplitAtBegin,
+    required this.initiateSplitAtEnd,
+    required this.vsync,
+    required this.setSplit,
+    required this.change,
+    required this.changeRatioSizeHeader,
+    required this.split,
+  }) {
+    animationController = AnimationController(
+        value: split() ? 1.0 : 0.0,
+        vsync: vsync,
+        duration: const Duration(milliseconds: 300))
+      ..addListener(go);
+  }
+
+  @override
+  void update(double updatePosition, double updateDelta, double? split) {
+    position += updateDelta;
+
+    double delta = 0.0;
+    final startTable = this.startTable();
+    final endTable = this.endTable();
+    final closertoStart = position < startTable + (endTable - startTable) / 2.0;
+
+    switch (change) {
+      case SplitChange.start:
+        {
+          if (position > initiateSplitAtBegin &&
+              position < initiateSplitAtEnd) {
+            if (closertoStart) {
+              animationStatus = AnimateSplit.fromBegin;
+              from = startTable;
+            } else {
+              animationStatus = AnimateSplit.fromEnd;
+              from = endTable;
+            }
+            to = position;
+            setSplit(split: from);
+            animationController.forward();
+            change = SplitChange.edit;
+          }
+          break;
+        }
+      case SplitChange.edit:
+        {
+          if (position < initiateSplitAtBegin &&
+              animationStatus != AnimateSplit.goToBegin) {
+            to = split ?? 0.0;
+            from = startTable;
+
+            animationStatus = AnimateSplit.goToBegin;
+            animationController.reverse();
+          } else if (position > initiateSplitAtEnd &&
+              animationStatus != AnimateSplit.goToEnd) {
+            from = endTable;
+            to = position;
+            animationStatus = AnimateSplit.goToEnd;
+            animationController.reverse();
+          } else if (closertoStart &&
+              position >= initiateSplitAtBegin &&
+              !(animationStatus == AnimateSplit.fromBegin ||
+                  animationStatus == AnimateSplit.fromEnd)) {
+            from = split ?? startTable;
+            to = position;
+            animationController.forward();
+            animationStatus = AnimateSplit.fromBegin;
+            delta = 0;
+          } else if (!closertoStart &&
+              position <= initiateSplitAtEnd &&
+              !(animationStatus == AnimateSplit.fromBegin ||
+                  animationStatus == AnimateSplit.fromEnd)) {
+            from = split ?? endTable;
+            to = position;
+            animationController.forward();
+            animationStatus = AnimateSplit.fromEnd;
+            delta = 0;
+          } else if (animationController.isAnimating) {
+            switch (animationStatus) {
+              case AnimateSplit.fromBegin:
+                {
+                  delta += updateDelta;
+                  from = startTable + (delta > 0.0 ? delta : 0.0);
+                  to += updateDelta;
+                  break;
+                }
+              case AnimateSplit.fromEnd:
+                {
+                  delta += updateDelta;
+                  from = endTable - (delta < 0.0 ? delta : 0.0);
+                  to += updateDelta;
+                  break;
+                }
+              default:
+                {}
+            }
+          } else if (position > initiateSplitAtBegin &&
+              position < initiateSplitAtEnd) {
+            to = position;
+            setSplit(delta: updateDelta);
+          }
+
+          break;
+        }
+      default:
+        {}
+    }
+  }
+
+  @override
+  void go() {
+    final value = animationController.value;
+    setSplit(split: from + (to - from) * value);
+
+    if (animationController.isCompleted || animationController.isDismissed) {
+      animationStatus = AnimateSplit.noAnimation;
+      evaluateEnd();
+    }
+
+    changeRatioSizeHeader(value);
+  }
+
+  @override
+  bool isAnimating() => animationController.isAnimating;
+
+  @override
+  void dispose() {
+    final status = animationController.status;
+
+    if (status == AnimationStatus.forward) {
+      changeRatioSizeHeader(1.0);
+    } else if (status == AnimationStatus.reverse) {
+      changeRatioSizeHeader(0.0);
+    }
+
+    animationController.dispose();
+  }
+}

@@ -1,17 +1,31 @@
-import 'package:flextable/FlexTable/TableItems/Cells.dart';
-import 'package:flextable/FlexTable/data_flexfable.dart';
-import 'package:flextable/FlexTable/tabel_panel_viewport.dart';
-import 'package:flextable/FlexTable/table_builder.dart';
-import 'package:flextable/FlexTable/table_line.dart';
-import 'package:flextable/FlexTable/table_model.dart';
+// Copyright (C) 2023 Joan Schipper
+// 
+// This file is part of flextable.
+// 
+// flextable is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// flextable is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License
+// along with flextable.  If not, see <http://www.gnu.org/licenses/>.
+
+import 'package:flextable/flextable.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 import 'package:intl/intl.dart';
-import 'package:flextable/FlexTable/flextable_constants.dart' as constants;
+
+const cellBackgroundColor = 'backgroundColor';
+const cellTextColor = 'textColor';
 
 class HypotheekTableModel {
-  final data = DataFlexTableCR();
+  final data = FlexTableDataModelCR();
   var df = DateFormat('dd-MM-yyyy');
   var nf = NumberFormat('###', 'nl_NL');
   final years = 30;
@@ -88,8 +102,7 @@ class HypotheekTableModel {
         row: row,
         column: columnStart + 2,
         columns: 2,
-        cell: Cell(
-            value: 'Per maand', attr: {constants.cell_backgroundColor: bc2}));
+        cell: Cell(value: 'Per maand', attr: {cellBackgroundColor: bc2}));
 
     var rowColor = row % 2 == 0 ? bc2 : bc1;
 
@@ -98,54 +111,43 @@ class HypotheekTableModel {
     data.addCell(
         row: row,
         column: column++,
-        cell: Cell(
-            value: 'Datum', attr: {constants.cell_backgroundColor: rowColor}));
+        cell: Cell(value: 'Datum', attr: {cellBackgroundColor: rowColor}));
 
     data.addCell(
       row: row,
       column: column++,
-      cell: Cell(
-          value: 'Lening', attr: {constants.cell_backgroundColor: rowColor}),
+      cell: Cell(value: 'Lening', attr: {cellBackgroundColor: rowColor}),
     );
 
     data.addCell(
         row: row,
         column: column++,
-        cell: Cell(
-            value: 'Rente', attr: {constants.cell_backgroundColor: rowColor}));
+        cell: Cell(value: 'Rente', attr: {cellBackgroundColor: rowColor}));
 
     data.addCell(
         row: row,
         column: column++,
-        cell: Cell(
-            value: 'Aflossen',
-            attr: {constants.cell_backgroundColor: rowColor}));
+        cell: Cell(value: 'Aflossen', attr: {cellBackgroundColor: rowColor}));
     data.addCell(
         row: row,
         column: column++,
-        cell: Cell(
-            value: 'Totaal', attr: {constants.cell_backgroundColor: rowColor}));
+        cell: Cell(value: 'Totaal', attr: {cellBackgroundColor: rowColor}));
     data.addCell(
         row: row,
         column: column++,
-        cell: Cell(
-            value: 'Rente', attr: {constants.cell_backgroundColor: rowColor}));
+        cell: Cell(value: 'Rente', attr: {cellBackgroundColor: rowColor}));
     data.addCell(
         row: row,
         column: column++,
-        cell: Cell(
-            value: 'Teruggave',
-            attr: {constants.cell_backgroundColor: rowColor}));
+        cell: Cell(value: 'Teruggave', attr: {cellBackgroundColor: rowColor}));
     data.addCell(
         row: row,
         column: column++,
-        cell: Cell(
-            value: 'Netto', attr: {constants.cell_backgroundColor: rowColor}));
+        cell: Cell(value: 'Netto', attr: {cellBackgroundColor: rowColor}));
     data.addCell(
         row: row,
         column: column++,
-        cell: Cell(
-            value: 'N. e/m', attr: {constants.cell_backgroundColor: rowColor}));
+        cell: Cell(value: 'N. e/m', attr: {cellBackgroundColor: rowColor}));
 
     for (int i = 0; i < years; i++) {
       double interestYear = 0;
@@ -170,25 +172,25 @@ class HypotheekTableModel {
             column: column++,
             cell: Cell(
                 value: df.format(DateTime(currentYear, month + 1)),
-                attr: {constants.cell_backgroundColor: rowColor}));
+                attr: {cellBackgroundColor: rowColor}));
         data.addCell(
             row: row,
             column: column++,
             cell: Cell(
                 value: nf.format(morgage),
-                attr: {constants.cell_backgroundColor: rowColor}));
+                attr: {cellBackgroundColor: rowColor}));
         data.addCell(
             row: row,
             column: column++,
             cell: Cell(
                 value: nf.format(monthlyInterest),
-                attr: {constants.cell_backgroundColor: rowColor}));
+                attr: {cellBackgroundColor: rowColor}));
         data.addCell(
             row: row,
             column: column++,
             cell: Cell(
                 value: nf.format(repay),
-                attr: {constants.cell_backgroundColor: rowColor}));
+                attr: {cellBackgroundColor: rowColor}));
 
         if (month == 0) {
           h.addList(
@@ -211,28 +213,28 @@ class HypotheekTableModel {
               rows: 12,
               cell: Cell(
                   value: nf.format(interestYear + repay),
-                  attr: {constants.cell_backgroundColor: yearColorBlock}));
+                  attr: {cellBackgroundColor: yearColorBlock}));
           data.addCell(
               row: row - 11,
               column: column++,
               rows: 12,
               cell: Cell(
                   value: nf.format(interestYear),
-                  attr: {constants.cell_backgroundColor: yearColorBlockNext}));
+                  attr: {cellBackgroundColor: yearColorBlockNext}));
           data.addCell(
               row: row - 11,
               column: column++,
               rows: 12,
               cell: Cell(
                   value: nf.format(back),
-                  attr: {constants.cell_backgroundColor: yearColorBlock}));
+                  attr: {cellBackgroundColor: yearColorBlock}));
           data.addCell(
               row: row - 11,
               column: column++,
               rows: 12,
               cell: Cell(
                   value: nf.format(total - back),
-                  attr: {constants.cell_backgroundColor: yearColorBlockNext}));
+                  attr: {cellBackgroundColor: yearColorBlockNext}));
           data.addCell(
               row: row - 11,
               column: column++,
@@ -240,7 +242,7 @@ class HypotheekTableModel {
               cell: Cell(
                   value:
                       'T: ${nf.format(total / 12.0)}\nB: ${nf.format(back / 12.0)}\nN: ${nf.format((total - back) / 12.0)}',
-                  attr: {constants.cell_backgroundColor: yearColorBlock}));
+                  attr: {cellBackgroundColor: yearColorBlock}));
         }
 
         morgage -= repay;
@@ -338,18 +340,18 @@ class HypotheekTableModel {
                 customSplitSize: 0.5))
         : <AutoFreezeArea>[];
 
-    List<PropertiesRange> specificWidth = [];
+    List<RangeProperties> specificWidth = [];
 
     for (int i = 0; i < tableColumns; i++) {
       final begin = i * 10;
       specificWidth
-          .add(PropertiesRange(min: 0 + begin, max: 0 + begin, length: 90));
+          .add(RangeProperties(min: 0 + begin, max: 0 + begin, length: 90));
       specificWidth
-          .add(PropertiesRange(min: 2 + begin, max: 2 + begin, length: 60));
+          .add(RangeProperties(min: 2 + begin, max: 2 + begin, length: 60));
     }
-    return TableModel(
-        stateSplitX: SplitState.NO_SPLITE,
-        stateSplitY: SplitState.NO_SPLITE,
+    return FlexTableModel(
+        stateSplitX: SplitState.noSplit,
+        stateSplitY: SplitState.noSplit,
         // xSplit: 100.0, ySplit: 160.0,
         // freezeColumns: 3, freezeRows: 23,
         columnHeader: false,
@@ -375,10 +377,11 @@ class HypoteekTableBuilder extends DefaultTableBuilder {
   HypoteekTableBuilder();
 
   @override
-  Widget? buildCell(double tableScale, TableCellIndex tableCellIndex) {
+  Widget? buildCell(
+      FlexTableModel flexTableModel, TableCellIndex tableCellIndex) {
     //RepaintBoundary for canvas layer
 
-    final cell = tableModel.dataTable
+    final cell = flexTableModel.dataTable
         .cell(row: tableCellIndex.row, column: tableCellIndex.column);
 
     if (cell == null) {
@@ -386,11 +389,11 @@ class HypoteekTableBuilder extends DefaultTableBuilder {
     }
 
     return Container(
-        color: cell.attr[constants.cell_backgroundColor] ?? Colors.white,
+        color: cell.attr[cellBackgroundColor] ?? Colors.white,
         child: Center(
             child: Text(
           '${cell.value}',
-          textScaleFactor: tableScale,
+          textScaleFactor: flexTableModel.tableScale,
         )));
   }
 

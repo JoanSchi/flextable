@@ -1,10 +1,23 @@
+// Copyright (C) 2023 Joan Schipper
+//
+// This file is part of flextable.
+//
+// flextable is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// flextable is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with flextable.  If not, see <http://www.gnu.org/licenses/>.
+
 // ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'dart:ui';
-
-import 'package:flextable/FlexTable/body_layout.dart';
-import 'package:flextable/FlexTable/table_bottombar.dart';
-import 'package:flextable/FlexTable/table_multi_panel_portview.dart';
-import 'package:flextable/sliver_to_viewportbox.dart';
+import 'package:flextable/flextable.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../about.dart';
@@ -193,58 +206,24 @@ class _SliverTablesState extends State<SliverTables> {
             ),
           ),
         ),
-        body: AdjustScrollConfiguration(
-          disableScroll: disableScrollbar,
-          child: const DemoSliver(),
-        ));
+        body: const DemoSliver());
   }
 }
 
-class AdjustScrollConfiguration extends StatelessWidget {
-  final bool disableScroll;
-  final Widget child;
-  const AdjustScrollConfiguration(
-      {super.key, required this.disableScroll, required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    final platform = defaultTargetPlatform;
-
-    if (platform == TargetPlatform.android ||
-        platform == TargetPlatform.iOS ||
-        !disableScroll) {
-      return child;
-    } else {
-      return ScrollConfiguration(
-        behavior: MyScrollBehavior(),
-        child: child,
-      );
-    }
-  }
-}
-
-class MyScrollBehavior extends MaterialScrollBehavior {
-  @override
-  TargetPlatform getPlatform(BuildContext context) {
-    final platform = defaultTargetPlatform;
-    switch (platform) {
-      case TargetPlatform.android:
-      case TargetPlatform.iOS:
-        return platform;
-      default:
-        return TargetPlatform.android;
-    }
-  }
-
-  @override
-  Set<PointerDeviceKind> get dragDevices => {
-        PointerDeviceKind.touch,
-        PointerDeviceKind.mouse,
-      };
-}
-
-class DemoSliver extends StatelessWidget {
+class DemoSliver extends StatefulWidget {
   const DemoSliver({super.key});
+
+  @override
+  State<DemoSliver> createState() => _DemoSliverState();
+}
+
+class _DemoSliverState extends State<DemoSliver> {
+  final FlexTableController _energieFlexTableController = FlexTableController();
+  final FlexTableController _handelFlexTableController = FlexTableController();
+  final FlexTableController _fruitFlexTableController = FlexTableController();
+  final FlexTableController _hypotheekFlexTableController =
+      FlexTableController();
+  final FlexTableController _basicFlexTableController = FlexTableController();
 
   @override
   Widget build(BuildContext context) {
@@ -265,6 +244,38 @@ class DemoSliver extends StatelessWidget {
         break;
     }
 
+    Widget makeTable(
+        {required FlexTableController flexTableController,
+        required FlexTableModel model,
+        TableBuilder? tableBuilder}) {
+      FlexTableScaleChangeNotifier scaleChangeNotifier =
+          FlexTableScaleChangeNotifier();
+
+      Widget table = FlexTable(
+        scaleChangeNotifier: scaleChangeNotifier,
+        flexTableController: flexTableController,
+        tableBuilder: tableBuilder,
+        backgroundColor: Colors.grey[50],
+        flexTableModel: model,
+      );
+
+      if (scaleSlider) {
+        table = GridBorderLayout(children: [
+          table,
+          GridBorderLayoutPosition(
+              row: 2,
+              squeezeRatio: 1.0,
+              measureHeight: true,
+              child: TableBottomBar(
+                  scaleChangeNotifier: scaleChangeNotifier,
+                  flexTableController: flexTableController,
+                  maxWidthSlider: 200.0))
+        ]);
+      }
+      return FlexTableToSliverBox(
+          flexTableController: flexTableController, child: table);
+    }
+
     return Container(
       color: Colors.blueGrey[100],
       alignment: Alignment.center,
@@ -273,185 +284,52 @@ class DemoSliver extends StatelessWidget {
           width: 1000.0,
           child: CustomScrollView(
             slivers: <Widget>[
-              SliverList(
-                  delegate: SliverChildListDelegate([
-                const InfoCard(
-                    title: 'Energy and heat',
-                    info: Text(
-                      'Manual Freeze\nVertical split\nzoom',
-                      style: TextStyle(
-                        color: Colors.brown,
-                        fontSize: 24.0,
-                      ),
-                      textAlign: TextAlign.center,
-                    )),
-              ])),
-              SliverToViewPortBox(
-                  delegate: FlexTableToViewPortBoxDelegate(
-                flexTable: FlexTable(
-                  // targetPlatform: TargetPlatform.linux,
-                  backgroundColor: Colors.grey[50],
-                  tableModel: EnergieWarmte().makeTable(platform: platform),
-                  sizeScrollBarTrack: 0.0,
-                  findSliverScrollPosition: true,
-                  //splitPositionProperties: const SplitPositionProperties(useSplitPosition: false),
-                  sidePanelWidget: [
-                    if (scaleSlider)
-                      (tableModel) => FlexTableLayoutParentDataWidget(
-                          tableLayoutPosition:
-                              const FlexTableLayoutPosition.bottom(),
-                          child: TableBottomBar(
-                              tableModel: tableModel, maxWidthSlider: 200.0))
-                  ],
-                ),
-              )),
-              SliverList(
-                  delegate: SliverChildListDelegate([
-                const InfoCard(
-                    title: 'Trade',
-                    info: Text(
-                      'AutoFreeze\nVertical split\nzoom',
-                      style: TextStyle(
-                        color: Colors.brown,
-                        fontSize: 24.0,
-                      ),
-                      textAlign: TextAlign.center,
-                    )),
-              ])),
-              SliverToViewPortBox(
-                  delegate: FlexTableToViewPortBoxDelegate(
-                      flexTable: FlexTable(
-                backgroundColor: Colors.grey[50],
-                tableModel: InternationaleHandel().makeTable(
-                  platform: platform,
-                ),
-                findSliverScrollPosition: true,
-                sidePanelWidget: [
-                  if (scaleSlider)
-                    (tableModel) => FlexTableLayoutParentDataWidget(
-                        tableLayoutPosition:
-                            const FlexTableLayoutPosition.bottom(),
-                        child: TableBottomBar(
-                            tableModel: tableModel, maxWidthSlider: 200.0))
-                ],
-              ))),
-              SliverList(
-                  delegate: SliverChildListDelegate([
-                const InfoCard(
-                    title: 'Fruit',
-                    info: Text(
-                      'Freeze\nVertical split\nzoom',
-                      style: TextStyle(
-                        color: Colors.brown,
-                        fontSize: 24.0,
-                      ),
-                      textAlign: TextAlign.center,
-                    )),
-              ])),
-              SliverToViewPortBox(
-                  delegate: FlexTableToViewPortBoxDelegate(
-                      flexTable: FlexTable(
-                backgroundColor: Colors.grey[50],
-                tableModel: Fruit().makeTable(platform: platform),
-                findSliverScrollPosition: true,
-                sidePanelWidget: [
-                  if (scaleSlider)
-                    (tableModel) => FlexTableLayoutParentDataWidget(
-                        tableLayoutPosition:
-                            const FlexTableLayoutPosition.bottom(),
-                        child: TableBottomBar(
-                            tableModel: tableModel, maxWidthSlider: 200.0))
-                ],
-              ))),
-              SliverList(
-                  delegate: SliverChildListDelegate([
-                const InfoCard(
-                    title: 'Mortgage',
-                    info: Text(
-                      'Autofreeze\nVertical split\nzoom',
-                      style: TextStyle(
-                        color: Colors.brown,
-                        fontSize: 24.0,
-                      ),
-                      textAlign: TextAlign.center,
-                    )),
-              ])),
-              SliverToViewPortBox(
-                  delegate: FlexTableToViewPortBoxDelegate(
-                flexTable: FlexTable(
-                  findSliverScrollPosition: true,
-                  backgroundColor: Colors.grey[50],
-                  tableModel: hypotheekExample1(tableColumns: 2).tableModel(
+              const InfoBox(
+                  title: 'Energy and heat',
+                  info: 'Manual Freeze\nVertical split\nzoom'),
+              makeTable(
+                  flexTableController: _energieFlexTableController,
+                  model: EnergieWarmte().makeTable(platform: platform)),
+              const InfoBox(
+                  title: 'Trade', info: 'AutoFreeze\nVertical split\nzoom'),
+              makeTable(
+                  flexTableController: _handelFlexTableController,
+                  model: InternationaleHandel().makeTable(
+                    platform: platform,
+                  )),
+              const InfoBox(
+                  title: 'Fruit', info: 'Freeze\nVertical split\nzoom'),
+              makeTable(
+                  flexTableController: _fruitFlexTableController,
+                  model: Fruit().makeTable(platform: platform)),
+              const InfoBox(
+                title: 'Mortgage',
+                info: 'Autofreeze\nVertical split\nzoom',
+              ),
+              makeTable(
+                  flexTableController: _hypotheekFlexTableController,
+                  model: hypotheekExample1(tableColumns: 2).tableModel(
                     autoFreezeListX: true,
                     autoFreezeListY: true,
                   ),
-                  tableBuilder: HypoteekTableBuilder(),
-                  sizeScrollBarTrack: 0.0,
-                  //splitPositionProperties: const SplitPositionProperties(useSplitPosition: false),
-                  sidePanelWidget: [
-                    if (scaleSlider)
-                      (tableModel) => FlexTableLayoutParentDataWidget(
-                          tableLayoutPosition:
-                              const FlexTableLayoutPosition.bottom(),
-                          child: TableBottomBar(
-                              tableModel: tableModel, maxWidthSlider: 200.0))
-                  ],
-                ),
-              )),
-              SliverList(
-                  delegate: SliverChildListDelegate([
-                const InfoCard(
-                    title: 'Stress table',
-                    info: Text(
-                      'Manual freeze\nVertical split\nzoom',
-                      style: TextStyle(
-                        color: Colors.brown,
-                        fontSize: 24.0,
-                      ),
-                      textAlign: TextAlign.center,
-                    )),
-              ])),
-              SliverToViewPortBox(
-                  delegate: FlexTableToViewPortBoxDelegate(
-                      flexTable: FlexTable(
-                maxWidth: 980,
-                tableModel: BasicTable.positions(rows: 300).makeTable(
-
-                    //     autoFreezeAreasX: [
-                    //   AutoFreezeArea(
-                    //       startIndex: 40,
-                    //       freezeIndex: 41,
-                    //       endIndex: 50,
-                    //       customSplitSize: 0.5)
-                    // ], autoFreezeAreasY: [
-                    //   AutoFreezeArea(
-                    //       startIndex: 100,
-                    //       freezeIndex: 102,
-                    //       endIndex: 200,
-                    //       customSplitSize: 0.5)
-                    // ]
-                    ),
-                findSliverScrollPosition: true,
-                alignment: Alignment.topCenter,
-                sidePanelWidget: [
-                  if (scaleSlider)
-                    (tableModel) => FlexTableLayoutParentDataWidget(
-                        tableLayoutPosition:
-                            const FlexTableLayoutPosition.bottom(),
-                        child: TableBottomBar(
-                            tableModel: tableModel, maxWidthSlider: 200.0))
-                ],
-              )))
+                  tableBuilder: HypoteekTableBuilder()),
+              const InfoBox(
+                title: 'Stress table',
+                info: 'Manual freeze\nVertical split\nzoom',
+              ),
+              makeTable(
+                  flexTableController: _basicFlexTableController,
+                  model: BasicTable.positions(rows: 300).makeTable()),
             ],
           )),
     );
   }
 }
 
-class InfoCard extends StatelessWidget {
+class InfoBox extends StatelessWidget {
   final String title;
-  final Widget info;
-  const InfoCard({
+  final String info;
+  const InfoBox({
     Key? key,
     required this.title,
     required this.info,
@@ -459,31 +337,34 @@ class InfoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
-      shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(32.0))),
-      color: Colors.pink[50],
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxHeight: 400.0),
-        child: Column(children: [
-          const SizedBox(
-            height: 16.0,
+    return SliverToBoxAdapter(
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 4.0),
+        color: const Color.fromARGB(152, 252, 249, 248),
+        child: DefaultTextStyle(
+          style: const TextStyle(color: Color(0xFF697f25), fontSize: 24.0),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxHeight: 400.0),
+            child: Column(children: [
+              const SizedBox(
+                height: 16.0,
+              ),
+              Text(
+                title,
+                style: const TextStyle(fontSize: 24.0),
+              ),
+              const Divider(
+                  color: Color(0xFF697f25), indent: 8.0, endIndent: 8.0),
+              const Text(
+                '{ spacer }',
+              ),
+              Expanded(child: Center(child: Text(info))),
+              const SizedBox(
+                height: 16.0,
+              )
+            ]),
           ),
-          Text(
-            title,
-            style: const TextStyle(color: Colors.brown, fontSize: 24.0),
-          ),
-          const Divider(color: Colors.brown, indent: 8.0, endIndent: 8.0),
-          const Text(
-            '{ spacer }',
-            style: TextStyle(color: Colors.brown, fontSize: 24.0),
-          ),
-          Expanded(child: Center(child: info)),
-          const SizedBox(
-            height: 16.0,
-          )
-        ]),
+        ),
       ),
     );
   }

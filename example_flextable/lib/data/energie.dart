@@ -1,13 +1,26 @@
-import 'package:flextable/FlexTable/TableItems/Cells.dart';
-import 'package:flextable/FlexTable/data_flexfable.dart';
-import 'package:flextable/FlexTable/table_builder.dart';
-import 'package:flextable/FlexTable/table_line.dart';
-import 'package:flextable/FlexTable/table_model.dart';
+// Copyright (C) 2023 Joan Schipper
+// 
+// This file is part of flextable.
+// 
+// flextable is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// flextable is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License
+// along with flextable.  If not, see <http://www.gnu.org/licenses/>.
+
+import 'package:flextable/flextable.dart';
 
 import 'package:flutter/material.dart';
 
 class EnergieWarmte {
-  final dataTable = DataFlexTable();
+  final dataTable = FlexTableDataModel();
 
   final rowHeader1 = [
     _Item(value: 'Totaal centrale/decentrale productie', length: 13),
@@ -628,7 +641,7 @@ class EnergieWarmte {
     ],
   ];
 
-  TableModel makeTable({TargetPlatform? platform}) {
+  FlexTableModel makeTable({TargetPlatform? platform}) {
     double minTableScale = 0.5;
     double maxTableScale = 3.0;
     double tableScale = 1.0;
@@ -768,7 +781,7 @@ class EnergieWarmte {
 
     //final v = dataTable.verticalLineList;
 
-    return TableModel(
+    return FlexTableModel(
         dataTable: dataTable,
         defaultHeightCell: 30,
         defaultWidthCell: 120,
@@ -776,12 +789,12 @@ class EnergieWarmte {
         minTableScale: minTableScale,
         maxTableScale: maxTableScale,
         specificWidth: [
-          PropertiesRange(min: 0, length: 40.0),
-          PropertiesRange(min: 1, length: 210.0),
-          PropertiesRange(min: 2, length: 150.0),
-          PropertiesRange(min: 8, length: 150.0)
+          RangeProperties(min: 0, length: 40.0),
+          RangeProperties(min: 1, length: 210.0),
+          RangeProperties(min: 2, length: 150.0),
+          RangeProperties(min: 8, length: 150.0)
         ],
-        specificHeight: [PropertiesRange(min: 2, length: 55.0)],
+        specificHeight: [RangeProperties(min: 2, length: 55.0)],
         maximumColumns: endTableColumn,
         maximumRows: endTableRow);
   }

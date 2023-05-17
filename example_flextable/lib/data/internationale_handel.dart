@@ -1,11 +1,25 @@
-import 'package:flextable/FlexTable/data_flexfable.dart';
-import 'package:flextable/FlexTable/table_line.dart';
-import 'package:flextable/FlexTable/table_model.dart';
+// Copyright (C) 2023 Joan Schipper
+// 
+// This file is part of flextable.
+// 
+// flextable is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// flextable is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License
+// along with flextable.  If not, see <http://www.gnu.org/licenses/>.
+
+import 'package:flextable/flextable.dart';
 import 'package:flutter/material.dart';
-import 'package:flextable/FlexTable/TableItems/Cells.dart';
 
 class InternationaleHandel {
-  final dataTable = DataFlexTable();
+  final dataTable = FlexTableDataModel();
   int endTableRows = 0;
   int endTableColumns = 0;
   final columnHeader1 = [
@@ -1240,7 +1254,7 @@ class InternationaleHandel {
     }
   }
 
-  TableModel makeTable(
+  FlexTableModel makeTable(
       {TargetPlatform? platform,
       scrollLockX = true,
       scrollLockY = true,
@@ -1266,7 +1280,7 @@ class InternationaleHandel {
       }
     }
 
-    return TableModel(
+    return FlexTableModel(
         dataTable: dataTable,
         defaultWidthCell: 80.0,
         defaultHeightCell: 50.0,
@@ -1283,7 +1297,7 @@ class InternationaleHandel {
         scrollLockY: scrollLockY,
         autoFreezeAreasX: autofreezeAreaX,
         autoFreezeAreasY: autofreezeAreasY,
-        specificWidth: [PropertiesRange(min: 0, max: 0, length: 160.0)],
-        specificHeight: [PropertiesRange(min: 1, max: 2, length: 30.0)]);
+        specificWidth: [RangeProperties(min: 0, max: 0, length: 160.0)],
+        specificHeight: [RangeProperties(min: 1, max: 2, length: 30.0)]);
   }
 }

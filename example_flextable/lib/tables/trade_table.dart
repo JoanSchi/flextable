@@ -1,8 +1,22 @@
+// Copyright (C) 2023 Joan Schipper
+// 
+// This file is part of flextable.
+// 
+// flextable is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// flextable is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License
+// along with flextable.  If not, see <http://www.gnu.org/licenses/>.
+
 import 'package:example_flextable/about.dart';
-import 'package:flextable/FlexTable/body_layout.dart';
-import 'package:flextable/FlexTable/table_bottombar.dart';
-import 'package:flextable/FlexTable/table_model.dart';
-import 'package:flextable/FlexTable/table_multi_panel_portview.dart';
+import 'package:flextable/flextable.dart';
 import 'package:flutter/material.dart';
 import '../data/internationale_handel.dart';
 
@@ -30,6 +44,22 @@ class TradeTable extends StatefulWidget {
 }
 
 class _TradeTableState extends State<TradeTable> {
+  late FlexTableController _flexTableController;
+  FlexTableScaleChangeNotifier? scaleChangeNotifier;
+
+  @override
+  void initState() {
+    _flexTableController = FlexTableController();
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    _flexTableController.dispose();
+    scaleChangeNotifier?.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
@@ -53,6 +83,40 @@ class _TradeTableState extends State<TradeTable> {
     const double sizeAbout = 24.0;
     const double sizeHeader = 18.0;
     const double sizeParagraph = 16.0;
+
+    if (scaleSlider) {
+      scaleChangeNotifier = FlexTableScaleChangeNotifier();
+    }
+
+    Widget table = FlexTable(
+      flexTableController: _flexTableController,
+      backgroundColor: Colors.grey[50],
+      flexTableModel: InternationaleHandel().makeTable(
+        platform: platform,
+        scrollLockX: false,
+        scrollLockY: true,
+        // autofreezeAreaX: [
+        //   AutoFreezeArea(startIndex: 0, freezeIndex: 1, endIndex: 1000)
+        // ],
+        autofreezeAreasY: [
+          AutoFreezeArea(startIndex: 0, freezeIndex: 3, endIndex: 1000)
+        ],
+      ),
+    );
+
+    if (scaleSlider) {
+      table = GridBorderLayout(children: [
+        table,
+        GridBorderLayoutPosition(
+            row: 2,
+            measureHeight: true,
+            squeezeRatio: 1.0,
+            child: TableBottomBar(
+                scaleChangeNotifier: scaleChangeNotifier!,
+                flexTableController: _flexTableController,
+                maxWidthSlider: 200.0))
+      ]);
+    }
 
     return About(
       notification: widget.notification(),
@@ -128,27 +192,7 @@ class _TradeTableState extends State<TradeTable> {
           ),
         ),
       ),
-      body: FlexTable(
-        backgroundColor: Colors.grey[50],
-        tableModel: InternationaleHandel().makeTable(
-          platform: platform,
-          scrollLockX: false,
-          scrollLockY: true,
-          // autofreezeAreaX: [
-          //   AutoFreezeArea(startIndex: 0, freezeIndex: 1, endIndex: 1000)
-          // ],
-          autofreezeAreasY: [
-            AutoFreezeArea(startIndex: 0, freezeIndex: 3, endIndex: 1000)
-          ],
-        ),
-        sidePanelWidget: [
-          if (scaleSlider)
-            (tableModel) => FlexTableLayoutParentDataWidget(
-                tableLayoutPosition: const FlexTableLayoutPosition.bottom(),
-                child: TableBottomBar(
-                    tableModel: tableModel, maxWidthSlider: 200.0))
-        ],
-      ),
+      body: table,
     );
   }
 }
