@@ -335,6 +335,8 @@ class _TableScrollbarState extends State<TableScrollbar>
 
     _drag = widget.flexTableViewModel
         .dragScrollBar(details, _disposeDrag, it.scrollIndexX, it.scrollIndexY);
+
+    _fadeoutTimer?.cancel();
   }
 
   _handleDragUpdate(TableDragUpdateDetails details) {
@@ -405,6 +407,7 @@ class _TableScrollbarState extends State<TableScrollbar>
   _endScrollBarDrag() {
     scrollBarSelection.reset();
     _scrollbarPainter.repaintScrollbar();
+    fade();
   }
 
   @override
@@ -414,6 +417,10 @@ class _TableScrollbarState extends State<TableScrollbar>
 
   @override
   didEndScroll(TableScrollMetrics metrics, BuildContext? context) {
+    fade();
+  }
+
+  fade() {
     if (!_isAlwaysShown) {
       _fadeoutTimer?.cancel();
       _fadeoutTimer = Timer(_kScrollbarTimeToFade * 2.0, () {

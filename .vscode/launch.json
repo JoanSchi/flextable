@@ -19,6 +19,13 @@
             "program": "lib/main.dart",
             "flutterMode": "profile"
         },
+        {
+            "name": "example_flextable_in_sliver",
+            "type": "dart",
+            "request": "launch",
+            "cwd": "example_flextable_in_sliver",
+            "program": "lib/main.dart"
+        },
          
     ]
 }

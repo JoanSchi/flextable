@@ -1,22 +1,23 @@
 // Copyright (C) 2023 Joan Schipper
-// 
+//
 // This file is part of flextable.
-// 
+//
 // flextable is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // flextable is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with flextable.  If not, see <http://www.gnu.org/licenses/>.
 
 import 'package:flextable/flextable.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
@@ -27,28 +28,46 @@ class FlexTableToSliverBox extends SingleChildRenderObjectWidget {
     super.key,
     super.child,
     required this.flexTableController,
+    this.maxOverlap,
   });
 
   final FlexTableController flexTableController;
+  final double? maxOverlap;
 
   @override
   void updateRenderObject(
       BuildContext context, RenderFlexTableToSliverBox renderObject) {
-    renderObject.flexTableController = flexTableController;
+    renderObject
+      ..flexTableController = flexTableController
+      ..maxOverlap = maxOverlap;
   }
 
   @override
   RenderFlexTableToSliverBox createRenderObject(BuildContext context) =>
-      RenderFlexTableToSliverBox(flexTableController: flexTableController);
+      RenderFlexTableToSliverBox(
+          flexTableController: flexTableController, maxOverlap: maxOverlap);
 }
 
 class RenderFlexTableToSliverBox extends RenderSliverSingleBoxAdapter {
   FlexTableController flexTableController;
+  double? _maxOverlap;
 
-  RenderFlexTableToSliverBox({
-    super.child,
-    required this.flexTableController,
-  });
+  RenderFlexTableToSliverBox(
+      {super.child, required this.flexTableController, double? maxOverlap})
+      : _maxOverlap = maxOverlap;
+
+  set maxOverlap(double? value) {
+    if (value != _maxOverlap) {
+      _maxOverlap = value;
+      markNeedsLayout();
+    }
+  }
+
+  double get _overlap {
+    final m = _maxOverlap;
+
+    return (m != null && m < constraints.overlap) ? m : constraints.overlap;
+  }
 
   @override
   void performLayout() {
@@ -76,24 +95,38 @@ class RenderFlexTableToSliverBox extends RenderSliverSingleBoxAdapter {
 
     final SliverConstraints constraints = this.constraints;
     // double min = child!.getMinIntrinsicHeight(0);
+
+    double overlap = _overlap;
+
     double maxExtent = child!.getMaxIntrinsicHeight(0);
+
     final double childExtent = maxExtent;
 
     final double paintedChildSize =
         calculatePaintOffset(constraints, from: 0.0, to: childExtent);
 
+    debugPrint(
+        'maxExtent ${maxExtent.toInt()}paintedChildSize ${paintedChildSize.toInt()}');
+
     assert(paintedChildSize.isFinite);
     assert(paintedChildSize >= 0.0);
 
-    flexTableController.viewModel.setScrollWithSliver(constraints.scrollOffset);
+    flexTableController.viewModel
+        .setScrollWithSliver(constraints.scrollOffset + overlap);
 
-    child!.layout(constraints.asBoxConstraints(maxExtent: paintedChildSize),
+    debugPrint(
+        'constraints.overlap ${constraints.overlap.toInt()} constraints.scrollOffset ${constraints.scrollOffset.toInt()}');
+
+    child!.layout(
+        constraints.asBoxConstraints(
+            maxExtent:
+                clampDouble(paintedChildSize - overlap, 0.0, paintedChildSize)),
         parentUsesSize: true);
 
     SliverPhysicalParentData childParent =
         child!.parentData as SliverPhysicalParentData;
 
-    childParent.paintOffset = Offset.zero;
+    childParent.paintOffset = Offset(0.0, overlap);
 
     geometry = SliverGeometry(
       scrollExtent: maxExtent,
@@ -124,7 +157,7 @@ class RenderFlexTableToSliverBox extends RenderSliverSingleBoxAdapter {
   // Simplified hitTestBoxChild
   bool simplyfiedHitTestBoxChild(BoxHitTestResult result, RenderBox child,
       {required double mainAxisPosition, required double crossAxisPosition}) {
-    double delta = 0.0; //childMainAxisPosition(child);
+    double delta = _overlap; //childMainAxisPosition(child);
     final double crossAxisDelta = childCrossAxisPosition(child);
     double absolutePosition = mainAxisPosition - delta;
     final double absoluteCrossAxisPosition = crossAxisPosition - crossAxisDelta;
@@ -133,11 +166,13 @@ class RenderFlexTableToSliverBox extends RenderSliverSingleBoxAdapter {
     paintOffset = Offset(crossAxisDelta, delta);
     transformedPosition = Offset(absoluteCrossAxisPosition, absolutePosition);
 
-    return result.addWithOutOfBandPosition(
+    final r = result.addWithOutOfBandPosition(
       paintOffset: paintOffset,
       hitTest: (BoxHitTestResult result) {
         return child.hitTest(result, position: transformedPosition);
       },
     );
+    debugPrint('hit box $r');
+    return r;
   }
 }

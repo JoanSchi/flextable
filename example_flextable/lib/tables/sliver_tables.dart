@@ -15,8 +15,6 @@
 // You should have received a copy of the GNU General Public License
 // along with flextable.  If not, see <http://www.gnu.org/licenses/>.
 
-// ignore_for_file: public_member_api_docs, sort_constructors_first
-import 'dart:ui';
 import 'package:flextable/flextable.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
