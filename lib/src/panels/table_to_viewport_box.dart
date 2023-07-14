@@ -109,8 +109,7 @@ class RenderFlexTableToSliverBox extends RenderSliverSingleBoxAdapter {
     assert(paintedChildSize.isFinite);
     assert(paintedChildSize >= 0.0);
 
-    flexTableController.viewModel
-        .setScrollWithSliver(constraints.scrollOffset + overlap);
+    viewModel.setScrollWithSliver(constraints.scrollOffset + overlap);
 
     // debugPrint(
     //     'constraints.overlap ${constraints.overlap.toInt()} constraints.scrollOffset ${constraints.scrollOffset.toInt()}');
@@ -164,13 +163,11 @@ class RenderFlexTableToSliverBox extends RenderSliverSingleBoxAdapter {
     paintOffset = Offset(crossAxisDelta, delta);
     transformedPosition = Offset(absoluteCrossAxisPosition, absolutePosition);
 
-    final r = result.addWithOutOfBandPosition(
+    return result.addWithOutOfBandPosition(
       paintOffset: paintOffset,
       hitTest: (BoxHitTestResult result) {
         return child.hitTest(result, position: transformedPosition);
       },
     );
-    debugPrint('hit box $r');
-    return r;
   }
 }

@@ -100,7 +100,7 @@ class TableBottomBarState extends State<TableBottomBar>
   }
 
   Widget buildSlider(BuildContext context) {
-    final ftm = _flexTableController.viewModel.ftm;
+    final ftm = _flexTableController.lastViewModel().ftm;
     double min = ftm.minTableScale;
     double max = ftm.maxTableScale;
     double scale = ftm.tableScale;
@@ -123,10 +123,10 @@ class TableBottomBarState extends State<TableBottomBar>
         max: max,
         onChanged: (double value) {
           final newScale = (value < 1.0) ? 1.0 / (2.0 - value) : value;
-          _flexTableController.viewModel.setScaleTable(newScale);
+          _flexTableController.lastViewModel().setScaleTable(newScale);
         },
         onChangeEnd: (double value) {
-          _flexTableController.viewModel.correctOffScroll(0, 0);
+          _flexTableController.lastViewModel().correctOffScroll(0, 0);
         },
       ),
     );

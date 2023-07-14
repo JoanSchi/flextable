@@ -60,6 +60,10 @@ class FlexTableController extends ChangeNotifier {
         'ScrollController not attached to any scroll views.');
     assert(_viewModels.length <= stretch,
         'ScrollController attached to multiple scroll views.');
+    if (_viewModels.length > 1) {
+      debugPrint(
+          'LastViewModel viewModel number is: ${_viewModels.length} (delayed microTask?)');
+    }
     return _viewModels.last;
   }
 
