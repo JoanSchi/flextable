@@ -26,6 +26,14 @@
             "cwd": "example_flextable_in_sliver",
             "program": "lib/main.dart"
         },
+        {
+            "name": "example_flextable_in_sliver (profile mode)",
+            "type": "dart",
+            "request": "launch",
+            "cwd": "example_flextable_in_sliver",
+            "program": "lib/main.dart",
+            "flutterMode": "profile"
+        },
          
     ]
 }

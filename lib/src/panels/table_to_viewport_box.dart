@@ -76,14 +76,12 @@ class RenderFlexTableToSliverBox extends RenderSliverSingleBoxAdapter {
       return;
     }
 
-    assert(
-        flexTableController.viewModels.length == 1,
-        'Only one viewModel should be present in flexTableController, ${flexTableController.viewModels.length} found.'
-        ' It is however possible that the dettach of the previous is delayed by the microschedule task!');
+    // assert(
+    //     flexTableController.viewModels.length == 1,
+    //     'Only one viewModel should be present in flexTableController, ${flexTableController.viewModels.length} found.'
+    //     ' It is however possible that the dettach of the previous is delayed by the microschedule task!');
 
-    final viewModel = flexTableController.viewModels.length > 1
-        ? flexTableController.viewModels.last
-        : flexTableController.viewModel;
+    final viewModel = flexTableController.lastViewModel();
 
     if (viewModel.correctSliverOffset != null &&
         viewModel.correctSliverOffset != 0.0) {
@@ -105,8 +103,8 @@ class RenderFlexTableToSliverBox extends RenderSliverSingleBoxAdapter {
     final double paintedChildSize =
         calculatePaintOffset(constraints, from: 0.0, to: childExtent);
 
-    debugPrint(
-        'maxExtent ${maxExtent.toInt()}paintedChildSize ${paintedChildSize.toInt()}');
+    // debugPrint(
+    //     'maxExtent ${maxExtent.toInt()}paintedChildSize ${paintedChildSize.toInt()}');
 
     assert(paintedChildSize.isFinite);
     assert(paintedChildSize >= 0.0);
@@ -114,8 +112,8 @@ class RenderFlexTableToSliverBox extends RenderSliverSingleBoxAdapter {
     flexTableController.viewModel
         .setScrollWithSliver(constraints.scrollOffset + overlap);
 
-    debugPrint(
-        'constraints.overlap ${constraints.overlap.toInt()} constraints.scrollOffset ${constraints.scrollOffset.toInt()}');
+    // debugPrint(
+    //     'constraints.overlap ${constraints.overlap.toInt()} constraints.scrollOffset ${constraints.scrollOffset.toInt()}');
 
     child!.layout(
         constraints.asBoxConstraints(
