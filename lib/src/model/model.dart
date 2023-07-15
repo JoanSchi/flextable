@@ -1,17 +1,18 @@
+// ignore_for_file: public_member_api_docs, sort_constructors_first
 // Copyright (C) 2023 Joan Schipper
-// 
+//
 // This file is part of flextable.
-// 
+//
 // flextable is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // flextable is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with flextable.  If not, see <http://www.gnu.org/licenses/>.
 
@@ -59,17 +60,18 @@ bool noSplit(SplitState split) =>
     split == SplitState.canceledSplit;
 
 class FlexTableModel {
-  double scrollX0pY0 = 0.0,
-      scrollX1pY0 = 0.0,
-      scrollY0pX0 = 0.0,
-      scrollY1pX0 = 0.0,
-      scrollX0pY1 = 0.0,
-      scrollX1pY1 = 0.0,
-      scrollY0pX1 = 0.0,
-      scrollY1pX1 = 0.0,
-      mainScrollX = 0.0,
-      mainScrollY = 0.0;
-  double xSplit = 0.0, ySplit = 0.0;
+  double scrollX0pY0 = 0.0;
+  double scrollX1pY0 = 0.0;
+  double scrollY0pX0 = 0.0;
+  double scrollY1pX0 = 0.0;
+  double scrollX0pY1 = 0.0;
+  double scrollX1pY1 = 0.0;
+  double scrollY0pX1 = 0.0;
+  double scrollY1pX1 = 0.0;
+  double mainScrollX = 0.0;
+  double mainScrollY = 0.0;
+  double xSplit = 0.0;
+  double ySplit = 0.0;
   bool rowHeader;
   bool columnHeader;
   int maximumColumns;
@@ -81,11 +83,14 @@ class FlexTableModel {
   bool modifySplit = false;
   bool scheduleCorrectOffScroll = false;
 
-  int topLeftCellPaneColumn = 0, topLeftCellPaneRow = 0;
+  int topLeftCellPaneColumn = 0;
+  int topLeftCellPaneRow = 0;
 
-  bool scrollLockX = false, scrollLockY = false;
+  bool scrollLockX = false;
+  bool scrollLockY = false;
 
-  SplitState stateSplitX, stateSplitY;
+  SplitState stateSplitX;
+  SplitState stateSplitY;
 
   double headerVisibility = 1.0;
 
@@ -350,5 +355,102 @@ class FlexTableModel {
     }
 
     return length;
+  }
+
+  FlexTableModel copyWith({
+    double? scrollX0pY0,
+    double? scrollX1pY0,
+    double? scrollY0pX0,
+    double? scrollY1pX0,
+    double? scrollX0pY1,
+    double? scrollX1pY1,
+    double? scrollY0pX1,
+    double? scrollY1pX1,
+    double? mainScrollX,
+    double? mainScrollY,
+    double? xSplit,
+    double? ySplit,
+    bool? rowHeader,
+    bool? columnHeader,
+    int? maximumColumns,
+    int? maximumRows,
+    double? defaultWidthCell,
+    double? defaultHeightCell,
+    List<RangeProperties>? specificHeight,
+    List<RangeProperties>? specificWidth,
+    bool? modifySplit,
+    bool? scheduleCorrectOffScroll,
+    int? topLeftCellPaneColumn,
+    int? topLeftCellPaneRow,
+    bool? scrollLockX,
+    bool? scrollLockY,
+    SplitState? stateSplitX,
+    SplitState? stateSplitY,
+    double? headerVisibility,
+    double? spaceSplit,
+    double? spaceSplitFreeze,
+    double? splitChangeInsets,
+    AbstractFlexTableDataModel? dataTable,
+    double? freezeMinimumSize,
+    double? leftPanelMargin,
+    double? topPanelMargin,
+    double? rightPanelMargin,
+    double? bottomPanelMargin,
+    double? scale,
+    double? minTableScale,
+    double? maxTableScale,
+    double? maxRowHeaderScale,
+    double? maxColumnHeaderScale,
+    double? headerHeight,
+    double? freezePadding,
+    double? unfreezePadding,
+    List<AutoFreezeArea>? autoFreezeAreasX,
+    bool? autoFreezeX,
+    List<AutoFreezeArea>? autoFreezeAreasY,
+    bool? autoFreezeY,
+    double? minSplitSpaceFromSide,
+    double? hitScrollBarThickness,
+    Alignment? alignment,
+  }) {
+    return FlexTableModel(
+      xSplit: xSplit ?? this.xSplit,
+      ySplit: ySplit ?? this.ySplit,
+      rowHeader: rowHeader ?? this.rowHeader,
+      columnHeader: columnHeader ?? this.columnHeader,
+      maximumColumns: maximumColumns ?? this.maximumColumns,
+      maximumRows: maximumRows ?? this.maximumRows,
+      defaultWidthCell: defaultWidthCell ?? this.defaultWidthCell,
+      defaultHeightCell: defaultHeightCell ?? this.defaultHeightCell,
+      specificHeight: specificHeight ?? this.specificHeight,
+      specificWidth: specificWidth ?? this.specificWidth,
+      scrollLockX: scrollLockX ?? this.scrollLockX,
+      scrollLockY: scrollLockY ?? this.scrollLockY,
+      stateSplitX: stateSplitX ?? this.stateSplitX,
+      stateSplitY: stateSplitY ?? this.stateSplitY,
+      splitChangeInsets: splitChangeInsets ?? this.splitChangeInsets,
+      dataTable: dataTable ?? this.dataTable,
+      freezeMinimumSize: freezeMinimumSize ?? this.freezeMinimumSize,
+      leftPanelMargin: leftPanelMargin ?? this.leftPanelMargin,
+      topPanelMargin: topPanelMargin ?? this.topPanelMargin,
+      rightPanelMargin: rightPanelMargin ?? this.rightPanelMargin,
+      bottomPanelMargin: bottomPanelMargin ?? this.bottomPanelMargin,
+      scale: scale ?? _scale,
+      minTableScale: minTableScale ?? this.minTableScale,
+      maxTableScale: maxTableScale ?? this.maxTableScale,
+      maxRowHeaderScale: maxRowHeaderScale ?? this.maxRowHeaderScale,
+      maxColumnHeaderScale: maxColumnHeaderScale ?? this.maxColumnHeaderScale,
+      headerHeight: headerHeight ?? this.headerHeight,
+      freezePadding: freezePadding ?? this.freezePadding,
+      unfreezePadding: unfreezePadding ?? this.unfreezePadding,
+      autoFreezeAreasX: autoFreezeAreasX ?? this.autoFreezeAreasX,
+      autoFreezeX: autoFreezeX ?? this.autoFreezeX,
+      autoFreezeAreasY: autoFreezeAreasY ?? this.autoFreezeAreasY,
+      autoFreezeY: autoFreezeY ?? this.autoFreezeY,
+      minSplitSpaceFromSide:
+          minSplitSpaceFromSide ?? this.minSplitSpaceFromSide,
+      hitScrollBarThickness:
+          hitScrollBarThickness ?? this.hitScrollBarThickness,
+      alignment: alignment ?? this.alignment,
+    );
   }
 }
