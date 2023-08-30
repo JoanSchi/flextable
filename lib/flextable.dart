@@ -1,19 +1,6 @@
-// Copyright (C) 2023 Joan Schipper
-//
-// This file is part of flextable.
-//
-// flextable is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// flextable is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with flextable.  If not, see <http://www.gnu.org/licenses/>.
+// Copyright 2023 Joan Schipper. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
 
 library flextable;
 
@@ -26,12 +13,14 @@ export 'src/model/view_model.dart' show FlexTableViewModel;
 
 //Build
 export 'src/builders/cells.dart' show Cell;
-export 'src/builders/table_line.dart' show Line, LineNode, LineNodeList;
-export 'src/builders/table_builder.dart'
+export 'src/builders/table_line.dart'
+    show Line, LineNode, LineNodeRange, LineRange;
+export 'src/builders/table_builder.dart' show LineHeader, TableBuilder;
+
+export 'src/builders/default_table_builder.dart'
     show
         DefaultTableBuilder,
-        LineHeader,
-        TableBuilder,
+        CellAttr,
         PaintSplitLines,
         TableTextRotate,
         PercentageBackground,
@@ -41,7 +30,7 @@ export 'src/panels/header_viewport.dart' show TableHeaderIndex;
 export 'src/model/flextable_controller.dart' show FlexTableController;
 export 'src/listeners/scale_change_notifier.dart'
     show FlexTableScaleChangeNotifier, FlexTableScaleNotification;
-export 'src/listeners//scroll_change_notifier.dart'
+export 'src/listeners/scroll_change_notifier.dart'
     show FlexTableScrollChangeNotifier, FlexTableScrollNotification;
 export 'src/panels/table_to_viewport_box.dart' show FlexTableToSliverBox;
 

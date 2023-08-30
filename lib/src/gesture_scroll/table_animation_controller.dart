@@ -1,19 +1,6 @@
-// Copyright (C) 2023 Joan Schipper
-// 
-// This file is part of flextable.
-// 
-// flextable is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-// 
-// flextable is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-// 
-// You should have received a copy of the GNU General Public License
-// along with flextable.  If not, see <http://www.gnu.org/licenses/>.
+// Copyright 2023 Joan Schipper. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
@@ -234,21 +221,6 @@ class ScrollSimulation {
 
 class TableMultiAnimationController extends Animation<ScrollSimulation>
     with AnimationEagerListenerMixin, AnimationLocalListenersMixin {
-  Duration? get lastElapsedDuration => _lastElapsedDuration;
-  Duration? _lastElapsedDuration;
-
-  Duration? duration;
-  Duration? reverseDuration;
-
-  Ticker? _ticker;
-  final double lowerBound;
-  final double upperBound;
-  final String? debugLabel;
-  _AnimationDirection _direction;
-  late List<ScrollSimulation> _list = List.empty();
-  int _count = 0;
-  bool _scrolling = true;
-
   TableMultiAnimationController.unbounded({
     double value = 0.0,
     this.duration,
@@ -262,6 +234,19 @@ class TableMultiAnimationController extends Animation<ScrollSimulation>
     _ticker = vsync.createTicker(_tick);
     // _internalSetValue_internalSetValue(value);
   }
+
+  Duration? get lastElapsedDuration => _lastElapsedDuration;
+  Duration? _lastElapsedDuration;
+  Duration? duration;
+  Duration? reverseDuration;
+  Ticker? _ticker;
+  final double lowerBound;
+  final double upperBound;
+  final String? debugLabel;
+  _AnimationDirection _direction;
+  late List<ScrollSimulation> _list = List.empty();
+  int _count = 0;
+  bool _scrolling = true;
 
   TickerFuture animateWith(List<ScrollSimulation> list) {
     assert(

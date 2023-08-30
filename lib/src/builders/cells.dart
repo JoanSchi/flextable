@@ -1,19 +1,6 @@
-// Copyright (C) 2023 Joan Schipper
-// 
-// This file is part of flextable.
-// 
-// flextable is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-// 
-// flextable is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-// 
-// You should have received a copy of the GNU General Public License
-// along with flextable.  If not, see <http://www.gnu.org/licenses/>.
+// Copyright 2023 Joan Schipper. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
 
 mixin Index {
   int get index;
@@ -81,6 +68,8 @@ abstract class GridRibbon with Index {
 }
 
 class Cell {
+  Cell({this.value = '', Map? attr}) : attr = attr ?? {};
+
   late double left, top, width, height;
   late Index rowIndex;
   late Index columnIndex;
@@ -90,8 +79,6 @@ class Cell {
   Merged? merged;
 
   Object value;
-
-  Cell({this.value = '', Map? attr}) : attr = attr ?? {};
 
   double get leftScaled => left * scaleAndZoom;
 
@@ -103,16 +90,16 @@ class Cell {
 }
 
 class Merged {
-  Index startRow;
-  Index lastRow;
-  Index startColumn;
-  Index lastColumn;
-
   Merged(
       {required this.startRow,
       required this.lastRow,
       required this.startColumn,
       required this.lastColumn});
+
+  Index startRow;
+  Index lastRow;
+  Index startColumn;
+  Index lastColumn;
 
   bool containCell(int row, int column) {
     return (row >= startRow.index &&

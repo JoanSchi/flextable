@@ -1,36 +1,22 @@
-// Copyright (C) 2023 Joan Schipper
-// 
-// This file is part of flextable.
-// 
-// flextable is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-// 
-// flextable is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-// 
-// You should have received a copy of the GNU General Public License
-// along with flextable.  If not, see <http://www.gnu.org/licenses/>.
+// Copyright 2023 Joan Schipper. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
 
-// ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'package:flutter/material.dart';
-import 'package:flextable/src/hit_test/hit_container.dart';
+import '../hit_test/hit_container.dart';
 import '../model/model.dart';
 import '../model/properties/flextable_freeze_change.dart';
 import '../model/view_model.dart';
 
 class TableFreeze extends StatefulWidget {
-  final FlexTableViewModel flexTableViewModel;
-  final FreezeOptions freezeOptions;
-
   const TableFreeze({
-    Key? key,
+    super.key,
     required this.flexTableViewModel,
     required this.freezeOptions,
-  }) : super(key: key);
+  });
+
+  final FlexTableViewModel flexTableViewModel;
+  final FreezeOptions freezeOptions;
 
   @override
   State<TableFreeze> createState() => _TableFreezeState();
@@ -133,13 +119,6 @@ class _TableFreezeState extends State<TableFreeze>
 }
 
 class FreezeLinePainter extends CustomPainter with ChangeNotifier {
-  double lineWidth;
-  Color freezeColor;
-  Color unFreezeColor;
-  FreezeChange freezeChange;
-  Animation<double> animation;
-  HitTestCallback hitTestTable;
-
   FreezeLinePainter({
     required this.lineWidth,
     required this.freezeColor,
@@ -150,6 +129,12 @@ class FreezeLinePainter extends CustomPainter with ChangeNotifier {
   }) {
     animation.addListener(notifyListeners);
   }
+  double lineWidth;
+  Color freezeColor;
+  Color unFreezeColor;
+  FreezeChange freezeChange;
+  Animation<double> animation;
+  HitTestCallback hitTestTable;
 
   @override
   void dispose() {
@@ -228,11 +213,11 @@ class FreezeLinePainter extends CustomPainter with ChangeNotifier {
 }
 
 class FreezeOptions {
-  final bool useFreezePosition;
-  final double freezeSlope;
-
   const FreezeOptions({
     this.useFreezePosition = true,
     this.freezeSlope = 32.0,
   });
+
+  final bool useFreezePosition;
+  final double freezeSlope;
 }

@@ -1,24 +1,9 @@
-// Copyright (C) 2023 Joan Schipper
-// 
-// This file is part of flextable.
-// 
-// flextable is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-// 
-// flextable is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-// 
-// You should have received a copy of the GNU General Public License
-// along with flextable.  If not, see <http://www.gnu.org/licenses/>.
+// Copyright 2023 Joan Schipper. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
 
-import 'package:flextable/src/model/view_model.dart';
-import 'package:flutter/cupertino.dart';
+import '../model/view_model.dart';
 import 'package:flutter/material.dart';
-
 import '../gesture_scroll/table_drag_details.dart';
 import '../gesture_scroll/table_scroll_activity.dart';
 import '../hit_test/hit_and_drag.dart';
@@ -26,15 +11,14 @@ import '../model/model.dart';
 import '../model/properties/flextable_grid_layout.dart';
 
 class AdjustTableSplit extends StatefulWidget {
-  final FlexTableViewModel flexTableViewModel;
-
-  final SplitPositionProperties properties;
-
   const AdjustTableSplit({
     Key? key,
     required this.flexTableViewModel,
     required this.properties,
   }) : super(key: key);
+
+  final FlexTableViewModel flexTableViewModel;
+  final SplitPositionProperties properties;
 
   @override
   State<StatefulWidget> createState() => AdjustTableSplitState();
@@ -71,11 +55,6 @@ class AdjustTableSplitState extends State<AdjustTableSplit> {
 }
 
 class SplitPositionProperties {
-  final bool useSplitPosition;
-  final SelectArea xSplitSelectArea;
-  final SelectArea ySplitSelectArea;
-  final double marginSplit;
-
   const SplitPositionProperties(
       {this.useSplitPosition = true,
       this.xSplitSelectArea = const SelectArea(
@@ -83,14 +62,19 @@ class SplitPositionProperties {
       this.ySplitSelectArea = const SelectArea(
           width: 100.0, height: 50.0, horizontalAlignment: HitAlignment.end),
       this.marginSplit = 20.0});
+
+  final bool useSplitPosition;
+  final SelectArea xSplitSelectArea;
+  final SelectArea ySplitSelectArea;
+  final double marginSplit;
 }
 
 class SplitPosition implements HitAndDragDelegate {
+  SplitPosition({required this.flexTableViewModel, required this.properties});
+
   FlexTableViewModel flexTableViewModel;
   SplitPositionProperties properties;
   SplitPositionProperties? adjust;
-
-  SplitPosition({required this.flexTableViewModel, required this.properties});
 
   dispose() {}
 
@@ -261,11 +245,6 @@ class SplitPosition implements HitAndDragDelegate {
 enum HitAlignment { start, center, end }
 
 class SelectArea {
-  final double _width;
-  final double _height;
-  final HitAlignment horizontalAlignment;
-  final HitAlignment verticalAlignment;
-
   const SelectArea(
       {required double width,
       required double height,
@@ -273,6 +252,11 @@ class SelectArea {
       this.verticalAlignment = HitAlignment.start})
       : _width = width,
         _height = height;
+
+  final double _width;
+  final double _height;
+  final HitAlignment horizontalAlignment;
+  final HitAlignment verticalAlignment;
 
   bool contains(FlexTableViewModel flexTableViewModel, Offset offset) {
     double left, top, bottom, right;
@@ -344,13 +328,6 @@ class DragTableSplitActivity extends TableScrollActivity {
 }
 
 class SplitDragController implements TableDrag {
-  final VoidCallback? onDragCanceled;
-  final FlexTableViewModel flexTableViewModel;
-
-  SplitHandler? xSplitchanger;
-  SplitHandler? ySplitchanger;
-  bool dragEnd = false;
-
   SplitDragController({
     required this.flexTableViewModel,
     required DragStartDetails details,
@@ -362,6 +339,12 @@ class SplitDragController implements TableDrag {
     ySplitchanger?.evaluateEnd = evaluateEnd;
     flexTableViewModel.modifySplit = true;
   }
+
+  final VoidCallback? onDragCanceled;
+  final FlexTableViewModel flexTableViewModel;
+  SplitHandler? xSplitchanger;
+  SplitHandler? ySplitchanger;
+  bool dragEnd = false;
 
   @override
   void cancel() {
@@ -425,21 +408,6 @@ class SplitHandler {
 }
 
 class SplitChanger extends SplitHandler {
-  SplitChange change;
-  double Function() startTable;
-  double Function() endTable;
-  double initiateSplitAtBegin;
-  double initiateSplitAtEnd;
-  double position;
-  TickerProvider vsync;
-  late AnimationController animationController;
-  SetSplit setSplit;
-  double from = 0.0;
-  double to = 0.0;
-  AnimateSplit animationStatus = AnimateSplit.noAnimation;
-  final Function(double value) changeRatioSizeHeader;
-  final bool Function() split;
-
   SplitChanger({
     required this.position,
     required this.startTable,
@@ -458,6 +426,21 @@ class SplitChanger extends SplitHandler {
         duration: const Duration(milliseconds: 300))
       ..addListener(go);
   }
+
+  SplitChange change;
+  double Function() startTable;
+  double Function() endTable;
+  double initiateSplitAtBegin;
+  double initiateSplitAtEnd;
+  double position;
+  TickerProvider vsync;
+  late AnimationController animationController;
+  SetSplit setSplit;
+  double from = 0.0;
+  double to = 0.0;
+  AnimateSplit animationStatus = AnimateSplit.noAnimation;
+  final Function(double value) changeRatioSizeHeader;
+  final bool Function() split;
 
   @override
   void update(double updatePosition, double updateDelta, double? split) {

@@ -1,19 +1,6 @@
-// Copyright (C) 2023 Joan Schipper
-// 
-// This file is part of flextable.
-// 
-// flextable is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-// 
-// flextable is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-// 
-// You should have received a copy of the GNU General Public License
-// along with flextable.  If not, see <http://www.gnu.org/licenses/>.
+// Copyright 2023 Joan Schipper. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
 
 import 'package:flextable/src/model/view_model.dart';
 import 'package:flutter/widgets.dart';
@@ -25,14 +12,14 @@ import '../hit_test/hit_and_drag.dart';
 import '../model/model.dart';
 
 class TableMoveFreeze extends StatefulWidget {
-  final FlexTableViewModel flexTableViewModel;
-  final MoveFreezePositionProperties moveFreezePositionProperties;
-
   const TableMoveFreeze({
-    Key? key,
+    super.key,
     required this.flexTableViewModel,
     required this.moveFreezePositionProperties,
-  }) : super(key: key);
+  });
+
+  final FlexTableViewModel flexTableViewModel;
+  final MoveFreezePositionProperties moveFreezePositionProperties;
 
   @override
   State<StatefulWidget> createState() => TableMoveFreezeState();
@@ -73,23 +60,22 @@ class TableMoveFreezeState extends State<TableMoveFreeze> {
 }
 
 class MoveFreezePositionProperties {
-  final bool useMoveFreezePosition;
-  final double sizeMoveFreezeButton;
-
   const MoveFreezePositionProperties(
       {this.useMoveFreezePosition = true, this.sizeMoveFreezeButton = 50.0});
+
+  final bool useMoveFreezePosition;
+  final double sizeMoveFreezeButton;
 }
 
 class MoveFreeze extends ChangeNotifier implements HitAndDragDelegate {
-  FlexTableViewModel _flexTableViewModel;
-  MoveFreezePositionProperties moveFreezePositionProperties;
-
-  late FreezeLine freezeLine;
-
   MoveFreeze(
       {required FlexTableViewModel flexTableViewModel,
       required this.moveFreezePositionProperties})
       : _flexTableViewModel = flexTableViewModel;
+
+  FlexTableViewModel _flexTableViewModel;
+  MoveFreezePositionProperties moveFreezePositionProperties;
+  late FreezeLine freezeLine;
 
   FlexTableViewModel get flexTableViewModel => _flexTableViewModel;
 
@@ -176,18 +162,18 @@ class MoveFreeze extends ChangeNotifier implements HitAndDragDelegate {
 }
 
 class FreezeDragController implements TableDrag {
-  final VoidCallback? onDragCanceled;
-  final TableScrollActivityDelegate _delegate;
-  FreezeLine freezeLine;
-
-  bool dragEnd = false;
-
   FreezeDragController(
       {required TableScrollActivityDelegate delegate,
       required DragStartDetails details,
       this.onDragCanceled,
       required this.freezeLine})
       : _delegate = delegate;
+
+  final VoidCallback? onDragCanceled;
+  final TableScrollActivityDelegate _delegate;
+  FreezeLine freezeLine;
+
+  bool dragEnd = false;
 
   @override
   void cancel() {
@@ -263,16 +249,6 @@ class FreezeDragController implements TableDrag {
 }
 
 class FreezeMoveController implements TableDrag {
-  final VoidCallback? onDragCanceled;
-  final TableScrollActivityDelegate _delegate;
-  final double scrollX;
-  final double scrollY;
-  final double moveToScrollX;
-  final double moveToScrollY;
-  bool dragEnd = false;
-  late AnimationController _controller;
-  late Animation _animation;
-
   FreezeMoveController(
       {required TableScrollActivityDelegate delegate,
       this.onDragCanceled,
@@ -288,6 +264,15 @@ class FreezeMoveController implements TableDrag {
     _animation.addListener(_tick);
     _controller.forward();
   }
+  final VoidCallback? onDragCanceled;
+  final TableScrollActivityDelegate _delegate;
+  final double scrollX;
+  final double scrollY;
+  final double moveToScrollX;
+  final double moveToScrollY;
+  bool dragEnd = false;
+  late AnimationController _controller;
+  late Animation _animation;
 
   @override
   void cancel() {

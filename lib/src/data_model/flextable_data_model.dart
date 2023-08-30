@@ -1,28 +1,15 @@
-// Copyright (C) 2023 Joan Schipper
-// 
-// This file is part of flextable.
-// 
-// flextable is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-// 
-// flextable is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-// 
-// You should have received a copy of the GNU General Public License
-// along with flextable.  If not, see <http://www.gnu.org/licenses/>.
+// Copyright 2023 Joan Schipper. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
 
 import '../builders/cells.dart';
 import '../builders/table_line.dart';
 
 class FlexTableDataModelCR extends AbstractFlexTableDataModel {
+  FlexTableDataModelCR() : super();
+
   final List<TableColumn?> _tableColumnList = [];
   final List<GridRibbon?> _rowIndices = [];
-
-  FlexTableDataModelCR() : super();
 
   @override
   List<GridRibbon?> get columnIndices => _tableColumnList;
@@ -48,7 +35,7 @@ class FlexTableDataModelCR extends AbstractFlexTableDataModel {
     placeCell(tableColumn, row, cell);
 
     if (rows > 1 || columns > 1) {
-      addMerged(cell: cell, rows: rows, columns: columns);
+      _addMerged(cell: cell, rows: rows, columns: columns);
     }
   }
 
@@ -85,10 +72,10 @@ class FlexTableDataModelCR extends AbstractFlexTableDataModel {
 }
 
 class FlexTableDataModel extends AbstractFlexTableDataModel {
+  FlexTableDataModel() : super();
+
   final List<TableRow?> _tableRowList = <TableRow?>[];
   final List<GridRibbon?> _columnIndices = <GridRibbon?>[];
-
-  FlexTableDataModel() : super();
 
   @override
   List<GridRibbon?> get columnIndices => _columnIndices;
@@ -111,26 +98,23 @@ class FlexTableDataModel extends AbstractFlexTableDataModel {
       required Cell cell}) {
     TableRow tableRow = retrieveRowIndex(row) as TableRow;
 
-    placeCell(tableRow, column, cell);
+    _placeCell(tableRow, column, cell);
 
     if (rows > 1 || columns > 1) {
-      addMerged(cell: cell, rows: rows, columns: columns);
+      _addMerged(cell: cell, rows: rows, columns: columns);
     }
   }
 
-  placeCell(TableRow tableRow, int column, Cell cell) {
+  _placeCell(TableRow tableRow, int column, Cell cell) {
     List<Cell?> columnList = tableRow.columnList;
 
     if (column >= columnList.length) {
       columnList.length = column + 1;
-      columnList[column] = cell;
     }
 
-    cell
+    columnList[column] = cell
       ..rowIndex = tableRow
       ..columnIndex = retrieveColumnIndex(column);
-
-    columnList[column] = cell;
 
     return tableRow;
   }
@@ -151,16 +135,16 @@ class FlexTableDataModel extends AbstractFlexTableDataModel {
 }
 
 abstract class AbstractFlexTableDataModel {
-  late TableLineList horizontalLineList;
-  late TableLineList verticalLineList;
+  late TableLinesOneDirection horizontalLineList;
+  late TableLinesOneDirection verticalLineList;
 
   AbstractFlexTableDataModel() {
-    horizontalLineList = TableLineList(
-        requestLevelOneIndex: retrieveRowIndex,
-        requestLevelTwoIndex: retrieveColumnIndex);
-    verticalLineList = TableLineList(
-        requestLevelOneIndex: retrieveColumnIndex,
-        requestLevelTwoIndex: retrieveRowIndex);
+    horizontalLineList = TableLinesOneDirection(
+        requestLineRangeModelIndex: retrieveRowIndex,
+        requestModelIndex: retrieveColumnIndex);
+    verticalLineList = TableLinesOneDirection(
+        requestLineRangeModelIndex: retrieveColumnIndex,
+        requestModelIndex: retrieveRowIndex);
   }
 
   addCell(
@@ -190,14 +174,14 @@ abstract class AbstractFlexTableDataModel {
       list[value] = index;
     }
 
-    assert(index != null, 'neeeeee toch');
+    assert(index != null, 'No index found');
 
     return index!;
   }
 
   Cell? cell({required int row, required int column});
 
-  addMerged({required Cell cell, required int rows, required int columns}) {
+  _addMerged({required Cell cell, required int rows, required int columns}) {
     final rowIndex = cell.rowIndex;
     final columnIndex = cell.columnIndex;
 
@@ -208,17 +192,17 @@ abstract class AbstractFlexTableDataModel {
         lastColumn: indexOfExtendColumn(columnIndex, columns));
 
     if (columns == 1) {
-      addMergeOneDirection(
+      _addMergeOneDirection(
           gridRibbon: retrieveColumnIndex(columnIndex.index) as GridRibbon,
           merged: cell.merged!);
     } else if (rows == 1) {
-      addMergeOneDirection(
+      _addMergeOneDirection(
           gridRibbon: retrieveRowIndex(rowIndex.index) as GridRibbon,
           merged: cell.merged!);
     } else {}
   }
 
-  addMergeOneDirection(
+  _addMergeOneDirection(
       {required GridRibbon gridRibbon, required Merged merged}) {
     final startIndex = (merged.startRow == merged.lastRow)
         ? merged.startColumn
@@ -237,14 +221,14 @@ abstract class AbstractFlexTableDataModel {
     gridRibbon.mergedList.insert(i, merged);
   }
 
-  indexOfExtendRow(Index rowIndex, int rows) {
+  Index indexOfExtendRow(Index rowIndex, int rows) {
     if (rows == 1) {
       return rowIndex;
     }
     return retrieveRowIndex(rowIndex.index + rows - 1);
   }
 
-  indexOfExtendColumn(Index columnIndex, int columns) {
+  Index indexOfExtendColumn(Index columnIndex, int columns) {
     if (columns == 1) {
       return columnIndex;
     }

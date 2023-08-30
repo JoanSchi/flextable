@@ -1,65 +1,22 @@
-// Copyright (C) 2023 Joan Schipper
-//
-// This file is part of flextable.
-//
-// flextable is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// flextable is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with flextable.  If not, see <http://www.gnu.org/licenses/>.
+// Copyright 2023 Joan Schipper. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
 
-// Copyright (C) 2023 Joan Schipper
-//
-// This file is part of flextable.
-//
-// flextable is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// flextable is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with flextable.  If not, see <http://www.gnu.org/licenses/>.
-
+import 'package:flextable/flextable.dart';
 import 'package:flutter/material.dart';
 import 'adjust/adjust_table_freeze.dart';
 import 'adjust/adjust_table_move_freeze.dart';
 import 'adjust/adjust_table_split.dart';
 import 'adjust/zoom/adjust_table_zoom.dart';
 import 'adjust/zoom/combi_key.dart';
-import 'builders/table_builder.dart';
-import 'listeners/scale_change_notifier.dart';
+
 import 'panels/table_multi_panel_viewport.dart';
 import 'panels/table_view_scrollable.dart';
-import 'listeners/scroll_change_notifier.dart';
-import 'model/model.dart';
-import 'model/flextable_controller.dart';
-import 'model/view_model.dart';
+
 import 'panels/hit_test_stack.dart';
 import 'panels/table_scrollbar.dart';
 
 class FlexTable extends StatefulWidget {
-  final FlexTableModel flexTableModel;
-  final FlexTableController? flexTableController;
-  final SplitPositionProperties splitPositionProperties;
-  final FreezeOptions freezePositionProperties;
-  final MoveFreezePositionProperties moveFreezePositionProperties;
-  final TableBuilder tableBuilder;
-  final Color? backgroundColor;
-  final FlexTableScrollChangeNotifier? scrollChangeNotifier;
-  final FlexTableScaleChangeNotifier? scaleChangeNotifier;
-
   FlexTable({
     super.key,
     required this.flexTableModel,
@@ -72,6 +29,16 @@ class FlexTable extends StatefulWidget {
     this.scrollChangeNotifier,
     this.scaleChangeNotifier,
   }) : tableBuilder = tableBuilder ?? DefaultTableBuilder();
+
+  final FlexTableModel flexTableModel;
+  final FlexTableController? flexTableController;
+  final SplitPositionProperties splitPositionProperties;
+  final FreezeOptions freezePositionProperties;
+  final MoveFreezePositionProperties moveFreezePositionProperties;
+  final TableBuilder tableBuilder;
+  final Color? backgroundColor;
+  final FlexTableScrollChangeNotifier? scrollChangeNotifier;
+  final FlexTableScaleChangeNotifier? scaleChangeNotifier;
 
   @override
   State<StatefulWidget> createState() => FlexTableState();
@@ -212,6 +179,8 @@ class FlexTableState extends State<FlexTable> {
       );
     }
 
-    return table;
+    return widget.backgroundColor == null
+        ? table
+        : Container(color: widget.backgroundColor, child: table);
   }
 }

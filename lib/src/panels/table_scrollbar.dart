@@ -1,28 +1,14 @@
-// Copyright (C) 2023 Joan Schipper
-//
-// This file is part of flextable.
-//
-// flextable is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// flextable is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with flextable.  If not, see <http://www.gnu.org/licenses/>.
+// Copyright 2023 Joan Schipper. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
 
 import 'dart:async';
 import 'dart:ui';
-import 'package:flextable/src/listeners/scroll_change_notifier.dart';
-import 'package:flextable/src/model/view_model.dart';
+import '../listeners/scroll_change_notifier.dart';
+import '../model/view_model.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
-
 import '../gesture_scroll/table_drag_details.dart';
 import '../gesture_scroll/table_gesture.dart';
 import '../model/model.dart';
@@ -95,7 +81,7 @@ class _TableScrollbarState extends State<TableScrollbar>
   bool _isAlwaysShown = false;
   double _thumbSize = _kThumbSize;
   double _paddingOutside = _kPaddingOutside;
-  double _paddingInside = 0.0;
+  // double _paddingInside = 0.0;
   double _paddingTrackInside = 0.0;
   double _paddingTrackOutside = 0.0;
   DeviceGestureSettings? _mediaQueryGestureSettings;
@@ -158,7 +144,7 @@ class _TableScrollbarState extends State<TableScrollbar>
     if (widget.platformIndependent) {
       _isAlwaysShown = widget.isAlwaysShown;
       _thumbSize = _flexTableViewModel.thumbSize;
-      _paddingInside = _flexTableViewModel.paddingInside;
+      // _paddingInside = _flexTableViewModel.paddingInside;
       _paddingOutside = _flexTableViewModel.paddingOutside;
 
       final scrollBarTrack = widget.scrollBarTrack;
@@ -186,7 +172,7 @@ class _TableScrollbarState extends State<TableScrollbar>
             _fadeoutAnimationController.value = 0.0;
             _isAlwaysShown = false;
             _thumbSize = _flexTableViewModel.thumbSize;
-            _paddingInside = _flexTableViewModel.paddingInside;
+            // _paddingInside = _flexTableViewModel.paddingInside;
             _paddingOutside = _flexTableViewModel.paddingOutside;
 
             _paddingTrackOutside = widget.paddingTrackOutside ??
@@ -210,7 +196,7 @@ class _TableScrollbarState extends State<TableScrollbar>
           {
             _isAlwaysShown = true;
             _thumbSize = _flexTableViewModel.thumbSize;
-            _paddingInside = _flexTableViewModel.paddingInside;
+            // _paddingInside = _flexTableViewModel.paddingInside;
             _paddingOutside = _flexTableViewModel.paddingOutside;
 
             _paddingTrackOutside =
@@ -856,6 +842,14 @@ class ScrollbarPainter extends ChangeNotifier implements CustomPainter {
 }
 
 class IterateScrollable {
+  IterateScrollable({
+    required this.metrics,
+    required this.minThumbLength,
+    required this.mimimalThumbHitLength,
+    this.paddingTrackOutside = 0.0,
+    this.paddingTrackInside = 0.0,
+  });
+
   int scrollIndexX = 0;
   int scrollIndexY = 0;
   int _startX = 0;
@@ -869,14 +863,6 @@ class IterateScrollable {
   double mimimalThumbHitLength;
   double paddingTrackOutside;
   double paddingTrackInside;
-
-  IterateScrollable({
-    required this.metrics,
-    required this.minThumbLength,
-    required this.mimimalThumbHitLength,
-    this.paddingTrackOutside = 0.0,
-    this.paddingTrackInside = 0.0,
-  });
 
   setScrollIndex(scrollIndexX, scrollIndexY) {
     this.scrollIndexX = scrollIndexX;

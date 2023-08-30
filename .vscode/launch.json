@@ -8,29 +8,44 @@
             "name": "example_flextable",
             "type": "dart",
             "request": "launch",
-            "cwd": "example_flextable",
+            "cwd": "example/multiple_tables",
             "program": "lib/main.dart"
         },
         {
             "name": "example_flextable (profile mode)",
             "type": "dart",
             "request": "launch",
-            "cwd": "example_flextable",
+            "cwd": "example/multiple_tables",
             "program": "lib/main.dart",
             "flutterMode": "profile"
         },
         {
-            "name": "example_flextable_in_sliver",
+            "name": "example_table_in_custom_scroll_view",
             "type": "dart",
             "request": "launch",
-            "cwd": "example_flextable_in_sliver",
+            "cwd": "example/table_in_custom_scroll_view",
             "program": "lib/main.dart"
         },
         {
-            "name": "example_flextable_in_sliver (profile mode)",
+            "name": "example_table_in_custom_scroll_view (profile mode)",
             "type": "dart",
             "request": "launch",
-            "cwd": "example_flextable_in_sliver",
+            "cwd": "example/table_in_custom_scroll_view",
+            "program": "lib/main.dart",
+            "flutterMode": "profile"
+        },
+        {
+            "name": "short_example",
+            "type": "dart",
+            "request": "launch",
+            "cwd": "example/short_example",
+            "program": "lib/main.dart"
+        },
+        {
+            "name": "short_example (profile mode)",
+            "type": "dart",
+            "request": "launch",
+            "cwd": "example/short_example",
             "program": "lib/main.dart",
             "flutterMode": "profile"
         },

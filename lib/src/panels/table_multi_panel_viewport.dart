@@ -1,52 +1,20 @@
-// Copyright (C) 2023 Joan Schipper
-// 
-// This file is part of flextable.
-// 
-// flextable is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-// 
-// flextable is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-// 
-// You should have received a copy of the GNU General Public License
-// along with flextable.  If not, see <http://www.gnu.org/licenses/>.
-
-// Copyright (C) 2023 Joan Schipper
-//
-// This file is part of flextable.
-//
-// flextable is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// flextable is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with flextable.  If not, see <http://www.gnu.org/licenses/>.
+// Copyright 2023 Joan Schipper. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
 
 import 'dart:collection';
-
-import 'package:flextable/src/panels/panel_viewport.dart';
+import '../panels/panel_viewport.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
-
 import '../builders/table_builder.dart';
 import '../model/properties/flextable_grid_layout.dart';
 import '../model/view_model.dart';
 import 'header_viewport.dart';
 
 class SplitIterator implements Iterator<int> {
-  FlexTableViewModel delegate;
-
   SplitIterator(this.delegate);
+
+  FlexTableViewModel delegate;
 
   int _row = 0;
   int _column = 0;
@@ -82,16 +50,15 @@ class SplitIterator implements Iterator<int> {
 }
 
 class TableMultiPanelViewport extends RenderObjectWidget {
+  const TableMultiPanelViewport(
+      {super.key,
+      required this.flexTableViewModel,
+      required this.tableBuilder,
+      required this.tableScale});
+
   final FlexTableViewModel flexTableViewModel;
   final TableBuilder tableBuilder;
   final double tableScale;
-
-  const TableMultiPanelViewport(
-      {Key? key,
-      required this.flexTableViewModel,
-      required this.tableBuilder,
-      required this.tableScale})
-      : super(key: key);
 
   @override
   TableMultiPanelRenderViewport createRenderObject(BuildContext context) {
@@ -123,8 +90,7 @@ class TableMultiPanelViewport extends RenderObjectWidget {
 
 class TableMultiPanelRenderObjectElement extends RenderObjectElement
     implements TableMultiPanelRenderChildManager {
-  TableMultiPanelRenderObjectElement(TableMultiPanelViewport widget)
-      : super(widget);
+  TableMultiPanelRenderObjectElement(super.widget);
 
   final Map<int, Widget?> _childWidgets = HashMap<int, Widget?>();
   final SplayTreeMap<int, Element?> _childElements =
@@ -442,18 +408,6 @@ class TableMultiPanelRenderViewport extends RenderBox
     with
         ContainerRenderObjectMixin<RenderBox, TablePanelParentData>,
         RenderBoxContainerDefaultsMixin<RenderBox, TablePanelParentData> {
-  TableMultiPanelRenderChildManager childManager;
-  FlexTableViewModel _flexTableViewModel;
-  double _tableScale;
-  TableBuilder tableBuilder;
-
-  @override
-  void setupParentData(RenderBox child) {
-    if (child.parentData is! TablePanelParentData) {
-      child.parentData = TablePanelParentData();
-    }
-  }
-
   TableMultiPanelRenderViewport({
     required FlexTableViewModel flexTableViewModel,
     required this.childManager,
@@ -461,6 +415,11 @@ class TableMultiPanelRenderViewport extends RenderBox
     required this.tableBuilder,
   })  : _flexTableViewModel = flexTableViewModel,
         _tableScale = tableScale;
+
+  TableMultiPanelRenderChildManager childManager;
+  FlexTableViewModel _flexTableViewModel;
+  double _tableScale;
+  TableBuilder tableBuilder;
 
   FlexTableViewModel get flexTableViewModel => _flexTableViewModel;
 
@@ -479,6 +438,13 @@ class TableMultiPanelRenderViewport extends RenderBox
     if (value == _tableScale) return;
     _tableScale = value;
     markNeedsLayout();
+  }
+
+  @override
+  void setupParentData(RenderBox child) {
+    if (child.parentData is! TablePanelParentData) {
+      child.parentData = TablePanelParentData();
+    }
   }
 
   @override

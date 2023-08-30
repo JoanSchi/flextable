@@ -1,19 +1,6 @@
-// Copyright (C) 2023 Joan Schipper
-// 
-// This file is part of flextable.
-// 
-// flextable is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-// 
-// flextable is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-// 
-// You should have received a copy of the GNU General Public License
-// along with flextable.  If not, see <http://www.gnu.org/licenses/>.
+// Copyright 2023 Joan Schipper. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
 
 import 'package:flutter/material.dart';
 import 'cells.dart';
@@ -24,112 +11,95 @@ const _emptyLine = _EmptyLine();
 const gridLine = Line.grid();
 //const noLine = Line.NoLine();
 
-typedef Merge = LineLinkedListEntry Function(
-    LineLinkedListEntry link, LineLinkedListEntry merge);
-typedef RequestNewIndex = Index Function(int newIndex);
+typedef Merge<E extends LineLinkedListEntry<E>> = E Function(E link, E merge);
+typedef RequestModelIndex = Index Function(int newIndex);
 
 var check = false;
 
-class TableLineList extends LineLinkedList<TableLineNode> {
-  RequestNewIndex requestLevelTwoIndex;
+class TableLinesOneDirection extends LineLinkedList<LineRange> {
+  TableLinesOneDirection(
+      {required RequestModelIndex requestLineRangeModelIndex,
+      required this.requestModelIndex,
+      bool addEmpty = false})
+      : super(requestNewIndex: requestLineRangeModelIndex, addEmpty: addEmpty);
 
-  TableLineList({
-    required RequestNewIndex requestLevelOneIndex,
-    required this.requestLevelTwoIndex,
-  }) : super(requestNewIndex: requestLevelOneIndex);
+  RequestModelIndex requestModelIndex;
 
-  addLineNode(
-      {var startLevelOneIndex,
-      var endLevelOneIndex,
-      var startLevelTwoIndex,
-      var endLevelTwoIndex,
-      required LineNode lineNode,
-      addEmpty = false}) {
-    // lineNode.setIndex(
-    //     startIndex: startLevelTwoIndex is int
-    //         ? requestLevelTwoIndex(startLevelTwoIndex)
-    //         : requestLevelTwoIndex,
-    //     endIndex: endLevelTwoIndex == null
-    //         ? null
-    //         : (endLevelTwoIndex is int
-    //             ? requestLevelTwoIndex(endLevelTwoIndex)
-    //             : endLevelTwoIndex));
-
+  void createLineRange(
+    LineRange Function(RequestModelIndex requestLineRangeModelIndex,
+            RequestModelIndex requestModelIndex)
+        create,
+  ) {
     add(
-        TableLineNode(
-            startIndex: startLevelOneIndex is int
-                ? requestNewIndex(startLevelOneIndex)
-                : startLevelOneIndex,
-            endIndex: endLevelOneIndex == null
-                ? null
-                : (endLevelOneIndex is int
-                    ? requestNewIndex(endLevelOneIndex)
-                    : endLevelOneIndex),
-            lineList: LineNodeList(
-                lineNode: lineNode, requestNewIndex: requestLevelTwoIndex)),
-        merge,
-        addEmpty);
+      create(requestNewIndex, requestModelIndex),
+      merge,
+    );
   }
 
-  addList(
-      {var startLevelOneIndex,
-      var endLevelOneIndex,
-      required LineNodeList lineList,
-      bool keepNoLine = true,
-      addEmpty = false}) {
-    // assert(lineList != null, 'LineList is null, maybe: .addLineNode -> ..addLineNode');
-
+  void addLineRange(
+    LineRange lineRange,
+  ) {
     add(
-        TableLineNode(
-            startIndex: startLevelOneIndex is int
-                ? requestNewIndex(startLevelOneIndex)
-                : startLevelOneIndex,
-            endIndex: endLevelOneIndex == null
-                ? null
-                : (endLevelOneIndex is int
-                    ? requestNewIndex(endLevelOneIndex)
-                    : endLevelOneIndex),
-            lineList: lineList),
-        merge,
-        addEmpty);
+      lineRange,
+      merge,
+    );
   }
 
-  TableLineNode merge(LineLinkedListEntry link, LineLinkedListEntry merge) {
-    assert(link is TableLineNode);
-    assert(merge is TableLineNode);
+  void createLineRanges(
+      Function(
+              RequestModelIndex requestLineRangeModelIndex,
+              RequestModelIndex requestModelIndex,
+              Function(LineRange lineRange) create)
+          lineRanges,
+      {addEmpty = false}) {
+    lineRanges(
+        requestNewIndex,
+        requestModelIndex,
+        (LineRange lineRange) => add(
+              lineRange,
+              merge,
+            ));
+  }
 
-    final list = (link as TableLineNode).lineList.copy();
-    final mergeList = (merge as TableLineNode).lineList;
+  LineNodeRange createLineNodeRange(
+          LineNodeRange Function(RequestModelIndex requestModelIndex) create) =>
+      create(requestModelIndex);
 
-    var mergeLineNode = mergeList.first;
+  LineRange merge(LineRange link, LineRange merge) {
+    // assert(link is LineRange);
+    // assert(merge is LineRange);
+
+    final list = link.lineNodeRange.copy();
+    final mergeLineNodes = merge.lineNodeRange;
+
+    var mergeLineNode = mergeLineNodes.first;
 
     while (mergeLineNode != null) {
-      list.addLineNode(lineNode: mergeLineNode);
+      list._addMerge(mergeLineNode);
       mergeLineNode = mergeLineNode.next;
     }
 
-    return TableLineNode(
-        lineList: list, startIndex: merge.startIndex, endIndex: merge.endIndex);
-  }
-
-  LineNodeList createLineNodeList(
-      {LineNode? lineNode, var startLevelTwoIndex, var endLevelTwoIndex}) {
-    return LineNodeList(
-        requestNewIndex: requestLevelTwoIndex,
-        lineNode: lineNode,
-        startLevelTwoIndex: startLevelTwoIndex,
-        endLevelTwoIndex: endLevelTwoIndex);
+    return LineRange(
+        lineNodeRange: list,
+        startIndex: merge.startIndex,
+        endIndex: merge.endIndex);
   }
 }
 
-class TableLineNode extends LineLinkedListEntry<TableLineNode> {
-  LineNodeList lineList;
+class LineRange extends LineLinkedListEntry<LineRange> {
+  LineRange({
+    required super.startIndex,
+    super.endIndex,
+    required this.lineNodeRange,
+  });
 
-  TableLineNode({
-    Index? startIndex,
-    Index? endIndex,
-    required this.lineList,
-  }) : super(startIndex: startIndex, endIndex: endIndex);
+  LineRange.empty({
+    required super.startIndex,
+    super.endIndex,
+  }) : lineNodeRange =
+            LineNodeRange(requestNewIndex: (_) => const DummyIndex(0));
+
+  LineNodeRange lineNodeRange;
 
   @override
   bool operator <(o) => startIndex < o.startIndex;
@@ -153,29 +123,31 @@ class TableLineNode extends LineLinkedListEntry<TableLineNode> {
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
 
-    return other is TableLineNode && other.lineList == lineList;
+    return other is LineRange && other.lineNodeRange == lineNodeRange;
   }
 
   @override
-  int get hashCode => lineList.hashCode;
+  int get hashCode => lineNodeRange.hashCode;
 
   @override
-  TableLineNode copy() => TableLineNode(
-      startIndex: startIndex, endIndex: endIndex, lineList: lineList.copy());
+  LineRange copy() => LineRange(
+      startIndex: startIndex,
+      endIndex: endIndex,
+      lineNodeRange: lineNodeRange.copy());
 
   @override
-  bool equalLink(TableLineNode? o) {
+  bool equalLink(LineRange? o) {
     if (identical(this, o)) return true;
 
-    return o != null && lineList == o.lineList;
+    return o != null && lineNodeRange == o.lineNodeRange;
   }
 
   @override
   bool get isNotEmpty {
-    if (lineList.isEmpty) {
+    if (lineNodeRange.isEmpty) {
       return false;
     } else {
-      var link = lineList.first;
+      var link = lineNodeRange.first;
 
       while (link != null) {
         if (link.isNotEmpty) {
@@ -192,48 +164,59 @@ class TableLineNode extends LineLinkedListEntry<TableLineNode> {
       'Fy(lineList: startIndex $startIndex endIndex $endIndex)';
 }
 
-void printTableList(TableLineList list) {
+void printTableList(TableLinesOneDirection list) {
   var link = list.first;
 
   while (link != null) {
-    printList(link.lineList);
+    printList(link.lineNodeRange);
     link = link.next;
   }
 }
 
-class LineNodeList extends LineLinkedList<LineNode> {
-  LineNodeList(
-      {LineNode? lineNode,
-      var startLevelTwoIndex,
-      var endLevelTwoIndex,
-      required RequestNewIndex requestNewIndex})
-      : super(requestNewIndex: requestNewIndex) {
-    if (lineNode != null) {
-      if (startLevelTwoIndex != null) {
-        assert(startLevelTwoIndex != null);
-        setIndex(lineNode, startLevelTwoIndex, endLevelTwoIndex);
-      }
-      _insertBefore(null, lineNode, updateFirst: false);
+class LineNodeRange extends LineLinkedList<LineNode> {
+  LineNodeRange(
+      {required RequestModelIndex requestNewIndex,
+      List<LineNode> lineNodes = const [],
+      addEmpty = false})
+      : super(requestNewIndex: requestNewIndex, addEmpty: addEmpty) {
+    for (LineNode lineNode in lineNodes) {
+      add(lineNode, merge);
     }
   }
 
-  addLineNode(
-      {required LineNode lineNode,
-      var startLevelTwoIndex,
-      var endLevelTwoIndex,
-      addEmpty = false}) {
-    if (startLevelTwoIndex != null) {
-      setIndex(lineNode, startLevelTwoIndex, endLevelTwoIndex);
-    }
+  _addMerge(
+    LineNode lineNode,
+  ) {
     if (_length == 0) {
       _insertBefore(null, lineNode, updateFirst: false);
     } else {
-      add(lineNode, merge, addEmpty);
+      add(lineNode, merge);
     }
   }
 
-  LineNodeList copy() {
-    final lineList = LineNodeList(requestNewIndex: requestNewIndex);
+  createLineNode(
+    LineNode Function(RequestModelIndex requestModelIndex) create,
+  ) {
+    if (_length == 0) {
+      _insertBefore(null, create(requestNewIndex), updateFirst: false);
+    } else {
+      add(
+        create(requestNewIndex),
+        merge,
+      );
+    }
+  }
+
+  createLineNodes(
+    Function(RequestModelIndex requestModelIndex,
+            Function(LineNode lineNode) create)
+        lineNodes,
+  ) {
+    lineNodes(requestNewIndex, (lineNode) => add(lineNode, merge));
+  }
+
+  LineNodeRange copy() {
+    final lineList = LineNodeRange(requestNewIndex: requestNewIndex);
     LineNode? link = _first;
     LineNode? entryCopy;
 
@@ -248,8 +231,8 @@ class LineNodeList extends LineLinkedList<LineNode> {
     return lineList;
   }
 
-  LineLinkedListEntry merge(lineNode, merge) {
-    return (lineNode as LineNode).mergeLineNode(lineIntercept: merge);
+  LineNode merge(LineNode lineNode, LineNode merge) {
+    return lineNode.mergeLineNode(lineIntercept: merge);
   }
 }
 
@@ -262,6 +245,7 @@ abstract class LineLinkedList<E extends LineLinkedListEntry<E>> {
   E? d1d0;
   E? d0d1;
   E? d1d1;
+  bool addEmpty;
 
   E begin(var index, int demensionOne, int demensionTwo, bool lock) {
     if (demensionOne == 0 || lock) {
@@ -297,11 +281,14 @@ abstract class LineLinkedList<E extends LineLinkedListEntry<E>> {
     }
   }
 
-  RequestNewIndex requestNewIndex;
+  RequestModelIndex requestNewIndex;
 
-  LineLinkedList({required this.requestNewIndex});
+  LineLinkedList({required this.requestNewIndex, required this.addEmpty});
 
-  add(E link, Merge merge, bool addEmpty) {
+  add(E link, Merge<E> merge) {
+    /// The link is already in used if the list is not null.
+    /// To prevent breaking of the the LinkedList the link will be coppied.
+    ///
     if (link._list != null) {
       link = link.copy();
     }
@@ -322,10 +309,17 @@ abstract class LineLinkedList<E extends LineLinkedListEntry<E>> {
           debugPrint('0: found $found');
           debugPrint('0: ln $link');
         }
-        _addOutside(link, found, addEmpty);
+        _addOutside(
+          link,
+          found,
+        );
       } else if (found.startIndex <= link.startIndex &&
           found.endIndex >= link.endIndex) {
-        _addInside(link, found, merge, addEmpty);
+        _addInside(
+          link,
+          found,
+          merge,
+        );
       } else {
         //  found: 1_____  <        2 ______                              1 _____  <     2 ______
         //  li:                 ______________   found go to 2  or                    ______________  found go to 2
@@ -378,7 +372,7 @@ abstract class LineLinkedList<E extends LineLinkedListEntry<E>> {
 
             if (link.endIndex < found.startIndex) {
               // 2
-              _addOutside(link, found.previous, addEmpty);
+              _addOutside(link, found.previous);
               break;
             } else {
               // 1
@@ -387,9 +381,9 @@ abstract class LineLinkedList<E extends LineLinkedListEntry<E>> {
               final startFound = found.startIndex;
 
               final newFound = _addOutside(
-                  link..endIndex = requestNewIndex(startFound.index - 1),
-                  found.previous,
-                  addEmpty);
+                link..endIndex = requestNewIndex(startFound.index - 1),
+                found.previous,
+              );
 
               if (link._list != null) {
                 link = link.copy();
@@ -418,8 +412,7 @@ abstract class LineLinkedList<E extends LineLinkedListEntry<E>> {
             final endLink = link.endIndex;
             assert(link._list == null);
             // assert(found != null);
-            found =
-                _addInside(link..endIndex = endFound, found, merge, addEmpty);
+            found = _addInside(link..endIndex = endFound, found, merge);
 
             if (_length == 0) {
               break;
@@ -452,7 +445,7 @@ abstract class LineLinkedList<E extends LineLinkedListEntry<E>> {
 
             assert(link._list == null);
 
-            _addInside(link, found, merge, addEmpty);
+            _addInside(link, found, merge);
             break;
           } else {
             assert(false, 'Endless loop in TableLine function add?');
@@ -463,7 +456,7 @@ abstract class LineLinkedList<E extends LineLinkedListEntry<E>> {
               //  Found:     ______               Outside and break
               //  li:                 ___________
 
-              _addOutside(link, last, addEmpty);
+              _addOutside(link, last);
               break;
             }
 
@@ -474,7 +467,7 @@ abstract class LineLinkedList<E extends LineLinkedListEntry<E>> {
     }
   }
 
-  E? _addOutside(E link, E? found, bool addEmpty) {
+  E? _addOutside(E link, E? found) {
     E? newFound;
 
     if (found == null || link.endIndex < found.startIndex) {
@@ -505,7 +498,7 @@ abstract class LineLinkedList<E extends LineLinkedListEntry<E>> {
     return newFound;
   }
 
-  E _addInside(E link, E? found, Merge merge, bool addEmpty) {
+  E _addInside(E link, E? found, Merge<E> merge) {
     E newFound;
 
     if (found == null) {
@@ -537,7 +530,7 @@ abstract class LineLinkedList<E extends LineLinkedListEntry<E>> {
       // assert(newFound != null);
     } else if (found.startIndex == link.startIndex &&
         found.endIndex == link.endIndex) {
-      final adjusted = merge(found, link) as E;
+      final adjusted = merge(found, link);
 
       if (adjusted.isNotEmpty || addEmpty) {
         if (adjusted.differentIntercept(found)) {
@@ -555,7 +548,7 @@ abstract class LineLinkedList<E extends LineLinkedListEntry<E>> {
       //assert(_length == 0);
     } else if (found.startIndex <= link.startIndex &&
         found.endIndex >= link.endIndex) {
-      final adjusted = merge(found, link) as E;
+      final adjusted = merge(found, link);
 
       if (adjusted.differentIntercept(found)) {
         if (adjusted.startIndex > found.startIndex &&
@@ -660,19 +653,19 @@ abstract class LineLinkedList<E extends LineLinkedListEntry<E>> {
     return begin!;
   }
 
-  setIndex(E link, var startLevelIndex, var endLevelIndex) {
-    assert(startLevelIndex != null,
-        'StartIndex can not be null, Where does the list or LineNode start?');
-    link.setIndex(
-        startIndex: startLevelIndex is int
-            ? requestNewIndex(startLevelIndex)
-            : startLevelIndex,
-        endIndex: endLevelIndex == null
-            ? null
-            : (endLevelIndex is int
-                ? requestNewIndex(endLevelIndex)
-                : endLevelIndex));
-  }
+  // setIndex(E link, var startLevelIndex, var endLevelIndex) {
+  //   assert(startLevelIndex != null,
+  //       'StartIndex can not be null, Where does the list or LineNode start?');
+  //   link.setIndex(
+  //       startIndex: startLevelIndex is int
+  //           ? requestNewIndex(startLevelIndex)
+  //           : startLevelIndex,
+  //       endIndex: endLevelIndex == null
+  //           ? null
+  //           : (endLevelIndex is int
+  //               ? requestNewIndex(endLevelIndex)
+  //               : endLevelIndex));
+  // }
 
   /* Default linked list functions
    *
@@ -865,29 +858,29 @@ abstract class LineLinkedList<E extends LineLinkedListEntry<E>> {
 }
 
 class LineNode extends LineLinkedListEntry<LineNode> {
-  final Line left;
-  final Line top;
-  final Line right;
-  final Line bottom;
-
   LineNode({
-    this.left = _emptyLine,
-    this.top = _emptyLine,
-    this.right = _emptyLine,
-    this.bottom = _emptyLine,
-    var startIndex,
-    var endIndex,
-  }) : super(startIndex: startIndex, endIndex: endIndex);
+    this.before = _emptyLine,
+    // this.top = _emptyLine,
+    this.after = _emptyLine,
+    // this.bottom = _emptyLine,
+    super.startIndex,
+    super.endIndex,
+  });
+
+  final Line before;
+  // final Line top;
+  final Line after;
+  // final Line bottom;
 
   extendRight() {}
 
   @override
   LineNode copy() {
     return LineNode(
-      left: left,
-      top: top,
-      right: right,
-      bottom: bottom,
+      before: before,
+      // top: top,
+      after: after,
+      // bottom: bottom,
       startIndex: startIndex,
       endIndex: endIndex,
     );
@@ -895,18 +888,18 @@ class LineNode extends LineLinkedListEntry<LineNode> {
 
   copyObject(LineNode lineNode) {
     return LineNode(
-      left: identical(lineNode.left, _emptyLine)
-          ? left
-          : left.copyObject(o: lineNode.left),
-      top: identical(lineNode.top, _emptyLine)
-          ? top
-          : top.copyObject(o: lineNode.top),
-      right: identical(lineNode.right, _emptyLine)
-          ? right
-          : right.copyObject(o: lineNode.right),
-      bottom: identical(lineNode.bottom, _emptyLine)
-          ? bottom
-          : bottom.copyObject(o: lineNode.bottom),
+      before: identical(lineNode.before, _emptyLine)
+          ? before
+          : before.copyObject(o: lineNode.before),
+      // top: identical(lineNode.top, _emptyLine)
+      //     ? top
+      //     : top.copyObject(o: lineNode.top),
+      after: identical(lineNode.after, _emptyLine)
+          ? after
+          : after.copyObject(o: lineNode.after),
+      // bottom: identical(lineNode.bottom, _emptyLine)
+      //     ? bottom
+      //     : bottom.copyObject(o: lineNode.bottom),
       startIndex: lineNode.startIndex,
       endIndex: lineNode.endIndex,
     );
@@ -939,10 +932,12 @@ class LineNode extends LineLinkedListEntry<LineNode> {
 
   @override
   bool get isNotEmpty {
-    return left != gridLine ||
-        top != gridLine ||
-        right != gridLine ||
-        bottom != gridLine;
+    return before != gridLine
+            //  || top != gridLine
+            ||
+            after != gridLine
+        //  || bottom != gridLine
+        ;
   }
 
   @override
@@ -955,16 +950,12 @@ class LineNode extends LineLinkedListEntry<LineNode> {
   bool equalLink(LineNode? o) {
     if (identical(this, o)) return true;
 
-    return o != null &&
-        o.left == left &&
-        o.top == top &&
-        o.right == right &&
-        o.bottom == bottom;
+    return o != null && o.before == before && o.after == after;
   }
 
   @override
   String toString() {
-    return 'LineNode(startIndex: $startIndex, endIndex: $endIndex, left: $left, top: $top, right: $right, bottom: $bottom)';
+    return 'LineNode(startIndex: $startIndex, endIndex: $endIndex, before: $before, after: $after)';
   }
 
   // entry.endIndex < startIndex
@@ -1003,43 +994,39 @@ class LineNode extends LineLinkedListEntry<LineNode> {
     return other is LineNode &&
         other.startIndex == startIndex &&
         other.endIndex == endIndex &&
-        other.left == left &&
-        other.top == top &&
-        other.right == right &&
-        other.bottom == bottom;
+        other.before == before &&
+        other.after == after;
   }
 
   @override
   int get hashCode {
-    return left.hashCode ^ top.hashCode ^ right.hashCode ^ bottom.hashCode;
+    return before.hashCode ^ after.hashCode;
   }
 }
 
 class _EmptyLine extends Line {
   const _EmptyLine()
       : super(
-            line: TableLineOptions.no,
-            width: 0,
-            color: const Color(0xffffffff),
-            drawLine: false);
+          line: TableLineOptions.no,
+          width: 0,
+          color: const Color(0xffffffff),
+        );
 }
 
 class Line {
-  final TableLineOptions line;
-  final double width;
-  final Color color;
-  final bool _drawLine;
-  final double lowestScale;
-  final double highestScale;
-
   const Line({
     this.line = TableLineOptions.custom,
     this.width = 0.5,
     this.color = const Color(0xFF42A5F5),
-    bool drawLine = true,
     this.lowestScale = 0.5,
     this.highestScale = 2.0,
-  }) : _drawLine = drawLine;
+  });
+
+  final TableLineOptions line;
+  final double width;
+  final Color color;
+  final double lowestScale;
+  final double highestScale;
 
   const Line.grid({
     this.line = TableLineOptions.grid,
@@ -1048,7 +1035,7 @@ class Line {
     bool drawLine = true,
     this.lowestScale = 0.5,
     this.highestScale = 2.0,
-  }) : _drawLine = drawLine;
+  });
 
   const Line.noLine({
     this.line = TableLineOptions.no,
@@ -1057,12 +1044,10 @@ class Line {
     bool drawLine = false,
     this.lowestScale = 0.5,
     this.highestScale = 2.0,
-  }) : _drawLine = drawLine;
-
-  bool get drawLine => _drawLine;
+  });
 
   @override
-  String toString() => '$line${drawLine ? '' : '*'}';
+  String toString() => 'TableLineOptions: $line';
 
   Line copyObject({
     required Line o,
@@ -1071,7 +1056,6 @@ class Line {
       line: o.line,
       width: o.width,
       color: o.color,
-      drawLine: o._drawLine,
       lowestScale: o.lowestScale,
       highestScale: o.highestScale,
     );
@@ -1103,7 +1087,6 @@ class Line {
         other.line == line &&
         other.width == width &&
         other.color == color &&
-        other._drawLine == _drawLine &&
         other.lowestScale == lowestScale &&
         other.highestScale == highestScale;
   }
@@ -1113,25 +1096,24 @@ class Line {
     return line.hashCode ^
         width.hashCode ^
         color.hashCode ^
-        _drawLine.hashCode ^
         lowestScale.hashCode ^
         highestScale.hashCode;
   }
 }
 
 abstract class LineLinkedListEntry<E extends LineLinkedListEntry<E>> {
-  LineLinkedList<E>? _list;
-  E? _next;
-  E? _previous;
-  late Index startIndex;
-  late Index endIndex;
-
   LineLinkedListEntry({Index? startIndex, Index? endIndex}) {
     if (startIndex != null) {
       this.startIndex = startIndex;
       this.endIndex = endIndex ?? startIndex;
     }
   }
+
+  LineLinkedList<E>? _list;
+  E? _next;
+  E? _previous;
+  late Index startIndex;
+  late Index endIndex;
 
   // assert(endIndex == null || startIndex <= endIndex,
   //     'EndIndex ${endIndex.index} is smaller than startIndex ${startIndex.index}! ');
@@ -1194,14 +1176,6 @@ abstract class LineLinkedListEntry<E extends LineLinkedListEntry<E>> {
     _list!._insertBefore(this as E, entry, updateFirst: true);
   }
 
-  void setIndex({required Index startIndex, Index? endIndex}) {
-    assert(_list == null, 'Link is already in use');
-    this.startIndex = startIndex;
-    this.endIndex = endIndex ?? startIndex;
-    assert(this.startIndex <= this.endIndex,
-        'EndIndex is smaller than startIndex!');
-  }
-
   bool goToNext(covariant entry);
 
   bool goToPrevious(covariant entry);
@@ -1230,12 +1204,12 @@ class DummyIndex with Index {
   @override
   final int index;
 
-  DummyIndex(
+  const DummyIndex(
     this.index,
   );
 }
 
-printList(LineNodeList lineList) {
+printList(LineNodeRange lineList) {
   debugPrint(
       '> LineNode list --------------------------------------------------');
   var t = lineList._first;
@@ -1246,7 +1220,7 @@ printList(LineNodeList lineList) {
   }
 }
 
-printListNext(LineNodeList lineList) {
+printListNext(LineNodeRange lineList) {
   var t = lineList._first;
 
   while (t != null) {
@@ -1254,7 +1228,7 @@ printListNext(LineNodeList lineList) {
   }
 }
 
-printListPrevious(LineNodeList lineList) {
+printListPrevious(LineNodeRange lineList) {
   var t = lineList.last;
 
   while (t != null) {

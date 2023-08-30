@@ -1,23 +1,10 @@
-// Copyright (C) 2023 Joan Schipper
-// 
-// This file is part of flextable.
-// 
-// flextable is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-// 
-// flextable is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-// 
-// You should have received a copy of the GNU General Public License
-// along with flextable.  If not, see <http://www.gnu.org/licenses/>.
+// Copyright 2023 Joan Schipper. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
 
 import 'dart:collection';
-import 'package:flextable/src/model/view_model.dart';
-import 'package:flextable/src/panels/table_multi_panel_viewport.dart';
+import '../model/view_model.dart';
+import '../panels/table_multi_panel_viewport.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import '../builders/cells.dart';
@@ -27,18 +14,17 @@ import 'table_layout_iterations.dart';
 import '../builders/table_line.dart';
 
 class TablePanelViewport extends RenderObjectWidget {
+  const TablePanelViewport(
+      {super.key,
+      required this.flexTableViewModel,
+      required this.panelIndex,
+      required this.tableBuilder,
+      required this.tableScale});
+
   final FlexTableViewModel flexTableViewModel;
   final int panelIndex;
   final TableBuilder tableBuilder;
   final double tableScale;
-
-  const TablePanelViewport(
-      {Key? key,
-      required this.flexTableViewModel,
-      required this.panelIndex,
-      required this.tableBuilder,
-      required this.tableScale})
-      : super(key: key);
 
   @override
   TablePanelChildRenderObjectElement createElement() =>
@@ -68,14 +54,14 @@ class TablePanelViewport extends RenderObjectWidget {
 
 class TablePanelChildRenderObjectElement extends RenderObjectElement
     implements TablePanelRenderChildManager {
+  TablePanelChildRenderObjectElement(super.widget);
+
   final Map<TableCellIndex, Widget?> _childWidgets =
       HashMap<TableCellIndex, Widget?>();
   final SplayTreeMap<TableCellIndex, Element?> _childElements =
       SplayTreeMap<TableCellIndex, Element?>();
   RenderBox? _currentBeforeChild;
   TableCellIndex? _currentlyUpdatingTableCellIndex;
-
-  TablePanelChildRenderObjectElement(TablePanelViewport widget) : super(widget);
 
   @override
   TablePanelViewport get widget => super.widget as TablePanelViewport;
@@ -354,17 +340,6 @@ class TablePanelRenderViewport extends RenderBox
     with
         ContainerRenderObjectMixin<RenderBox, TableCellParentData>,
         RenderBoxContainerDefaultsMixin<RenderBox, TableCellParentData> {
-  TablePanelRenderChildManager childManager;
-  int panelIndex;
-  late TablePanelLayoutIndex tpli;
-  late TableInterator iterator;
-  late double xScroll, yScroll;
-  late double _tableScale;
-  late double leftMargin, topMargin, rightMargin, bottomMargin;
-  FlexTableViewModel _flexTableViewModel;
-  int garbageCollectRowsFrom = -1;
-  int garbageCollectColumnsFrom = -1;
-
   TablePanelRenderViewport({
     required FlexTableViewModel flexTableViewModel,
     ScrollPosition? sliverPosition,
@@ -375,6 +350,17 @@ class TablePanelRenderViewport extends RenderBox
         _tableScale = tableScale {
     iterator = TableInterator(flexTableViewModel: flexTableViewModel);
   }
+
+  TablePanelRenderChildManager childManager;
+  int panelIndex;
+  late TablePanelLayoutIndex tpli;
+  late TableInterator iterator;
+  late double xScroll, yScroll;
+  late double _tableScale;
+  late double leftMargin, topMargin, rightMargin, bottomMargin;
+  FlexTableViewModel _flexTableViewModel;
+  int garbageCollectRowsFrom = -1;
+  int garbageCollectColumnsFrom = -1;
 
   FlexTableViewModel get flexTableViewModel => _flexTableViewModel;
 
@@ -863,7 +849,7 @@ class TablePanelRenderViewport extends RenderBox
       required int endLevelOne,
       required int startLevelTwo,
       required int endLevelTwo,
-      required TableLineList lineList,
+      required TableLinesOneDirection lineList,
       required List<GridInfo> infoLevelOne,
       required List<GridInfo> infoLevelTwo,
       required CrossNode crossNode,
@@ -883,7 +869,7 @@ class TablePanelRenderViewport extends RenderBox
     int scrollIndexX = tpli.scrollIndexX;
     int scrollIndexY = tpli.scrollIndexY;
 
-    TableLineNode? node =
+    LineRange? node =
         lineList.begin(startLevelOne, scrollIndexX, scrollIndexY, false);
     Paint paint = Paint();
 
@@ -895,7 +881,7 @@ class TablePanelRenderViewport extends RenderBox
       int endDrawOne = node.end > endLevelOne ? endLevelOne : node.end;
 
       for (int i = startDrawOne; i <= endDrawOne; i++) {
-        LineNode firstNode = node.lineList
+        LineNode firstNode = node.lineNodeRange
             .begin(startLevelTwo, scrollIndexX, scrollIndexY, false);
         LineNode? secondNode = firstNode.next;
 
@@ -1063,50 +1049,30 @@ class TablePanelRenderViewport extends RenderBox
       required double levelOnePosition,
       double levelTwoStartPosition = 0.0,
       double levelTwoEndPosition = double.maxFinite}) {
+    if ((first == null || first.after.line == TableLineOptions.no) &&
+        (second == null || second.before.line == TableLineOptions.no)) {
+      return;
+    }
+
     levelTwoStartPosition = (levelTwoStartPosition - xScroll) * tableScale;
 
-    // if(levelTwoStartPosition < 0.0){
-    //   levelTwoStartPosition = 0.0;
-    // }
-
     levelTwoEndPosition = (levelTwoEndPosition - xScroll) * tableScale;
-
-    // if(levelTwoEndPosition > size.width){
-    //   levelTwoEndPosition = size.width;
-    // }
 
     levelOnePosition = (levelOnePosition - yScroll) * tableScale;
 
     if (first != null) {
-      if (first.right.line == TableLineOptions.no) {
-        return;
-      }
-      // assert(first.right.color != null,
-      //     'No right color startIndex ${first.startIndex.index} endIndex ${first.endIndex.index}');
-      // assert(first.right.width != null,
-      //     'No right width startIndex ${first.startIndex.index} endIndex ${first.endIndex.index}');
-
-      paint.color = first.right.color;
-      paint.strokeWidth = first.right.widthScaled(tableScale);
+      paint
+        ..color = first.after.color
+        ..strokeWidth = first.after.widthScaled(tableScale);
     } else if (second != null) {
-      if (second.left.line == TableLineOptions.no) {
-        return;
-      }
-      // assert(second.left.color != null,
-      //     'No left color startIndex ${first.startIndex.index} endIndex ${first.endIndex.index}');
-      // assert(second.left.width != null,
-      //     'No left width startIndex ${first.startIndex.index} endIndex ${first.endIndex.index}');
-
-      paint.color = second.left.color;
-      paint.strokeWidth = second.left.widthScaled(tableScale);
+      paint
+        ..color = second.before.color
+        ..strokeWidth = second.before.widthScaled(tableScale);
     }
     //paint.color = Color(0xFFFF9000);
 
-    if (!(first == null || first.right.drawLine) ||
-        !(second == null || second.left.drawLine)) {
-      return;
-    } else if ((first == null || first.right.line == TableLineOptions.grid) &&
-        (second == null || second.left.line == TableLineOptions.grid)) {
+    if ((first == null || first.after.line == TableLineOptions.grid) &&
+        (second == null || second.before.line == TableLineOptions.grid)) {
       canvas.drawLine(Offset(levelTwoStartPosition, levelOnePosition),
           Offset(levelTwoEndPosition, levelOnePosition), paint);
     } else {
@@ -1124,30 +1090,19 @@ class TablePanelRenderViewport extends RenderBox
       required double levelOnePosition,
       double levelTwoStartPosition = 0.0,
       double levelTwoEndPosition = double.maxFinite}) {
+    if ((first == null || first.after.line == TableLineOptions.no) &&
+        (second == null || second.before.line == TableLineOptions.no)) {
+      return;
+    }
+
     levelTwoStartPosition = (levelTwoStartPosition - yScroll) * tableScale;
 
     if (first != null) {
-      if (first.bottom.line == TableLineOptions.no) {
-        return;
-      }
-      // assert(first.bottom.color != null,
-      //     'No bottom color startIndex ${first.startIndex.index} endIndex ${first.endIndex.index}');
-      // assert(first.bottom.width != null,
-      //     'No bottom width startIndex ${first.startIndex.index} endIndex ${first.endIndex.index}');
-
-      paint.color = first.bottom.color;
-      paint.strokeWidth = first.bottom.widthScaled(tableScale);
+      paint.color = first.after.color;
+      paint.strokeWidth = first.after.widthScaled(tableScale);
     } else if (second != null) {
-      if (second.top.line == TableLineOptions.no) {
-        return;
-      }
-      // assert(second.top.color != null,
-      //     'No top color startIndex ${second.startIndex.index} endIndex ${second.endIndex.index}');
-      // assert(second.top.width != null,
-      //     'No top width startIndex ${second.startIndex.index} endIndex ${second.endIndex.index}');
-
-      paint.color = second.top.color;
-      paint.strokeWidth = second.top.widthScaled(tableScale);
+      paint.color = second.before.color;
+      paint.strokeWidth = second.before.widthScaled(tableScale);
     }
 
     if (levelTwoStartPosition < 0.0) {
@@ -1162,15 +1117,10 @@ class TablePanelRenderViewport extends RenderBox
 
     levelOnePosition = (levelOnePosition - xScroll) * tableScale;
 
-    //print('levelTwoStartPosition $levelTwoStartPosition levelTwoEndPosition $levelTwoEndPosition levelOnePosition $levelOnePosition');
-    // canvas.drawLine(Offset(levelOnePosition, levelTwoStartPosition), Offset(levelOnePosition, levelTwoEndPosition), paint);
-
-    if (!(first == null || first.bottom.drawLine) ||
-        !(second == null || second.top.drawLine)) {
-      return;
-    } else if ((first == null || first.bottom.line == TableLineOptions.grid) &&
-        (second == null || second.top.line == TableLineOptions.grid)) {
-      //canvas.drawLine(Offset(x1 - xScroll, y - yScroll), Offset(x2 - xScroll,y - yScroll), paint);
+    if ((first == null || first.after.line == TableLineOptions.grid) &&
+        (second == null || second.before.line == TableLineOptions.grid)) {
+      canvas.drawLine(Offset(levelOnePosition, levelTwoStartPosition),
+          Offset(levelOnePosition, levelTwoEndPosition), paint);
     } else {
       canvas.drawLine(Offset(levelOnePosition, levelTwoStartPosition),
           Offset(levelOnePosition, levelTwoEndPosition), paint);
@@ -1194,13 +1144,6 @@ class TableCellParentData extends ContainerBoxParentData<RenderBox> {
 }
 
 class TableCellIndex extends Comparable<TableCellIndex> {
-  int column;
-  int row;
-  int columns;
-  int rows;
-  int panelIndexX;
-  int panelIndexY;
-
   TableCellIndex({
     this.panelIndexX = -1,
     this.panelIndexY = -1,
@@ -1209,6 +1152,13 @@ class TableCellIndex extends Comparable<TableCellIndex> {
     this.columns = 1,
     this.rows = 1,
   });
+
+  int column;
+  int row;
+  int columns;
+  int rows;
+  int panelIndexX;
+  int panelIndexY;
 
   bool operator >(TableCellIndex index) {
     return row > index.row || (row == index.row && column > index.column);

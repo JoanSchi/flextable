@@ -1,19 +1,6 @@
-// Copyright (C) 2023 Joan Schipper
-//
-// This file is part of flextable.
-//
-// flextable is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// flextable is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with flextable.  If not, see <http://www.gnu.org/licenses/>.
+// Copyright 2023 Joan Schipper. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
@@ -304,10 +291,11 @@ class TableScrollDragController implements TableDrag {
         _delegate = delegate,
         _lastDetails = details,
         _retainMomentumX = carriedVelocityX != null && carriedVelocityX != 0.0,
-        _retainMomentumY = carriedVelocityY != null && carriedVelocityY != 0.0,
-        _lastNonStationaryTimestamp = details.sourceTimeStamp,
-        _offsetSinceLastStop =
-            motionStartDistanceThreshold == null ? null : 0.0 {
+        _retainMomentumY = carriedVelocityY != null && carriedVelocityY != 0.0
+  // _lastNonStationaryTimestamp = details.sourceTimeStamp,
+  // _offsetSinceLastStop =
+  //     motionStartDistanceThreshold == null ? null : 0.0
+  {
     adjustScroll.start(details: details);
   }
 
@@ -330,12 +318,12 @@ class TableScrollDragController implements TableDrag {
   /// scroll movement again after each time scrolling came to a stop.
   final double? motionStartDistanceThreshold;
 
-  Duration? _lastNonStationaryTimestamp;
+  // Duration? _lastNonStationaryTimestamp;
   final bool _retainMomentumX;
   final bool _retainMomentumY;
 
   /// Null if already in motion or has no [motionStartDistanceThreshold].
-  double? _offsetSinceLastStop;
+  // double? _offsetSinceLastStop;
 
   /// Maximum amount of time interval the drag can have consecutive stationary
   /// pointer update events before losing the momentum carried from a previous
@@ -371,9 +359,9 @@ class TableScrollDragController implements TableDrag {
 
     adjustScroll.update(details);
 
-    if (offset != Offset.zero) {
-      _lastNonStationaryTimestamp = details.sourceTimeStamp;
-    }
+    // if (offset != Offset.zero) {
+    //   _lastNonStationaryTimestamp = details.sourceTimeStamp;
+    // }
 
     // e.g. an AxisDirection.up scrollable
     if (_reversedY) {
@@ -496,6 +484,7 @@ class TableScrollBarDragController implements TableDrag {
   }
 
   /// Called by the delegate when it is no longer sending events to this object.
+  @override
   @mustCallSuper
   void dispose() {
     _lastDetails = null;

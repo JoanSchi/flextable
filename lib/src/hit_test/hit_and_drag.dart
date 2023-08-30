@@ -1,19 +1,6 @@
-// Copyright (C) 2023 Joan Schipper
-// 
-// This file is part of flextable.
-// 
-// flextable is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-// 
-// flextable is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-// 
-// You should have received a copy of the GNU General Public License
-// along with flextable.  If not, see <http://www.gnu.org/licenses/>.
+// Copyright 2023 Joan Schipper. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/widgets.dart';
@@ -23,11 +10,10 @@ import '../panels/table_view_scrollable.dart';
 import 'hit_container.dart';
 
 class HitAndDrag extends StatefulWidget {
+  const HitAndDrag({super.key, required this.hitAndDragDelegate, this.child});
+
   final HitAndDragDelegate hitAndDragDelegate;
   final Widget? child;
-
-  const HitAndDrag({Key? key, required this.hitAndDragDelegate, this.child})
-      : super(key: key);
 
   @override
   State<StatefulWidget> createState() => HitAndDragState();
@@ -36,7 +22,6 @@ class HitAndDrag extends StatefulWidget {
 class HitAndDragState extends State<HitAndDrag> {
   Map<Type, GestureRecognizerFactory> _gestureRecognizers =
       const <Type, GestureRecognizerFactory>{};
-
   bool _lastCanDrag = false;
   TableDrag? _drag;
   late HitAndDragDelegate _hitAndDragDelegate;

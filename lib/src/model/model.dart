@@ -1,40 +1,8 @@
-// ignore_for_file: public_member_api_docs, sort_constructors_first
-// Copyright (C) 2023 Joan Schipper
-//
-// This file is part of flextable.
-//
-// flextable is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// flextable is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with flextable.  If not, see <http://www.gnu.org/licenses/>.
-
-// Copyright (C) 2023 Joan Schipper
-//
-// This file is part of flextable.
-//
-// flextable is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// flextable is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with flextable.  If not, see <http://www.gnu.org/licenses/>.
+// Copyright 2023 Joan Schipper. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
 
 import 'package:flutter/widgets.dart';
-
 import '../data_model/flextable_data_model.dart';
 import 'properties/flextable_autofreeze_area.dart';
 import 'properties/flextable_range_properties.dart';
@@ -60,6 +28,71 @@ bool noSplit(SplitState split) =>
     split == SplitState.canceledSplit;
 
 class FlexTableModel {
+  FlexTableModel(
+      {required this.maximumColumns,
+      required this.maximumRows,
+      required this.defaultWidthCell,
+      required this.defaultHeightCell,
+      this.stateSplitX = SplitState.noSplit,
+      this.stateSplitY = SplitState.noSplit,
+      double xSplit = 0.0,
+      double ySplit = 0.0,
+      this.rowHeader = false,
+      this.columnHeader = false,
+      this.scrollLockX = true,
+      this.scrollLockY = true,
+      int freezeColumns = -1,
+      int freezeRows = -1,
+      List<RangeProperties>? specificHeight,
+      List<RangeProperties>? specificWidth,
+      required this.dataTable,
+      this.freezeMinimumSize = 20.0,
+      double panelMargin = 0.0,
+      double? leftPanelMargin,
+      double? topPanelMargin,
+      double? rightPanelMargin,
+      double? bottomPanelMargin,
+      double scale = 1.0,
+      this.minTableScale = 0.5,
+      this.maxTableScale = 4.0,
+      this.maxRowHeaderScale = 1.5,
+      this.maxColumnHeaderScale = 1.5,
+      this.autoFreezeAreasX = const [],
+      this.autoFreezeX = true,
+      this.autoFreezeAreasY = const [],
+      this.autoFreezeY = true,
+      this.alignment = Alignment.topCenter,
+      this.splitChangeInsets = 20.0,
+      this.headerHeight = 20.0,
+      this.freezePadding = 20.0,
+      this.unfreezePadding = 0.0,
+      this.minSplitSpaceFromSide = 32.0,
+      this.hitScrollBarThickness = _kScrollBarHitThickness})
+      : _scale = scale,
+        assert(!(!scrollLockX && autoFreezeAreasX.isNotEmpty),
+            'If autofreezeX is used, scrollLockX should be locked with true'),
+        assert(!(!scrollLockY && autoFreezeAreasY.isNotEmpty),
+            'If autofreezeY is used, scrolllockY should be locked with true'),
+        assert(
+            !(stateSplitX == SplitState.freezeSplit &&
+                stateSplitY == SplitState.split),
+            'Freezesplit and split can not used together, select one split type or none!'),
+        assert(
+            !(stateSplitY == SplitState.freezeSplit &&
+                stateSplitX == SplitState.split),
+            'Freezesplit and split can not used together, select one split type or none!'),
+        assert(
+            stateSplitX == SplitState.freezeSplit ? freezeColumns != -1 : true,
+            'Select the number of columns to freeze'),
+        assert(stateSplitY == SplitState.freezeSplit ? freezeRows != -1 : true,
+            'Select the number of rows to freeze'),
+        specificWidth = specificWidth ?? [],
+        specificHeight = specificHeight ?? [],
+        leftPanelMargin = leftPanelMargin ?? panelMargin,
+        topPanelMargin = topPanelMargin ?? panelMargin,
+        rightPanelMargin = rightPanelMargin ?? panelMargin,
+        bottomPanelMargin = bottomPanelMargin ?? panelMargin;
+
   double scrollX0pY0 = 0.0;
   double scrollX1pY0 = 0.0;
   double scrollY0pX0 = 0.0;
@@ -157,71 +190,6 @@ class FlexTableModel {
   bool get splitX => stateSplitX == SplitState.split;
 
   bool get splitY => stateSplitY == SplitState.split;
-
-  FlexTableModel(
-      {required this.maximumColumns,
-      required this.maximumRows,
-      required this.defaultWidthCell,
-      required this.defaultHeightCell,
-      this.stateSplitX = SplitState.noSplit,
-      this.stateSplitY = SplitState.noSplit,
-      double xSplit = 0.0,
-      double ySplit = 0.0,
-      this.rowHeader = false,
-      this.columnHeader = false,
-      this.scrollLockX = true,
-      this.scrollLockY = true,
-      int freezeColumns = -1,
-      int freezeRows = -1,
-      List<RangeProperties>? specificHeight,
-      List<RangeProperties>? specificWidth,
-      required this.dataTable,
-      this.freezeMinimumSize = 20.0,
-      double panelMargin = 0.0,
-      double? leftPanelMargin,
-      double? topPanelMargin,
-      double? rightPanelMargin,
-      double? bottomPanelMargin,
-      double scale = 1.0,
-      this.minTableScale = 0.5,
-      this.maxTableScale = 4.0,
-      this.maxRowHeaderScale = 1.5,
-      this.maxColumnHeaderScale = 1.5,
-      this.autoFreezeAreasX = const [],
-      this.autoFreezeX = true,
-      this.autoFreezeAreasY = const [],
-      this.autoFreezeY = true,
-      this.alignment = Alignment.topCenter,
-      this.splitChangeInsets = 20.0,
-      this.headerHeight = 20.0,
-      this.freezePadding = 20.0,
-      this.unfreezePadding = 0.0,
-      this.minSplitSpaceFromSide = 32.0,
-      this.hitScrollBarThickness = _kScrollBarHitThickness})
-      : _scale = scale,
-        assert(!(!scrollLockX && autoFreezeAreasX.isNotEmpty),
-            'If autofreezeX is used, scrollLockX should be locked with true'),
-        assert(!(!scrollLockY && autoFreezeAreasY.isNotEmpty),
-            'If autofreezeY is used, scrolllockY should be locked with true'),
-        assert(
-            !(stateSplitX == SplitState.freezeSplit &&
-                stateSplitY == SplitState.split),
-            'Freezesplit and split can not used together, select one split type or none!'),
-        assert(
-            !(stateSplitY == SplitState.freezeSplit &&
-                stateSplitX == SplitState.split),
-            'Freezesplit and split can not used together, select one split type or none!'),
-        assert(
-            stateSplitX == SplitState.freezeSplit ? freezeColumns != -1 : true,
-            'Select the number of columns to freeze'),
-        assert(stateSplitY == SplitState.freezeSplit ? freezeRows != -1 : true,
-            'Select the number of rows to freeze'),
-        specificWidth = specificWidth ?? [],
-        specificHeight = specificHeight ?? [],
-        leftPanelMargin = leftPanelMargin ?? panelMargin,
-        topPanelMargin = topPanelMargin ?? panelMargin,
-        rightPanelMargin = rightPanelMargin ?? panelMargin,
-        bottomPanelMargin = bottomPanelMargin ?? panelMargin;
 
   set tableScale(value) {
     if (value < minTableScale) {

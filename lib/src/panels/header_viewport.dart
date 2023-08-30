@@ -1,22 +1,9 @@
-// Copyright (C) 2023 Joan Schipper
-// 
-// This file is part of flextable.
-// 
-// flextable is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-// 
-// flextable is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-// 
-// You should have received a copy of the GNU General Public License
-// along with flextable.  If not, see <http://www.gnu.org/licenses/>.
+// Copyright 2023 Joan Schipper. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
 
 import 'dart:collection';
-import 'package:flextable/src/model/view_model.dart';
+import '../model/view_model.dart';
 import 'package:flextable/src/panels/table_multi_panel_viewport.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -25,20 +12,19 @@ import '../model/properties/flextable_grid_info.dart';
 import '../builders/table_builder.dart';
 
 class TableHeaderViewport extends RenderObjectWidget {
+  const TableHeaderViewport(
+      {super.key,
+      required this.flexTableViewModel,
+      required this.panelIndex,
+      required this.tableBuilder,
+      required this.tableScale,
+      required this.headerScale});
+
   final FlexTableViewModel flexTableViewModel;
   final int panelIndex;
   final TableBuilder tableBuilder;
   final double tableScale;
   final double headerScale;
-
-  const TableHeaderViewport(
-      {Key? key,
-      required this.flexTableViewModel,
-      required this.panelIndex,
-      required this.tableBuilder,
-      required this.tableScale,
-      required this.headerScale})
-      : super(key: key);
 
   @override
   TableHeaderChildRenderObjectElement createElement() =>
@@ -71,15 +57,15 @@ class TableHeaderViewport extends RenderObjectWidget {
 
 class TableHeaderChildRenderObjectElement extends RenderObjectElement
     implements TableHeaderRenderChildManager {
+  TableHeaderChildRenderObjectElement(TableHeaderViewport widget)
+      : super(widget);
+
   final Map<TableHeaderIndex, Widget?> _childWidgets =
       HashMap<TableHeaderIndex, Widget?>();
   final SplayTreeMap<TableHeaderIndex, Element?> _childElements =
       SplayTreeMap<TableHeaderIndex, Element?>();
   RenderBox? _currentBeforeChild;
   TableHeaderIndex? _currentlyUpdatingTableHeaderIndex;
-
-  TableHeaderChildRenderObjectElement(TableHeaderViewport widget)
-      : super(widget);
 
   @override
   TableHeaderViewport get widget => super.widget as TableHeaderViewport;
@@ -348,6 +334,20 @@ class TableHeaderRenderViewport extends RenderBox
     with
         ContainerRenderObjectMixin<RenderBox, TableHeaderParentData>,
         RenderBoxContainerDefaultsMixin<RenderBox, TableHeaderParentData> {
+  TableHeaderRenderViewport({
+    required FlexTableViewModel flexTableViewModel,
+    required this.childManager,
+    required this.panelIndex,
+    required double tableScale,
+    required double headerScale,
+    required this.divider,
+  })  : _flexTableViewModel = flexTableViewModel,
+        _tableScale = tableScale,
+        _headerScale = headerScale {
+    iterator = TableHeaderIterator(
+        flexTableViewModel: flexTableViewModel, panelIndex: panelIndex);
+  }
+
   // TableScrollPosition _offset;
   // ScrollPosition? _sliverPosition;
   TableHeaderRenderChildManager childManager;
@@ -362,20 +362,6 @@ class TableHeaderRenderViewport extends RenderBox
   FlexTableViewModel _flexTableViewModel;
   int garbageCollectFrom = -1;
   LineHeader divider;
-
-  TableHeaderRenderViewport({
-    required FlexTableViewModel flexTableViewModel,
-    required this.childManager,
-    required this.panelIndex,
-    required double tableScale,
-    required double headerScale,
-    required this.divider,
-  })  : _flexTableViewModel = flexTableViewModel,
-        _tableScale = tableScale,
-        _headerScale = headerScale {
-    iterator = TableHeaderIterator(
-        flexTableViewModel: flexTableViewModel, panelIndex: panelIndex);
-  }
 
   FlexTableViewModel get flexTableViewModel => _flexTableViewModel;
 
@@ -801,13 +787,13 @@ class TableHeaderParentData extends ContainerBoxParentData<RenderBox> {
 }
 
 class TableHeaderIndex extends Comparable<TableHeaderIndex> {
-  int index;
-  int panelIndex;
-
   TableHeaderIndex({
     this.panelIndex = -1,
     this.index = -1,
   });
+
+  int index;
+  int panelIndex;
 
   bool operator >(TableHeaderIndex headerIndex) {
     return index > headerIndex.index;
@@ -849,6 +835,11 @@ class TableHeaderIndex extends Comparable<TableHeaderIndex> {
 }
 
 class TableHeaderIterator {
+  TableHeaderIterator(
+      {required FlexTableViewModel flexTableViewModel,
+      required this.panelIndex})
+      : _flexTableViewModel = flexTableViewModel;
+
   FlexTableViewModel _flexTableViewModel;
   late List<GridInfo> headerInfoList;
   int panelIndex;
@@ -858,10 +849,6 @@ class TableHeaderIterator {
   int firstIndex = 0;
   int lastIndex = 0;
 
-  TableHeaderIterator(
-      {required FlexTableViewModel flexTableViewModel,
-      required this.panelIndex})
-      : _flexTableViewModel = flexTableViewModel;
   set flexTableViewModel(value) {
     if (_flexTableViewModel != value) {
       _flexTableViewModel = value;

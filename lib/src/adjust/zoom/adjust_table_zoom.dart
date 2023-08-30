@@ -1,21 +1,7 @@
-// Copyright (C) 2023 Joan Schipper
-// 
-// This file is part of flextable.
-// 
-// flextable is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-// 
-// flextable is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-// 
-// You should have received a copy of the GNU General Public License
-// along with flextable.  If not, see <http://www.gnu.org/licenses/>.
+// Copyright 2023 Joan Schipper. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
 
-// ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flextable/src/model/view_model.dart';
@@ -28,14 +14,6 @@ import '../../gesture_scroll/table_gesture.dart';
 import '../../gesture_scroll/table_scale_gesture.dart';
 
 class TableZoomProperties {
-  double lineWidth;
-  Color lineColor;
-  double pointerSize;
-  double centerSize;
-  Color pointerColor;
-  Color pointerColorActive;
-  double fraction;
-
   TableZoomProperties({
     this.lineWidth = 1.0,
     this.lineColor = Colors.black38,
@@ -45,13 +23,20 @@ class TableZoomProperties {
     this.pointerColorActive = Colors.black38,
     this.fraction = 0.25,
   });
+
+  double lineWidth;
+  Color lineColor;
+  double pointerSize;
+  double centerSize;
+  Color pointerColor;
+  Color pointerColorActive;
+  double fraction;
 }
 
 class TableZoomTouch extends StatefulWidget {
-  final FlexTableViewModel flexTableViewModel;
+  const TableZoomTouch({super.key, required this.flexTableViewModel});
 
-  const TableZoomTouch({Key? key, required this.flexTableViewModel})
-      : super(key: key);
+  final FlexTableViewModel flexTableViewModel;
 
   @override
   State<StatefulWidget> createState() => TableZoomTouchState();
@@ -113,16 +98,16 @@ class TableZoomTouchState extends State<TableZoomTouch> {
 }
 
 class TableZoomMouse extends StatefulWidget {
+  const TableZoomMouse(
+      {super.key,
+      required this.flexTableViewModel,
+      required this.zoomProperties,
+      required this.combiKeyNotification});
+
   final FlexTableViewModel flexTableViewModel;
   final TableZoomProperties zoomProperties;
   final CombiKeyNotification combiKeyNotification;
 
-  const TableZoomMouse(
-      {Key? key,
-      required this.flexTableViewModel,
-      required this.zoomProperties,
-      required this.combiKeyNotification})
-      : super(key: key);
   @override
   State<StatefulWidget> createState() => TableZoomMouseState();
 }
@@ -263,6 +248,9 @@ class TableZoomGestureRecognizer extends MyDragGestureRecognizer {
 }
 
 class TableZoomMouseNotifier extends ChangeNotifier {
+  TableZoomMouseNotifier(
+      {required this.minTableScale, required this.maxTableScale});
+
   bool _active = false;
   bool _isScaling = false;
   double _scale = 0.0;
@@ -271,9 +259,6 @@ class TableZoomMouseNotifier extends ChangeNotifier {
   Offset startPosition = Offset.zero;
   Offset _position = Offset.zero;
   double distanceRatio = 0.0;
-
-  TableZoomMouseNotifier(
-      {required this.minTableScale, required this.maxTableScale});
 
   set position(Offset value) {
     _position = value;
@@ -342,16 +327,16 @@ class TableZoomMouseNotifier extends ChangeNotifier {
 }
 
 class MouseScalePaint extends StatefulWidget {
-  final TableZoomMouseNotifier tableZoomMouseNotifier;
-  final Widget child;
-  final TableZoomProperties zoomProperties;
-
   const MouseScalePaint(
       {Key? key,
       required this.tableZoomMouseNotifier,
       required this.child,
       required this.zoomProperties})
       : super(key: key);
+
+  final TableZoomMouseNotifier tableZoomMouseNotifier;
+  final Widget child;
+  final TableZoomProperties zoomProperties;
 
   @override
   State<MouseScalePaint> createState() => _MouseScalePaintState();
@@ -401,13 +386,6 @@ class _MouseScalePaintState extends State<MouseScalePaint> {
 }
 
 class MouseZoomPainter extends CustomPainter {
-  final Offset position;
-  final Offset startPostion;
-  final bool draw;
-  final double minDistance;
-  final double maxDistance;
-  TableZoomProperties zoomProperties;
-
   MouseZoomPainter({
     required this.position,
     required this.startPostion,
@@ -416,6 +394,13 @@ class MouseZoomPainter extends CustomPainter {
     required this.minDistance,
     required this.maxDistance,
   });
+
+  final Offset position;
+  final Offset startPostion;
+  final bool draw;
+  final double minDistance;
+  final double maxDistance;
+  TableZoomProperties zoomProperties;
 
   @override
   void paint(Canvas canvas, Size size) {

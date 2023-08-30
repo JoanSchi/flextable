@@ -1,19 +1,6 @@
-// Copyright (C) 2023 Joan Schipper
-//
-// This file is part of flextable.
-//
-// flextable is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// flextable is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with flextable.  If not, see <http://www.gnu.org/licenses/>.
+// Copyright 2023 Joan Schipper. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
 
 import 'dart:async';
 import 'package:flextable/src/listeners/scroll_change_notifier.dart';
@@ -29,7 +16,6 @@ import '../model/model.dart';
 import '../model/flextable_controller.dart';
 import '../model/view_model.dart';
 import 'dart:math' as math;
-
 import '../gesture_scroll/table_scroll_physics.dart';
 
 const Set<PointerDeviceKind> kTouchLikeDeviceTypes = <PointerDeviceKind>{
@@ -210,6 +196,8 @@ class TableViewScrollableState extends State<TableViewScrollable>
   @override
   void didChangeDependencies() {
     _mediaQueryGestureSettings = MediaQuery.maybeGestureSettingsOf(context);
+    _devicePixelRatio = MediaQuery.maybeDevicePixelRatioOf(context) ??
+        View.of(context).devicePixelRatio;
     super.didChangeDependencies();
     _updatePosition();
   }
@@ -376,6 +364,10 @@ class TableViewScrollableState extends State<TableViewScrollable>
   TickerProvider get vsync => this;
 
   @override
+  double get devicePixelRatio => _devicePixelRatio;
+  late double _devicePixelRatio;
+
+  @override
   @protected
   void setIgnorePointer(bool value) {
     if (_shouldIgnorePointer == value) return;
@@ -508,7 +500,6 @@ class TableViewScrollableState extends State<TableViewScrollable>
               child: IgnorePointer(
                 key: _ignorePointerKey,
                 ignoring: _shouldIgnorePointer,
-                ignoringSemantics: false,
                 child: widget.viewportBuilder(context, viewModel),
               ),
             ),

@@ -1,22 +1,8 @@
-// Copyright (C) 2023 Joan Schipper
-// 
-// This file is part of flextable.
-// 
-// flextable is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-// 
-// flextable is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-// 
-// You should have received a copy of the GNU General Public License
-// along with flextable.  If not, see <http://www.gnu.org/licenses/>.
+// Copyright 2023 Joan Schipper. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
 
 import 'package:flextable/src/model/view_model.dart';
-
 import '../builders/cells.dart';
 import 'panel_viewport.dart';
 import '../model/properties/flextable_grid_info.dart';
@@ -24,6 +10,10 @@ import '../data_model/flextable_data_model.dart';
 import 'table_multi_panel_viewport.dart';
 
 class TableInterator {
+  TableInterator({
+    required FlexTableViewModel flexTableViewModel,
+  }) : _flexTableViewModel = flexTableViewModel;
+
   FlexTableViewModel _flexTableViewModel;
   late List<GridInfo> rowInfoList;
   late List<GridInfo> columnInfoList;
@@ -42,10 +32,6 @@ class TableInterator {
       lastColumnIndex = 0;
   Cell? cell;
   late GridInfo rowInfo, columnInfo;
-
-  TableInterator({
-    required FlexTableViewModel flexTableViewModel,
-  }) : _flexTableViewModel = flexTableViewModel;
 
   set flexTableViewModel(value) {
     _flexTableViewModel = value;

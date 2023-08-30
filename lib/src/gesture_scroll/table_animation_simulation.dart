@@ -1,19 +1,6 @@
-// Copyright (C) 2023 Joan Schipper
-// 
-// This file is part of flextable.
-// 
-// flextable is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-// 
-// flextable is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-// 
-// You should have received a copy of the GNU General Public License
-// along with flextable.  If not, see <http://www.gnu.org/licenses/>.
+// Copyright 2023 Joan Schipper. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
 
 import 'dart:math' as math;
 import 'package:flutter/physics.dart';
@@ -99,7 +86,8 @@ class TableClampingScrollSimulation extends TableSimulation {
     final double scaledFriction = friction * _decelerationForFriction(0.84);
 
     // See getSplineDeceleration().
-    final double deceleration = math.log(0.35 * velocity.abs() / scaledFriction);
+    final double deceleration =
+        math.log(0.35 * velocity.abs() / scaledFriction);
 
     return math.exp(deceleration / (_kDecelerationRate - 1.0));
   }
@@ -121,7 +109,9 @@ class TableClampingScrollSimulation extends TableSimulation {
   //      = 1.2 t^3 - 3.27 t^2 + 3.065 t
   static const double _initialVelocityPenetration = 3.065;
   static double _flingDistancePenetration(double t) {
-    return (1.2 * t * t * t) - (3.27 * t * t) + (_initialVelocityPenetration * t);
+    return (1.2 * t * t * t) -
+        (3.27 * t * t) +
+        (_initialVelocityPenetration * t);
   }
 
   // The derivative of the _flingDistancePenetration() function.
@@ -132,13 +122,17 @@ class TableClampingScrollSimulation extends TableSimulation {
   @override
   double x(double time) {
     final double t = (time / _duration).clamp(0.0, 1.0);
-    return xPosition + _distanceX * _flingDistancePenetration(t) * xVelocity.sign;
+    return xPosition +
+        _distanceX * _flingDistancePenetration(t) * xVelocity.sign;
   }
 
   @override
   double dx(double time) {
     final double t = (time / _duration).clamp(0.0, 1.0);
-    return _distanceX * _flingVelocityPenetration(t) * xVelocity.sign / _duration;
+    return _distanceX *
+        _flingVelocityPenetration(t) *
+        xVelocity.sign /
+        _duration;
   }
 
   @override
@@ -149,13 +143,17 @@ class TableClampingScrollSimulation extends TableSimulation {
   @override
   double y(double time) {
     final double t = (time / _duration).clamp(0.0, 1.0);
-    return yPosition + _distanceY * _flingDistancePenetration(t) * yVelocity.sign;
+    return yPosition +
+        _distanceY * _flingDistancePenetration(t) * yVelocity.sign;
   }
 
   @override
   double dy(double time) {
     final double t = (time / _duration).clamp(0.0, 1.0);
-    return _distanceY * _flingVelocityPenetration(t) * yVelocity.sign / _duration;
+    return _distanceY *
+        _flingVelocityPenetration(t) *
+        yVelocity.sign /
+        _duration;
   }
 }
 

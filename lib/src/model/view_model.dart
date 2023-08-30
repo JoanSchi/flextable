@@ -1,19 +1,6 @@
-// Copyright (C) 2023 Joan Schipper
-// 
-// This file is part of flextable.
-// 
-// flextable is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-// 
-// flextable is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-// 
-// You should have received a copy of the GNU General Public License
-// along with flextable.  If not, see <http://www.gnu.org/licenses/>.
+// Copyright 2023 Joan Schipper. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
 
 import 'package:flextable/src/listeners/scroll_change_notifier.dart';
 import 'package:flextable/src/model/model.dart';
@@ -59,6 +46,101 @@ ScrollDirection _userScrollDirectionX = ScrollDirection.idle;
 class FlexTableViewModel extends ChangeNotifier
     with TableScrollMetrics
     implements TableScrollActivityDelegate {
+  FlexTableViewModel({
+    required this.physics,
+    required this.context,
+    FlexTableViewModel? oldPosition,
+    required this.ftm,
+    String? debugLabel,
+    required this.scaleChangeNotifier,
+    required this.scrollChangeNotifier,
+  }) {
+    // Scroll
+    //
+    //
+    //
+    //
+    context.setCanDrag(true);
+
+    if (activity == null) goIdle(0, 0);
+
+    assert(activity != null);
+
+    _adjustScroll = AdjustScroll(
+        flexTableViewModel: this,
+        scrollIndexX: 0,
+        scrollIndexY: 0,
+        direction: tableScrollDirection,
+        vsync: context.vsync);
+
+    sliverScrollPosition = context.storageContext
+        .findAncestorStateOfType<ScrollableState>()
+        ?.position;
+
+    if (sliverScrollPosition != null &&
+        sliverScrollPosition?.axis != Axis.vertical) {
+      sliverScrollPosition = null;
+    }
+
+    sliverScrollPosition?.addListener(notifyListeners);
+
+    // ViewModel
+    //
+    //
+    //
+    //
+
+    ratioSizeAnimatedSplitChangeX = stateSplitX != SplitState.split ? 0.0 : 1.0;
+    ratioSizeAnimatedSplitChangeY = stateSplitY != SplitState.split ? 0.0 : 1.0;
+
+    // if (stateSplitX == SplitState.FREEZE_SPLIT && ftm.freezeColumns > 0) {
+    //   scrollX0pY0 = getX(freezeColumns);
+
+    //   topLeftCellPaneColumn = freezeColumns + 1;
+    //   scrollX1pY0 = getX(topLeftCellPaneColumn);
+    // }
+
+    // if (stateSplitY == SplitState.FREEZE_SPLIT && freezeRows > 0) {
+    //   scrollY0pX0 = getY(freezeRows);
+
+    //   topLeftCellPaneRow = freezeRows + 1;
+    //   scrollY1pX0 = getY(topLeftCellPaneRow);
+    // }
+
+    calculateHeaderWidth();
+
+    for (var element in ftm.autoFreezeAreasX) {
+      element.setPosition(getX);
+    }
+    for (var element in ftm.autoFreezeAreasY) {
+      element.setPosition(getY);
+    }
+
+    _layoutIndex = List.generate(16, (int index) {
+      int r = index % 4;
+      int c = index ~/ 4;
+      return TablePanelLayoutIndex(xIndex: c, yIndex: r);
+    });
+
+    _panelIndex = List.generate(16, (index) => index);
+
+    switch (defaultTargetPlatform) {
+      case TargetPlatform.android:
+      case TargetPlatform.fuchsia:
+      case TargetPlatform.iOS:
+        scrollBarTrack = false;
+        sizeScrollBarTrack = 0.0;
+
+        break;
+      case TargetPlatform.linux:
+      case TargetPlatform.macOS:
+      case TargetPlatform.windows:
+        scrollBarTrack = true;
+        sizeScrollBarTrack = thumbSize + paddingOutside + paddingInside;
+        break;
+    }
+  }
+
   // Scroll
   //
   //
@@ -159,101 +241,6 @@ class FlexTableViewModel extends ChangeNotifier
 
   bool scheduleCorrectOffScroll = false;
   double? correctSliverOffset;
-
-  FlexTableViewModel({
-    required this.physics,
-    required this.context,
-    FlexTableViewModel? oldPosition,
-    required this.ftm,
-    String? debugLabel,
-    required this.scaleChangeNotifier,
-    required this.scrollChangeNotifier,
-  }) {
-    // Scroll
-    //
-    //
-    //
-    //
-    context.setCanDrag(true);
-
-    if (activity == null) goIdle(0, 0);
-
-    assert(activity != null);
-
-    _adjustScroll = AdjustScroll(
-        flexTableViewModel: this,
-        scrollIndexX: 0,
-        scrollIndexY: 0,
-        direction: tableScrollDirection,
-        vsync: context.vsync);
-
-    sliverScrollPosition = context.storageContext
-        .findAncestorStateOfType<ScrollableState>()
-        ?.position;
-
-    if (sliverScrollPosition != null &&
-        sliverScrollPosition?.axis != Axis.vertical) {
-      sliverScrollPosition = null;
-    }
-
-    sliverScrollPosition?.addListener(notifyListeners);
-
-    // ViewModel
-    //
-    //
-    //
-    //
-
-    ratioSizeAnimatedSplitChangeX = stateSplitX != SplitState.split ? 0.0 : 1.0;
-    ratioSizeAnimatedSplitChangeY = stateSplitY != SplitState.split ? 0.0 : 1.0;
-
-    // if (stateSplitX == SplitState.FREEZE_SPLIT && ftm.freezeColumns > 0) {
-    //   scrollX0pY0 = getX(freezeColumns);
-
-    //   topLeftCellPaneColumn = freezeColumns + 1;
-    //   scrollX1pY0 = getX(topLeftCellPaneColumn);
-    // }
-
-    // if (stateSplitY == SplitState.FREEZE_SPLIT && freezeRows > 0) {
-    //   scrollY0pX0 = getY(freezeRows);
-
-    //   topLeftCellPaneRow = freezeRows + 1;
-    //   scrollY1pX0 = getY(topLeftCellPaneRow);
-    // }
-
-    calculateHeaderWidth();
-
-    for (var element in ftm.autoFreezeAreasX) {
-      element.setPosition(getX);
-    }
-    for (var element in ftm.autoFreezeAreasY) {
-      element.setPosition(getY);
-    }
-
-    _layoutIndex = List.generate(16, (int index) {
-      int r = index % 4;
-      int c = index ~/ 4;
-      return TablePanelLayoutIndex(xIndex: c, yIndex: r);
-    });
-
-    _panelIndex = List.generate(16, (index) => index);
-
-    switch (defaultTargetPlatform) {
-      case TargetPlatform.android:
-      case TargetPlatform.fuchsia:
-      case TargetPlatform.iOS:
-        scrollBarTrack = false;
-        sizeScrollBarTrack = 0.0;
-
-        break;
-      case TargetPlatform.linux:
-      case TargetPlatform.macOS:
-      case TargetPlatform.windows:
-        scrollBarTrack = true;
-        sizeScrollBarTrack = thumbSize + paddingOutside + paddingInside;
-        break;
-    }
-  }
 
   TableScrollActivity? get activity => _activity;
   TableScrollActivity? _activity;

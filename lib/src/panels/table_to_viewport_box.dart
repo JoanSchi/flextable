@@ -1,19 +1,6 @@
-// Copyright (C) 2023 Joan Schipper
-//
-// This file is part of flextable.
-//
-// flextable is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// flextable is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with flextable.  If not, see <http://www.gnu.org/licenses/>.
+// Copyright 2023 Joan Schipper. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
 
 import 'package:flextable/flextable.dart';
 import 'package:flutter/cupertino.dart';
@@ -49,12 +36,12 @@ class FlexTableToSliverBox extends SingleChildRenderObjectWidget {
 }
 
 class RenderFlexTableToSliverBox extends RenderSliverSingleBoxAdapter {
-  FlexTableController flexTableController;
-  double? _maxOverlap;
-
   RenderFlexTableToSliverBox(
       {super.child, required this.flexTableController, double? maxOverlap})
       : _maxOverlap = maxOverlap;
+
+  FlexTableController flexTableController;
+  double? _maxOverlap;
 
   set maxOverlap(double? value) {
     if (value != _maxOverlap) {
