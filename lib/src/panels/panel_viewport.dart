@@ -3,6 +3,7 @@
 // license that can be found in the LICENSE file.
 
 import 'dart:collection';
+import '../model/model.dart';
 import '../model/view_model.dart';
 import '../panels/table_multi_panel_viewport.dart';
 import 'package:flutter/material.dart';
@@ -13,17 +14,44 @@ import '../builders/table_builder.dart';
 import 'table_layout_iterations.dart';
 import '../builders/table_line.dart';
 
-class TablePanelViewport extends RenderObjectWidget {
-  const TablePanelViewport(
+typedef CellBuilder = Widget? Function(FlexTableModel flexTableModel,
+    TableCellIndex tableCellIndex, BuildContext context);
+
+class TablePanel extends StatelessWidget {
+  final FlexTableViewModel flexTableViewModel;
+  final int panelIndex;
+  final TableBuilder tableBuilder;
+  final double tableScale;
+
+  const TablePanel(
       {super.key,
       required this.flexTableViewModel,
       required this.panelIndex,
       required this.tableBuilder,
       required this.tableScale});
 
+  @override
+  Widget build(BuildContext context) {
+    return TablePanelViewport(
+      flexTableViewModel: flexTableViewModel,
+      panelIndex: panelIndex,
+      cellBuilder: tableBuilder.cellBuilder,
+      tableScale: tableScale,
+    );
+  }
+}
+
+class TablePanelViewport extends RenderObjectWidget {
+  const TablePanelViewport(
+      {super.key,
+      required this.flexTableViewModel,
+      required this.panelIndex,
+      required this.cellBuilder,
+      required this.tableScale});
+
   final FlexTableViewModel flexTableViewModel;
   final int panelIndex;
-  final TableBuilder tableBuilder;
+  final CellBuilder cellBuilder;
   final double tableScale;
 
   @override
@@ -302,17 +330,8 @@ class TablePanelChildRenderObjectElement extends RenderObjectElement
 
   Widget? _build(TableCellIndex tableCellIndex) {
     return _childWidgets.putIfAbsent(tableCellIndex, () {
-      // return Container(
-      //   color: tableCellIndex.row % 2 == 0 ? Colors.grey[50] : Colors.grey[100],
-      // );
-
-      // return //RepaintBoundary(
-      //     Container(
-      //         color: tableCellIndex.row % 2 == 0 ? Colors.grey[50] : Colors.grey[100],
-      //         child: Center(child: Text('R${tableCellIndex.row}C${tableCellIndex.column}')));
-
-      return widget.tableBuilder
-          .buildCell(widget.flexTableViewModel.ftm, tableCellIndex);
+      return widget.cellBuilder(
+          widget.flexTableViewModel.ftm, tableCellIndex, this);
     });
   }
 }
@@ -1143,7 +1162,7 @@ class TableCellParentData extends ContainerBoxParentData<RenderBox> {
   TableCellIndex tableCellIndex = TableCellIndex();
 }
 
-class TableCellIndex extends Comparable<TableCellIndex> {
+class TableCellIndex implements Comparable<TableCellIndex> {
   TableCellIndex({
     this.panelIndexX = -1,
     this.panelIndexY = -1,

@@ -11,8 +11,69 @@ import '../model/properties/flextable_grid_layout.dart';
 import '../model/view_model.dart';
 import 'header_viewport.dart';
 
-class SplitIterator implements Iterator<int> {
-  SplitIterator(this.delegate);
+typedef TablePanelViewportBuilder = Widget Function(
+    BuildContext context, int index);
+
+typedef DrawPaintSplit = Function(FlexTableViewModel flexTableViewModel,
+    PaintingContext context, Offset offset, Size size);
+
+class TableMultiPanel extends StatelessWidget {
+  const TableMultiPanel(
+      {super.key,
+      required this.flexTableViewModel,
+      required this.tableBuilder,
+      required this.tableScale});
+
+  final FlexTableViewModel flexTableViewModel;
+  final TableBuilder tableBuilder;
+  final double tableScale;
+
+  @override
+  Widget build(BuildContext context) {
+    return TableMultiPanelViewport(
+      flexTableViewModel: flexTableViewModel,
+      tableScale: tableScale,
+      drawPaintSplit: tableBuilder.drawPaintSplit,
+      builder: (BuildContext context, int panelIndex) {
+        Widget? panel;
+
+        if (panelIndex == 5 ||
+            panelIndex == 6 ||
+            panelIndex == 9 ||
+            panelIndex == 10) {
+          panel = TablePanel(
+            flexTableViewModel: flexTableViewModel,
+            panelIndex: panelIndex,
+            tableBuilder: tableBuilder,
+            tableScale: tableScale,
+          );
+        } else if (panelIndex == 0 ||
+            panelIndex == 3 ||
+            panelIndex == 12 ||
+            panelIndex == 15) {
+          panel = null;
+        } else {
+          final layoutIndex = flexTableViewModel.layoutIndex(panelIndex);
+          final layoutIndexX = layoutIndex.xIndex;
+
+          panel = TableHeader(
+              flexTableViewModel: flexTableViewModel,
+              panelIndex: panelIndex,
+              tableBuilder: tableBuilder,
+              tableScale: tableScale,
+              headerScale: (layoutIndexX == 0 || layoutIndexX == 3)
+                  ? flexTableViewModel.ftm.scaleRowHeader
+                  : flexTableViewModel.ftm.scaleColumnHeader);
+        }
+
+        return tableBuilder.backgroundPanel(panelIndex, context, panel);
+      },
+    );
+  }
+}
+
+class _SplitIterator implements Iterator<int> {
+  _SplitIterator(this.delegate);
 
   FlexTableViewModel delegate;
 
@@ -53,11 +114,13 @@ class TableMultiPanelViewport extends RenderObjectWidget {
   const TableMultiPanelViewport(
       {super.key,
       required this.flexTableViewModel,
-      required this.tableBuilder,
+      required this.builder,
+      required this.drawPaintSplit,
       required this.tableScale});
 
   final FlexTableViewModel flexTableViewModel;
-  final TableBuilder tableBuilder;
+  final TablePanelViewportBuilder builder;
+  final DrawPaintSplit drawPaintSplit;
   final double tableScale;
 
   @override
@@ -66,11 +129,9 @@ class TableMultiPanelViewport extends RenderObjectWidget {
         context as TableMultiPanelRenderChildManager;
     return TableMultiPanelRenderViewport(
       flexTableViewModel: flexTableViewModel,
-      // scrollPosition: scrollPosition,
-      // sliverPosition: sliverPosition,
       childManager: element,
       tableScale: tableScale,
-      tableBuilder: tableBuilder,
+      drawPaintSplit: drawPaintSplit,
     );
   }
 
@@ -80,7 +141,7 @@ class TableMultiPanelViewport extends RenderObjectWidget {
     renderObject
       ..flexTableViewModel = flexTableViewModel
       ..tableScale = tableScale
-      ..tableBuilder = tableBuilder;
+      ..drawPaintSplit = drawPaintSplit;
   }
 
   @override
@@ -366,40 +427,7 @@ class TableMultiPanelRenderObjectElement extends RenderObjectElement
 
   Widget? _build(int panelIndex) {
     return _childWidgets.putIfAbsent(panelIndex, () {
-      Widget? panel;
-
-      if (panelIndex == 5 ||
-          panelIndex == 6 ||
-          panelIndex == 9 ||
-          panelIndex == 10) {
-        panel = TablePanelViewport(
-          flexTableViewModel: widget.flexTableViewModel,
-          // offset: widget.scrollPosition,
-          // sliverPosition: widget.sliverPosition,
-          panelIndex: panelIndex,
-          tableBuilder: widget.tableBuilder,
-          tableScale: widget.tableScale,
-        );
-      } else if (panelIndex == 0 ||
-          panelIndex == 3 ||
-          panelIndex == 12 ||
-          panelIndex == 15) {
-        panel = null;
-      } else {
-        final layoutIndex = widget.flexTableViewModel.layoutIndex(panelIndex);
-        final layoutIndexX = layoutIndex.xIndex;
-
-        panel = TableHeaderViewport(
-            flexTableViewModel: widget.flexTableViewModel,
-            panelIndex: panelIndex,
-            tableBuilder: widget.tableBuilder,
-            tableScale: widget.tableScale,
-            headerScale: (layoutIndexX == 0 || layoutIndexX == 3)
-                ? widget.flexTableViewModel.ftm.scaleRowHeader
-                : widget.flexTableViewModel.ftm.scaleColumnHeader);
-      }
-
-      return widget.tableBuilder.backgroundPanel(panelIndex, panel);
+      return widget.builder(this, panelIndex);
     });
   }
 }
@@ -412,14 +440,15 @@ class TableMultiPanelRenderViewport extends RenderBox
     required FlexTableViewModel flexTableViewModel,
     required this.childManager,
     required double tableScale,
-    required this.tableBuilder,
+    required DrawPaintSplit drawPaintSplit,
   })  : _flexTableViewModel = flexTableViewModel,
-        _tableScale = tableScale;
+        _tableScale = tableScale,
+        _drawPaintSplit = drawPaintSplit;
 
   TableMultiPanelRenderChildManager childManager;
   FlexTableViewModel _flexTableViewModel;
   double _tableScale;
-  TableBuilder tableBuilder;
+  DrawPaintSplit _drawPaintSplit;
 
   FlexTableViewModel get flexTableViewModel => _flexTableViewModel;
 
@@ -437,6 +466,14 @@ class TableMultiPanelRenderViewport extends RenderBox
   set tableScale(double value) {
     if (value == _tableScale) return;
     _tableScale = value;
+    markNeedsLayout();
+  }
+
+  DrawPaintSplit get drawPaintSplit => _drawPaintSplit;
+
+  set drawPaintSplit(DrawPaintSplit value) {
+    if (value == _drawPaintSplit) return;
+    _drawPaintSplit = value;
     markNeedsLayout();
   }
 
@@ -478,7 +515,7 @@ class TableMultiPanelRenderViewport extends RenderBox
           (firstChild!.parentData as TablePanelParentData).tablePanelIndex;
     }
 
-    final splitIterator = SplitIterator(flexTableViewModel);
+    final splitIterator = _SplitIterator(flexTableViewModel);
 
     while (splitIterator.moveNext()) {
       final tablePanelIndex = splitIterator.current;
@@ -796,7 +833,7 @@ class TableMultiPanelRenderViewport extends RenderBox
     defaultPaint(context, offset);
 
     if (flexTableViewModel.ftm.anySplitX || flexTableViewModel.ftm.anySplitY) {
-      tableBuilder.drawPaintSplit(_flexTableViewModel, context, offset, size);
+      drawPaintSplit(_flexTableViewModel, context, offset, size);
     }
   }
 
@@ -821,7 +858,7 @@ class TablePanelParentData extends ContainerBoxParentData<RenderBox> {
   double bottomMargin = 0.0;
 }
 
-class TablePanelLayoutIndex extends Comparable<TablePanelLayoutIndex> {
+class TablePanelLayoutIndex implements Comparable<TablePanelLayoutIndex> {
   int xIndex;
   int yIndex;
 

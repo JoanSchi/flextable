@@ -2,28 +2,25 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-import 'package:flextable/src/listeners/scroll_change_notifier.dart';
+import 'dart:async';
 import 'package:flextable/src/model/model.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
-import '../adjust/adjust_table_move_freeze.dart';
-import '../data_model/flextable_data_model.dart';
+import '../../flextable.dart';
+import '../adjust/freeze/adjust_table_move_freeze.dart';
 import '../gesture_scroll/table_animation_controller.dart';
 import '../gesture_scroll/table_drag_details.dart';
 import '../gesture_scroll/table_scroll_activity.dart';
 import '../gesture_scroll/table_scroll_physics.dart';
-import '../listeners/scale_change_notifier.dart';
-import '../panels/panel_viewport.dart';
+import '../listeners/default_change_notifier.dart';
 import '../panels/table_multi_panel_viewport.dart';
 import 'flextable_scroll_metrics.dart';
-import 'properties/flextable_autofreeze_area.dart';
 import 'properties/flextable_freeze_change.dart';
 import 'properties/flextable_grid_info.dart';
 import 'properties/flextable_grid_layout.dart';
 import 'properties/flextable_header_properties.dart';
-import 'properties/flextable_range_properties.dart';
 import 'properties/flextable_selection_index.dart';
 import 'dart:math' as math;
 
@@ -51,9 +48,11 @@ class FlexTableViewModel extends ChangeNotifier
     required this.context,
     FlexTableViewModel? oldPosition,
     required this.ftm,
+    required this.tableBuilder,
     String? debugLabel,
     required this.scaleChangeNotifier,
     required this.scrollChangeNotifier,
+    required this.flexTableChangeNotifiers,
   }) {
     // Scroll
     //
@@ -141,6 +140,8 @@ class FlexTableViewModel extends ChangeNotifier
     }
   }
 
+  bool _mounted = true;
+  bool get mounted => _mounted;
   // Scroll
   //
   //
@@ -151,10 +152,12 @@ class FlexTableViewModel extends ChangeNotifier
   final ScrollContext context;
   final TableScrollPhysics physics;
   final FlexTableModel ftm;
+  final TableBuilder tableBuilder;
   final ValueNotifier<bool> isScrollingNotifier = ValueNotifier<bool>(false);
   bool gridIndexAvailable = false;
   bool scrollNotificationEnabled = false;
   ScrollPosition? sliverScrollPosition;
+  bool scrolling = false;
 
   // ViewModel
   //
@@ -177,40 +180,40 @@ class FlexTableViewModel extends ChangeNotifier
       List.generate(4, (i) => GridLayout(), growable: false);
 
   double get scrollX0pY0 => ftm.scrollX0pY0;
-  set scrollX0pY0(value) => ftm.scrollX0pY0 = value;
+  set scrollX0pY0(double value) => ftm.scrollX0pY0 = value;
 
   double get scrollX1pY0 => ftm.scrollX1pY0;
-  set scrollX1pY0(value) => ftm.scrollX1pY0 = value;
+  set scrollX1pY0(double value) => ftm.scrollX1pY0 = value;
 
   double get scrollY0pX0 => ftm.scrollY0pX0;
-  set scrollY0pX0(value) => ftm.scrollY0pX0 = value;
+  set scrollY0pX0(double value) => ftm.scrollY0pX0 = value;
 
   double get scrollY1pX0 => ftm.scrollY1pX0;
-  set scrollY1pX0(value) => ftm.scrollY1pX0 = value;
+  set scrollY1pX0(double value) => ftm.scrollY1pX0 = value;
 
   double get scrollX0pY1 => ftm.scrollX0pY1;
-  set scrollX0pY1(value) => ftm.scrollX0pY1 = value;
+  set scrollX0pY1(double value) => ftm.scrollX0pY1 = value;
 
   double get scrollX1pY1 => ftm.scrollX1pY1;
-  set scrollX1pY1(value) => ftm.scrollX1pY1 = value;
+  set scrollX1pY1(double value) => ftm.scrollX1pY1 = value;
 
   double get scrollY0pX1 => ftm.scrollY0pX1;
-  set scrollY0pX1(value) => ftm.scrollY0pX1 = value;
+  set scrollY0pX1(double value) => ftm.scrollY0pX1 = value;
 
   double get scrollY1pX1 => ftm.scrollY1pX1;
-  set scrollY1pX1(value) => ftm.scrollY1pX1 = value;
+  set scrollY1pX1(double value) => ftm.scrollY1pX1 = value;
 
   double get mainScrollX => ftm.mainScrollX;
-  set mainScrollX(value) => ftm.mainScrollX = value;
+  set mainScrollX(double value) => ftm.mainScrollX = value;
 
   double get mainScrollY => ftm.mainScrollY;
-  set mainScrollY(value) => ftm.mainScrollY = value;
+  set mainScrollY(double value) => ftm.mainScrollY = value;
 
   double get _xSplit => ftm.xSplit;
-  set _xSplit(value) => ftm.xSplit = value;
+  set _xSplit(double value) => ftm.xSplit = value;
 
   double get _ySplit => ftm.ySplit;
-  set _ySplit(value) => ftm.ySplit = value;
+  set _ySplit(double value) => ftm.ySplit = value;
 
   bool modifySplit = false;
 
@@ -230,8 +233,9 @@ class FlexTableViewModel extends ChangeNotifier
   HeaderProperties rightRowHeaderProperty = noHeader;
   HeaderProperties leftRowHeaderProperty = noHeader;
 
-  FlexTableScrollChangeNotifier scrollChangeNotifier;
-  FlexTableScaleChangeNotifier scaleChangeNotifier;
+  ScrollChangeNotifier scrollChangeNotifier;
+  ScaleChangeNotifier scaleChangeNotifier;
+  List<FlexTableChangeNotifier> flexTableChangeNotifiers;
 
   bool scrollBarTrack = false;
   double sizeScrollBarTrack = 0.0;
@@ -321,8 +325,13 @@ class FlexTableViewModel extends ChangeNotifier
 
   /// Called by [beginActivity] to report when an activity has started.
   void didStartScroll() {
-    scrollChangeNotifier.notify((FlexTableScrollNotification listener) =>
-        listener.didStartScroll(this, context.notificationContext));
+    // scrollChangeNotifier.notify((FlexTableScrollNotification listener) =>
+    //     listener.didStartScroll(this, context.notificationContext));
+
+    scrolling = true;
+    scrollChangeNotifier.changeScrolling(scrolling);
+    _notifyFlextableChange();
+
     if (scrollNotificationEnabled) {
       activity!
           .dispatchScrollStartNotification(this, context.notificationContext);
@@ -347,8 +356,13 @@ class FlexTableViewModel extends ChangeNotifier
   ///
   /// This also saves the scroll offset using [saveScrollOffset].
   void didEndScroll() {
-    scrollChangeNotifier.notify((FlexTableScrollNotification listener) =>
-        listener.didEndScroll(this, context.notificationContext));
+    // scrollChangeNotifier.changeScrolling(
+    //     (FlexTableScrollNotification listener) =>
+    //         listener.didEndScroll(this, context.notificationContext));
+    scrolling = false;
+    scrollChangeNotifier.changeScrolling(scrolling);
+
+    _notifyFlextableChange();
 
     if (scrollNotificationEnabled) {
       activity!
@@ -390,6 +404,7 @@ class FlexTableViewModel extends ChangeNotifier
         ?.dispose(); // it will be null if it got absorbed by another ScrollPosition
     _activity = null;
     _adjustScroll.dispose();
+    _mounted = false;
     sliverScrollPosition?.removeListener(notifyListeners);
     super.dispose();
   }
@@ -896,7 +911,7 @@ class FlexTableViewModel extends ChangeNotifier
     if (ftm.anySplitY) {
       if (outOfRangeY(0, 1)) ySimulation(0, 1);
 
-      if (ftm.stateSplitY == SplitState.split && !ftm.scrollLockX) {
+      if (ftm.stateSplitY == SplitState.split && protectedScrollUnlockX) {
         if (outOfRangeX(0, 1)) xSimulation(0, 1);
 
         if (ftm.stateSplitX == SplitState.split && outOfRangeX(1, 1)) {
@@ -908,7 +923,7 @@ class FlexTableViewModel extends ChangeNotifier
     if (ftm.anySplitX) {
       if (outOfRangeX(1, 0)) xSimulation(1, 0);
 
-      if (ftm.stateSplitX == SplitState.split && !ftm.scrollLockY) {
+      if (ftm.stateSplitX == SplitState.split && protectedScrollUnlockY) {
         if (outOfRangeY(1, 0)) ySimulation(1, 0);
 
         if (ftm.stateSplitY == SplitState.split && outOfRangeY(1, 1)) {
@@ -1042,9 +1057,21 @@ class FlexTableViewModel extends ChangeNotifier
 
   set stateSplitY(SplitState state) => ftm.stateSplitY = state;
 
-  bool get scrollLockX => ftm.scrollLockX;
+  bool get scrollUnlockX => ftm.scrollUnlockX;
 
-  bool get scrollLockY => ftm.scrollLockY;
+  set scrollUnlockX(bool value) {
+    ftm.scrollUnlockX = value;
+  }
+
+  bool get protectedScrollUnlockX => ftm.protectedScrollUnlockX;
+
+  bool get scrollUnlockY => ftm.scrollUnlockY;
+
+  set scrollUnlockY(bool value) {
+    ftm.scrollUnlockY = value;
+  }
+
+  bool get protectedScrollUnlockY => ftm.protectedScrollUnlockY;
 
   bool get splitX => ftm.stateSplitX == SplitState.split;
 
@@ -1056,18 +1083,26 @@ class FlexTableViewModel extends ChangeNotifier
     ftm.tableScale = value;
   }
 
-  set rowHeader(value) {
+  set rowHeader(bool value) {
     ftm.rowHeader = value;
     calculateHeaderWidth();
   }
 
-  get rowHeader => ftm.rowHeader;
+  bool get rowHeader => ftm.rowHeader;
+
+  set columnHeader(bool value) {
+    ftm.columnHeader = value;
+  }
+
+  bool get columnHeader => ftm.columnHeader;
 
   void setScrollScaledX(int horizontal, int vertical, double scrollScaledX) {
     if (ftm.autoFreezePossibleX) {
       mainScrollX = scrollScaledX / tableScale;
       calculateAutoScrollX();
-    } else if (vertical == 0 || ftm.scrollLockX || ftm.anyFreezeSplitY) {
+    } else if (vertical == 0 ||
+        !protectedScrollUnlockX ||
+        ftm.anyFreezeSplitY) {
       if (horizontal == 0) {
         mainScrollX = scrollX0pY0 = scrollScaledX / tableScale;
       } else {
@@ -1086,7 +1121,7 @@ class FlexTableViewModel extends ChangeNotifier
     if (!ftm.autoFreezePossibleX) return;
 
     scrollX0pY0 = mainScrollX;
-    assert(ftm.scrollLockX,
+    assert(!protectedScrollUnlockX,
         'autofreezeX and unlock scrollLockX can not used together!');
 
     final previousHeader = autoFreezeAreaX.header;
@@ -1142,7 +1177,9 @@ class FlexTableViewModel extends ChangeNotifier
     if (ftm.autoFreezePossibleY) {
       mainScrollY = scrollScaledY / tableScale;
       calculateAutoScrollY();
-    } else if (horizontal == 0 || scrollLockY || ftm.anyFreezeSplitX) {
+    } else if (horizontal == 0 ||
+        !protectedScrollUnlockY ||
+        ftm.anyFreezeSplitX) {
       if (vertical == 0) {
         mainScrollY = scrollY0pX0 = mainScrollY = scrollScaledY / tableScale;
       } else {
@@ -1161,7 +1198,7 @@ class FlexTableViewModel extends ChangeNotifier
     if (!ftm.autoFreezePossibleY) return;
 
     scrollY0pX0 = mainScrollY;
-    assert(scrollLockY,
+    assert(!protectedScrollUnlockY,
         'autofreezeY and unlock scrollLockY can not used together!');
 
     final previousHeader = autoFreezeAreaY.header;
@@ -1252,7 +1289,7 @@ class FlexTableViewModel extends ChangeNotifier
     switch (stateSplitX) {
       case SplitState.autoFreezeSplit:
       case SplitState.freezeSplit:
-        return ftm.leftPanelMargin +
+        return tableBuilder.panelPadding.left +
             (getX(ftm.topLeftCellPaneColumn) - scrollX0pY0) * tableScale +
             leftHeaderPanelLength;
       case SplitState.split:
@@ -1266,7 +1303,7 @@ class FlexTableViewModel extends ChangeNotifier
     switch (stateSplitY) {
       case SplitState.autoFreezeSplit:
       case SplitState.freezeSplit:
-        return ftm.topPanelMargin +
+        return tableBuilder.panelPadding.top +
             (getY(ftm.topLeftCellPaneRow) - scrollY0pX0) * tableScale +
             topHeaderPanelLength;
       case SplitState.split:
@@ -1280,11 +1317,16 @@ class FlexTableViewModel extends ChangeNotifier
       {int indexSplit = 0,
       double? sizeSplit,
       double? deltaSplit,
+      double? ratioSplit,
       required SplitState splitView,
       bool animateSplit = false}) {
     if (splitView == SplitState.split) {
-      assert(indexSplit > 0 || sizeSplit != null || deltaSplit != null,
-          'Set a value for indexSplit > 0, sizeSplit or deltaSplit to change the X split');
+      assert(
+          indexSplit > 0 ||
+              sizeSplit != null ||
+              deltaSplit != null ||
+              ratioSplit != null,
+          'Set a value for indexSplit > 0, sizeSplit, ratioSplit or deltaSplit to change the X split');
 
       if (indexSplit > 0) {
         double splitScroll = getX(indexSplit);
@@ -1300,6 +1342,8 @@ class FlexTableViewModel extends ChangeNotifier
       } else {
         if (deltaSplit != null) {
           sizeSplit = _xSplit + deltaSplit;
+        } else if (ratioSplit != null) {
+          sizeSplit = widthMainPanel * ratioSplit;
         }
 
         _xSplit = sizeSplit!;
@@ -1313,7 +1357,7 @@ class FlexTableViewModel extends ChangeNotifier
             scrollX0pY0 = scrollX1pY0;
             scrollX0pY1 = scrollX1pY1;
 
-            if (!scrollLockY) {
+            if (protectedScrollUnlockY) {
               scrollY0pX0 = scrollY0pX1;
               scrollY1pX0 = scrollY1pX1;
             }
@@ -1347,6 +1391,11 @@ class FlexTableViewModel extends ChangeNotifier
 
           scrollY0pX1 = scrollY0pX0;
         }
+
+        if (!animateSplit) {
+          ratioSizeAnimatedSplitChangeX =
+              stateSplitX == SplitState.split ? 1.0 : 0.0;
+        }
       }
     } else if (splitView == SplitState.freezeSplit) {
       assert(stateSplitX != SplitState.freezeSplit,
@@ -1369,17 +1418,21 @@ class FlexTableViewModel extends ChangeNotifier
       }
     } else {
       if (stateSplitX == SplitState.freezeSplit) {
-        mainScrollX = scrollX0pY0 =
-            scrollX1pY0 - widthLayoutList[1].panelLength / tableScale;
-
-        switchXFreeze();
+        unFreezeX();
       } else if (stateSplitX == SplitState.split) {
         switchXSplit();
         _xSplit = 0;
       }
 
       stateSplitX = SplitState.noSplit;
+      ratioSizeAnimatedSplitChangeX = 0.0;
     }
+  }
+
+  void unFreezeX() {
+    switchXFreeze();
+    mainScrollX =
+        scrollX0pY0 = scrollX1pY0 - widthLayoutList[1].panelLength / tableScale;
   }
 
   switchXFreeze() {
@@ -1412,11 +1465,16 @@ class FlexTableViewModel extends ChangeNotifier
       {int indexSplit = 0,
       double? sizeSplit,
       double? deltaSplit,
+      double? ratioSplit,
       required SplitState splitView,
       bool animateSplit = false}) {
     if (splitView == SplitState.split) {
-      assert(indexSplit > 0 || sizeSplit != null || deltaSplit != null,
-          'Set a value for indexSplit > 0, sizeSplit or deltaSplit to change the Y split');
+      assert(
+          indexSplit > 0 ||
+              sizeSplit != null ||
+              deltaSplit != null ||
+              ratioSplit != null,
+          'Set a value for indexSplit > 0, sizeSplit, ratioSplit or deltaSplit to change the Y split');
 
       if (indexSplit > 0) {
         assert(stateSplitY == SplitState.split,
@@ -1434,6 +1492,8 @@ class FlexTableViewModel extends ChangeNotifier
       } else {
         if (deltaSplit != null) {
           sizeSplit = _ySplit + deltaSplit;
+        } else if (ratioSplit != null) {
+          sizeSplit = heightMainPanel * ratioSplit;
         }
 
         _ySplit = sizeSplit!;
@@ -1447,7 +1507,7 @@ class FlexTableViewModel extends ChangeNotifier
             scrollY0pX0 = scrollY1pX0;
             scrollY0pX1 = scrollY1pX1;
 
-            if (!scrollLockX) {
+            if (protectedScrollUnlockX) {
               scrollX0pY0 = scrollX0pY1;
               scrollX1pY0 = scrollX1pY1;
             }
@@ -1482,6 +1542,11 @@ class FlexTableViewModel extends ChangeNotifier
           scrollX0pY1 = scrollX0pY0;
         }
       }
+
+      if (!animateSplit) {
+        ratioSizeAnimatedSplitChangeY =
+            stateSplitY == SplitState.split ? 1.0 : 0.0;
+      }
     } else if (splitView == SplitState.freezeSplit) {
       assert(stateSplitY != SplitState.freezeSplit,
           'StateSplitY is already in FreezeSplit mode!');
@@ -1502,17 +1567,22 @@ class FlexTableViewModel extends ChangeNotifier
       }
     } else {
       if (stateSplitY == SplitState.freezeSplit) {
-        mainScrollY = scrollY0pX0 =
-            scrollY1pX0 - heightLayoutList[1].panelLength / tableScale;
-
-        switchYFreeze();
+        unFreezeY();
       } else if (stateSplitY == SplitState.split) {
         switchYSplit();
         _ySplit = 0;
       }
 
       stateSplitY = SplitState.noSplit;
+
+      ratioSizeAnimatedSplitChangeY = 0.0;
     }
+  }
+
+  void unFreezeY() {
+    switchYFreeze();
+    mainScrollY = scrollY0pX0 =
+        scrollY1pX0 - heightLayoutList[1].panelLength / tableScale;
   }
 
   switchYFreeze() {
@@ -1645,7 +1715,9 @@ class FlexTableViewModel extends ChangeNotifier
       {bool scrollActivity = false}) {
     if (scrollActivity && ftm.autoFreezePossibleX) {
       return mainScrollX;
-    } else if (scrollIndexY == 0 || scrollLockX || ftm.anyFreezeSplitY) {
+    } else if (scrollIndexY == 0 ||
+        !protectedScrollUnlockX ||
+        ftm.anyFreezeSplitY) {
       return scrollIndexX == 0 ? scrollX0pY0 : scrollX1pY0;
     } else {
       return scrollIndexX == 0 ? scrollX0pY1 : scrollX1pY1;
@@ -1664,7 +1736,7 @@ class FlexTableViewModel extends ChangeNotifier
     switch (stateSplitY) {
       case SplitState.split:
         return (scrollIndexY == 0 && stateSplitY == SplitState.split)
-            ? (scrollLockX ? DrawScrollBar.none : DrawScrollBar.top)
+            ? (protectedScrollUnlockX ? DrawScrollBar.top : DrawScrollBar.none)
             : DrawScrollBar.bottom;
       default:
         return DrawScrollBar.bottom;
@@ -1687,7 +1759,9 @@ class FlexTableViewModel extends ChangeNotifier
   double getScrollY(scrollIndexX, scrollIndexY, {bool scrollActivity = false}) {
     if (scrollActivity && ftm.autoFreezePossibleY) {
       return mainScrollY;
-    } else if (scrollIndexX == 0 || scrollLockY || ftm.anyFreezeSplitX) {
+    } else if (scrollIndexX == 0 ||
+        !protectedScrollUnlockY ||
+        ftm.anyFreezeSplitX) {
       return scrollIndexY == 0 ? scrollY0pX0 : scrollY1pX0;
     } else {
       return scrollIndexY == 0 ? scrollY0pX1 : scrollY1pX1;
@@ -1707,7 +1781,9 @@ class FlexTableViewModel extends ChangeNotifier
       case SplitState.split:
         {
           return (scrollIndexX == 0 && stateSplitX == SplitState.split)
-              ? (scrollLockY ? DrawScrollBar.none : DrawScrollBar.left)
+              ? (protectedScrollUnlockY
+                  ? DrawScrollBar.left
+                  : DrawScrollBar.none)
               : DrawScrollBar.right;
         }
       default:
@@ -2218,6 +2294,9 @@ class FlexTableViewModel extends ChangeNotifier
   }
 
   void calculate({required double width, required double height}) {
+    final oldStateSplitX = stateSplitX;
+    final oldStateSplitY = stateSplitY;
+
     if (!modifySplit &&
         tableScrollDirection != TableScrollDirection.horizontal) {
       adjustSplitStateAfterWidthResize(width);
@@ -2251,6 +2330,15 @@ class FlexTableViewModel extends ChangeNotifier
 
     if (_widthMainPanel != width ||
         _heightMainPanel != height ||
+        stateSplitX != oldStateSplitX ||
+        stateSplitY != oldStateSplitY) {
+      scheduleMicrotask(() {
+        _notifyFlextableChange();
+      });
+    }
+
+    if (_widthMainPanel != width ||
+        _heightMainPanel != height ||
         scheduleCorrectOffScroll) {
       _widthMainPanel = width;
       _heightMainPanel = height;
@@ -2280,8 +2368,8 @@ class FlexTableViewModel extends ChangeNotifier
         headerStartLayoutLength: topHeaderPanelLength,
         headerEndLayoutLength: bottomHeaderLayoutLength,
         splitPosition: ySplit,
-        startMargin: ftm.topPanelMargin,
-        endMargin: ftm.bottomPanelMargin,
+        startMargin: tableBuilder.panelPadding.top,
+        endMargin: tableBuilder.panelPadding.bottom,
         sizeScrollBarAtStart: sizeScrollBarTop,
         sizeScrollBarAtEnd: sizeScrollBarBottom,
         spaceSplitFreeze: horizontalSplitFreeze);
@@ -2290,7 +2378,7 @@ class FlexTableViewModel extends ChangeNotifier
 
     _calculateRowInfoList(0, 0, rowInfoListX0Y0);
 
-    if (stateSplitX == SplitState.split && !scrollLockY) {
+    if (stateSplitX == SplitState.split && protectedScrollUnlockY) {
       _calculateRowInfoList(1, 0, rowInfoListX1Y0);
     } else {
       rowInfoListX1Y0.clear();
@@ -2299,7 +2387,7 @@ class FlexTableViewModel extends ChangeNotifier
     if (stateSplitY != SplitState.noSplit) {
       _calculateRowInfoList(0, 1, rowInfoListX0Y1);
 
-      if (stateSplitX == SplitState.split && !scrollLockY) {
+      if (stateSplitX == SplitState.split && protectedScrollUnlockY) {
         _calculateRowInfoList(1, 1, rowInfoListX1Y1);
       } else {
         rowInfoListX1Y1.clear();
@@ -2330,8 +2418,8 @@ class FlexTableViewModel extends ChangeNotifier
         headerStartLayoutLength: leftHeaderPanelLength,
         headerEndLayoutLength: rightHeaderLayoutLength,
         splitPosition: xSplit,
-        startMargin: ftm.leftPanelMargin,
-        endMargin: ftm.rightPanelMargin,
+        startMargin: tableBuilder.panelPadding.left,
+        endMargin: tableBuilder.panelPadding.right,
         sizeScrollBarAtStart: sizeScrollBarLeft,
         sizeScrollBarAtEnd: sizeScrollBarRight,
         spaceSplitFreeze: verticalSplitFreeze);
@@ -2340,7 +2428,7 @@ class FlexTableViewModel extends ChangeNotifier
 
     _calculateColumnInfoList(0, 0, columnInfoListX0Y0);
 
-    if (stateSplitY == SplitState.split && !scrollLockX) {
+    if (stateSplitY == SplitState.split && protectedScrollUnlockX) {
       _calculateColumnInfoList(0, 1, columnInfoListX0Y1);
     } else {
       columnInfoListX0Y1.clear();
@@ -2349,7 +2437,7 @@ class FlexTableViewModel extends ChangeNotifier
     if (stateSplitX != SplitState.noSplit) {
       _calculateColumnInfoList(1, 0, columnInfoListX1Y0);
 
-      if (stateSplitY == SplitState.split && !scrollLockX) {
+      if (stateSplitY == SplitState.split && protectedScrollUnlockX) {
         _calculateColumnInfoList(1, 1, columnInfoListX1Y1);
       } else {
         columnInfoListX1Y1.clear();
@@ -2360,8 +2448,9 @@ class FlexTableViewModel extends ChangeNotifier
   }
 
   bool _isFreezeSplitInWindowX(double width, double widthFreezedPanel) {
-    final xStartPanel = leftHeaderPanelLength + ftm.leftPanelMargin;
-    final xEndPanel = width - sizeScrollBarTrack - ftm.rightPanelMargin;
+    final xStartPanel = leftHeaderPanelLength + tableBuilder.panelPadding.left;
+    final xEndPanel =
+        width - sizeScrollBarTrack - tableBuilder.panelPadding.right;
 
     final xStartTable = ftm.splitChangeInsets * tableScale;
     final xEndTable =
@@ -2371,8 +2460,9 @@ class FlexTableViewModel extends ChangeNotifier
   }
 
   bool _isFreezeSplitInWindowY(double height, double heightFreezedPanel) {
-    final yStartPanel = topHeaderPanelLength + ftm.topPanelMargin;
-    final yEndPanel = height - sizeScrollBarTrack - ftm.bottomPanelMargin;
+    final yStartPanel = topHeaderPanelLength + tableBuilder.panelPadding.top;
+    final yEndPanel =
+        height - sizeScrollBarTrack - tableBuilder.panelPadding.bottom;
     final yStartTable = ftm.splitChangeInsets * tableScale;
     final yEndTable =
         yEndPanel - yStartPanel - ftm.splitChangeInsets * tableScale;
@@ -2381,23 +2471,23 @@ class FlexTableViewModel extends ChangeNotifier
   }
 
   isSplitInWindowX(double width) {
-    final xStart = (scrollLockY ? 0.0 : sizeScrollBarTrack) +
+    final xStart = (protectedScrollUnlockY ? sizeScrollBarTrack : 0.0) +
         leftHeaderPanelLength +
-        ftm.leftPanelMargin +
+        tableBuilder.panelPadding.left +
         ftm.splitChangeInsets;
     final xEnd = width -
         sizeScrollBarTrack -
         rightHeaderLayoutLength -
-        ftm.rightPanelMargin -
+        tableBuilder.panelPadding.right -
         ftm.splitChangeInsets * tableScale;
 
     return _xSplit >= xStart && _xSplit <= xEnd;
   }
 
   isSplitInWindowY(double height) {
-    final yStart = (scrollLockX ? 0.0 : sizeScrollBarTrack) +
+    final yStart = (protectedScrollUnlockX ? sizeScrollBarTrack : 0.0) +
         topHeaderPanelLength +
-        ftm.topPanelMargin +
+        tableBuilder.panelPadding.top +
         ftm.splitChangeInsets;
     final yEnd = height -
         sizeScrollBarTrack -
@@ -2541,7 +2631,7 @@ class FlexTableViewModel extends ChangeNotifier
   }
 
   List<GridInfo> getRowInfoList(scrollIndexX, scrollIndexY) {
-    if (scrollIndexX == 0 || scrollLockY || ftm.anyFreezeSplitX) {
+    if (scrollIndexX == 0 || !protectedScrollUnlockY || ftm.anyFreezeSplitX) {
       return scrollIndexY == 0 ? rowInfoListX0Y0 : rowInfoListX0Y1;
     } else {
       return scrollIndexY == 0 ? rowInfoListX1Y0 : rowInfoListX1Y1;
@@ -2549,7 +2639,7 @@ class FlexTableViewModel extends ChangeNotifier
   }
 
   List<GridInfo> getColumnInfoList(int scrollIndexX, int scrollIndexY) {
-    if (scrollIndexY == 0 || scrollLockX || ftm.anyFreezeSplitY) {
+    if (scrollIndexY == 0 || !protectedScrollUnlockX || ftm.anyFreezeSplitY) {
       return scrollIndexX == 0 ? columnInfoListX0Y0 : columnInfoListX1Y0;
     } else {
       return scrollIndexX == 0 ? columnInfoListX0Y1 : columnInfoListX1Y1;
@@ -2600,7 +2690,9 @@ class FlexTableViewModel extends ChangeNotifier
       leftRowHeaderProperty = noHeader;
     }
 
-    if (ftm.columnHeader && stateSplitX == SplitState.split && !scrollLockY) {
+    if (ftm.columnHeader &&
+        stateSplitX == SplitState.split &&
+        protectedScrollUnlockY) {
       rightRowHeaderProperty = findWidthRightHeader();
     } else {
       rightRowHeaderProperty = noHeader;
@@ -2631,7 +2723,7 @@ class FlexTableViewModel extends ChangeNotifier
   }
 
   HeaderProperties findWidthRightHeader() {
-    if (headerRows.isEmpty || scrollLockY) return noHeader;
+    if (headerRows.isEmpty || !protectedScrollUnlockY) return noHeader;
 
     double bottomRightHeader =
         (heightLayoutList[1].panelLength + getScrollY(1, 0) * tableScale) /
@@ -2655,10 +2747,10 @@ class FlexTableViewModel extends ChangeNotifier
 
   double digitsToWidth(HeaderProperties headerProperty) =>
       (headerProperty.index != -1)
-          ? (headerProperty.digits * 10.0 + 6.0) * ftm.scaleRowHeader
+          ? tableBuilder.rowHeaderWidth(headerProperty) * ftm.scaleRowHeader
           : 0.0;
 
-  double get sizeScrollBarLeft => (scrollLockY
+  double get sizeScrollBarLeft => (!protectedScrollUnlockY
       ? 0.0
       : sizeScrollBarTrack *
           ratioVerticalScrollBarTrack *
@@ -2667,7 +2759,7 @@ class FlexTableViewModel extends ChangeNotifier
   double get sizeScrollBarRight =>
       sizeScrollBarTrack * ratioVerticalScrollBarTrack;
 
-  double get sizeScrollBarTop => (scrollLockX
+  double get sizeScrollBarTop => (!protectedScrollUnlockX
       ? 0.0
       : sizeScrollBarTrack *
           ratioHorizontalScrollBarTrack *
@@ -2691,9 +2783,9 @@ class FlexTableViewModel extends ChangeNotifier
       _heightMainPanel - topHeaderPanelLength - sizeScrollBarTrack;
 
   double get minimalSplitPositionFromLeft {
-    final minFromTheLeft = (scrollLockY ? 0.0 : sizeScrollBarTrack) +
+    final minFromTheLeft = (protectedScrollUnlockY ? sizeScrollBarTrack : 0.0) +
         digitsToWidth(findWidthLeftHeader()) +
-        ftm.leftPanelMargin +
+        tableBuilder.panelPadding.left +
         ftm.splitChangeInsets;
 
     return minFromTheLeft < ftm.minSplitSpaceFromSide
@@ -2702,9 +2794,9 @@ class FlexTableViewModel extends ChangeNotifier
   }
 
   double get minimalSplitPositionFromTop {
-    final minFromTheTop = (scrollLockY ? 0.0 : sizeScrollBarTrack) +
+    final minFromTheTop = (protectedScrollUnlockY ? sizeScrollBarTrack : 0.0) +
         topHeaderPanelLength +
-        ftm.topPanelMargin +
+        tableBuilder.panelPadding.top +
         ftm.splitChangeInsets;
 
     return minFromTheTop < ftm.minSplitSpaceFromSide
@@ -2715,7 +2807,7 @@ class FlexTableViewModel extends ChangeNotifier
   double get minimalSplitPositionFromRight {
     final minFromTheRight = sizeScrollBarTrack -
         digitsToWidth(findWidthRightHeader()) -
-        ftm.rightPanelMargin -
+        tableBuilder.panelPadding.right -
         ftm.splitChangeInsets;
 
     return _widthMainPanel -
@@ -2726,10 +2818,10 @@ class FlexTableViewModel extends ChangeNotifier
 
   double get minimalSplitPositionFromBottom {
     final minFromTheBottom = sizeScrollBarTrack -
-        (scrollLockX || !ftm.columnHeader
+        (!protectedScrollUnlockX || !ftm.columnHeader
             ? 0.0
-            : ftm.headerHeight * ftm.scaleColumnHeader) -
-        ftm.bottomPanelMargin -
+            : tableBuilder.headerHeight * ftm.scaleColumnHeader) -
+        tableBuilder.panelPadding.bottom -
         ftm.splitChangeInsets;
 
     return _heightMainPanel -
@@ -2739,11 +2831,11 @@ class FlexTableViewModel extends ChangeNotifier
   }
 
   double get leftScrollBarHit {
-    return scrollLockY ? 0.0 : ftm.hitScrollBarThickness;
+    return protectedScrollUnlockY ? ftm.hitScrollBarThickness : 0.0;
   }
 
   double get topScrollBarHit {
-    return scrollLockX ? 0.0 : ftm.hitScrollBarThickness;
+    return protectedScrollUnlockX ? ftm.hitScrollBarThickness : 0.0;
   }
 
   double get rightScrollBarHit => ftm.hitScrollBarThickness;
@@ -2752,8 +2844,9 @@ class FlexTableViewModel extends ChangeNotifier
 
   double get leftHeaderPanelLength => digitsToWidth(leftRowHeaderProperty);
 
-  double get topHeaderPanelLength =>
-      ftm.columnHeader ? ftm.headerHeight * ftm.scaleColumnHeader : 0.0;
+  double get topHeaderPanelLength => ftm.columnHeader
+      ? tableBuilder.headerHeight * ftm.scaleColumnHeader
+      : 0.0;
 
   double get rightHeaderPanelLength =>
       rightHeaderLayoutLength * ratioSizeAnimatedSplitChangeX;
@@ -2763,10 +2856,11 @@ class FlexTableViewModel extends ChangeNotifier
   double get bottomHeaderPanelLength =>
       bottomHeaderLayoutLength * ratioSizeAnimatedSplitChangeY;
 
-  double get bottomHeaderLayoutLength =>
-      ftm.columnHeader && stateSplitY == SplitState.split && !scrollLockX
-          ? ftm.headerHeight * ftm.scaleColumnHeader
-          : 0.0;
+  double get bottomHeaderLayoutLength => ftm.columnHeader &&
+          stateSplitY == SplitState.split &&
+          protectedScrollUnlockX
+      ? tableBuilder.headerHeight * ftm.scaleColumnHeader
+      : 0.0;
 
   rowVisible(int row) => heightLayoutList[row].inUse;
 
@@ -2933,8 +3027,7 @@ class FlexTableViewModel extends ChangeNotifier
       leftHeaderPanelLength +
       sheetWidth * tableScale +
       sizeScrollBarTrack +
-      ftm.leftPanelMargin +
-      ftm.rightPanelMargin;
+      tableBuilder.panelPadding.horizontal;
 
   double computeMaxIntrinsicHeight(double width) {
     if (stateSplitY == SplitState.freezeSplit && !ftm.autoFreezePossibleY) {
@@ -2954,11 +3047,17 @@ class FlexTableViewModel extends ChangeNotifier
       topHeaderPanelLength +
       sheetHeight * tableScale +
       sizeScrollBarTrack +
-      ftm.topPanelMargin +
-      ftm.bottomPanelMargin;
+      tableBuilder.panelPadding.vertical;
 
   markNeedsLayout() {
     notifyListeners();
+    _notifyFlextableChange();
+  }
+
+  _notifyFlextableChange() {
+    for (final flexTableChangeNotifier in flexTableChangeNotifiers) {
+      flexTableChangeNotifier.changeFlexTable(this);
+    }
   }
 
   @override
@@ -3256,9 +3355,8 @@ class FlexTableViewModel extends ChangeNotifier
             scrollY * oldScale);
       }
 
-      scaleChangeNotifier.notify((FlexTableScaleNotification listener) {
-        listener.scaleChange(ftm);
-      });
+      scaleChangeNotifier.changeScale(tableScale);
+      _notifyFlextableChange();
     }
   }
 
@@ -3595,4 +3693,82 @@ class FlexTableViewModel extends ChangeNotifier
 
   @override
   bool get noSplitY => ftm.noSplitY;
+
+  bool get autoFreezeX => ftm.autoFreezeX;
+
+  set autoFreezeX(bool value) {
+    ftm.autoFreezeX = value;
+
+    if (value) {
+      switch (stateSplitX) {
+        case SplitState.freezeSplit:
+          {
+            unFreezeX();
+            calculateAutoScrollX();
+            break;
+          }
+        case SplitState.split:
+          {
+            break;
+          }
+
+        case SplitState.noSplit:
+        case SplitState.autoFreezeSplit:
+        case SplitState.canceledFreezeSplit:
+        case SplitState.canceledSplit:
+          {
+            calculateAutoScrollX();
+            break;
+          }
+      }
+    } else {
+      if (stateSplitX == SplitState.autoFreezeSplit) {
+        if (autoFreezeAreaX.header * tableScale < viewportDimensionX(0) / 2.0) {
+          switchX();
+        }
+
+        stateSplitX = SplitState.noSplit;
+      }
+      scrollX0pY0 = scrollX0pY1 = mainScrollX;
+    }
+  }
+
+  bool get autoFreezeY => ftm.autoFreezeY;
+
+  set autoFreezeY(bool value) {
+    ftm.autoFreezeY = value;
+
+    if (value) {
+      switch (stateSplitY) {
+        case SplitState.freezeSplit:
+          {
+            unFreezeY();
+            calculateAutoScrollY();
+            break;
+          }
+        case SplitState.split:
+          {
+            break;
+          }
+
+        case SplitState.noSplit:
+        case SplitState.autoFreezeSplit:
+        case SplitState.canceledFreezeSplit:
+        case SplitState.canceledSplit:
+          {
+            calculateAutoScrollY();
+            break;
+          }
+      }
+    } else {
+      if (stateSplitY == SplitState.autoFreezeSplit) {
+        if (autoFreezeAreaY.header * tableScale < viewportDimensionY(0) / 2.0) {
+          switchY();
+        }
+
+        stateSplitY = SplitState.noSplit;
+      }
+      scrollY0pX0 = scrollY0pX1 = mainScrollY;
+    }
+  }
 }

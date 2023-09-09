@@ -39,40 +39,36 @@ class FlexTableModel {
       double ySplit = 0.0,
       this.rowHeader = false,
       this.columnHeader = false,
-      this.scrollLockX = true,
-      this.scrollLockY = true,
+      this.scrollUnlockX = false,
+      this.scrollUnlockY = false,
       int freezeColumns = -1,
       int freezeRows = -1,
       List<RangeProperties>? specificHeight,
       List<RangeProperties>? specificWidth,
       required this.dataTable,
       this.freezeMinimumSize = 20.0,
-      double panelMargin = 0.0,
-      double? leftPanelMargin,
-      double? topPanelMargin,
-      double? rightPanelMargin,
-      double? bottomPanelMargin,
       double scale = 1.0,
       this.minTableScale = 0.5,
       this.maxTableScale = 4.0,
       this.maxRowHeaderScale = 1.5,
       this.maxColumnHeaderScale = 1.5,
       this.autoFreezeAreasX = const [],
-      this.autoFreezeX = true,
+      bool? autoFreezeX,
       this.autoFreezeAreasY = const [],
-      this.autoFreezeY = true,
+      bool? autoFreezeY,
       this.alignment = Alignment.topCenter,
       this.splitChangeInsets = 20.0,
-      this.headerHeight = 20.0,
       this.freezePadding = 20.0,
       this.unfreezePadding = 0.0,
       this.minSplitSpaceFromSide = 32.0,
       this.hitScrollBarThickness = _kScrollBarHitThickness})
       : _scale = scale,
-        assert(!(!scrollLockX && autoFreezeAreasX.isNotEmpty),
-            'If autofreezeX is used, scrollLockX should be locked with true'),
-        assert(!(!scrollLockY && autoFreezeAreasY.isNotEmpty),
-            'If autofreezeY is used, scrolllockY should be locked with true'),
+        autoFreezeX = autoFreezeX ?? autoFreezeAreasX.isNotEmpty,
+        autoFreezeY = autoFreezeY ?? autoFreezeAreasY.isNotEmpty,
+        // assert(!(!scrollUnlockX && autoFreezeAreasX.isNotEmpty),
+        //     'If autofreezeX is used, scrollLockX should be locked with true'),
+        // assert(!(!scrollUnlockY && autoFreezeAreasY.isNotEmpty),
+        //     'If autofreezeY is used, scrolllockY should be locked with true'),
         assert(
             !(stateSplitX == SplitState.freezeSplit &&
                 stateSplitY == SplitState.split),
@@ -87,11 +83,7 @@ class FlexTableModel {
         assert(stateSplitY == SplitState.freezeSplit ? freezeRows != -1 : true,
             'Select the number of rows to freeze'),
         specificWidth = specificWidth ?? [],
-        specificHeight = specificHeight ?? [],
-        leftPanelMargin = leftPanelMargin ?? panelMargin,
-        topPanelMargin = topPanelMargin ?? panelMargin,
-        rightPanelMargin = rightPanelMargin ?? panelMargin,
-        bottomPanelMargin = bottomPanelMargin ?? panelMargin;
+        specificHeight = specificHeight ?? [];
 
   double scrollX0pY0 = 0.0;
   double scrollX1pY0 = 0.0;
@@ -119,8 +111,8 @@ class FlexTableModel {
   int topLeftCellPaneColumn = 0;
   int topLeftCellPaneRow = 0;
 
-  bool scrollLockX = false;
-  bool scrollLockY = false;
+  bool scrollUnlockX = false;
+  bool scrollUnlockY = false;
 
   SplitState stateSplitX;
   SplitState stateSplitY;
@@ -134,17 +126,12 @@ class FlexTableModel {
   AbstractFlexTableDataModel dataTable;
   double freezeMinimumSize;
 
-  double leftPanelMargin;
-  double topPanelMargin;
-  double rightPanelMargin;
-  double bottomPanelMargin;
-
   double _scale;
   double minTableScale;
   double maxTableScale;
   double maxRowHeaderScale;
   double maxColumnHeaderScale;
-  double headerHeight;
+
   double freezePadding;
   double unfreezePadding;
 
@@ -190,6 +177,20 @@ class FlexTableModel {
   bool get splitX => stateSplitX == SplitState.split;
 
   bool get splitY => stateSplitY == SplitState.split;
+
+  bool get protectedScrollUnlockX =>
+      ((!autoFreezeX || autoFreezeAreasX.isEmpty) &&
+                  stateSplitX == SplitState.noSplit) ||
+              stateSplitX == SplitState.split
+          ? scrollUnlockX
+          : false;
+
+  bool get protectedScrollUnlockY =>
+      ((!autoFreezeY || autoFreezeAreasY.isEmpty) &&
+                  stateSplitY == SplitState.noSplit) ||
+              stateSplitY == SplitState.split
+          ? scrollUnlockY
+          : false;
 
   set tableScale(value) {
     if (value < minTableScale) {
@@ -350,8 +351,8 @@ class FlexTableModel {
     bool? scheduleCorrectOffScroll,
     int? topLeftCellPaneColumn,
     int? topLeftCellPaneRow,
-    bool? scrollLockX,
-    bool? scrollLockY,
+    bool? scrollUnlockX,
+    bool? scrollUnlockY,
     SplitState? stateSplitX,
     SplitState? stateSplitY,
     double? headerVisibility,
@@ -369,7 +370,6 @@ class FlexTableModel {
     double? maxTableScale,
     double? maxRowHeaderScale,
     double? maxColumnHeaderScale,
-    double? headerHeight,
     double? freezePadding,
     double? unfreezePadding,
     List<AutoFreezeArea>? autoFreezeAreasX,
@@ -391,23 +391,18 @@ class FlexTableModel {
       defaultHeightCell: defaultHeightCell ?? this.defaultHeightCell,
       specificHeight: specificHeight ?? this.specificHeight,
       specificWidth: specificWidth ?? this.specificWidth,
-      scrollLockX: scrollLockX ?? this.scrollLockX,
-      scrollLockY: scrollLockY ?? this.scrollLockY,
+      scrollUnlockX: scrollUnlockX ?? this.scrollUnlockX,
+      scrollUnlockY: scrollUnlockY ?? this.scrollUnlockY,
       stateSplitX: stateSplitX ?? this.stateSplitX,
       stateSplitY: stateSplitY ?? this.stateSplitY,
       splitChangeInsets: splitChangeInsets ?? this.splitChangeInsets,
       dataTable: dataTable ?? this.dataTable,
       freezeMinimumSize: freezeMinimumSize ?? this.freezeMinimumSize,
-      leftPanelMargin: leftPanelMargin ?? this.leftPanelMargin,
-      topPanelMargin: topPanelMargin ?? this.topPanelMargin,
-      rightPanelMargin: rightPanelMargin ?? this.rightPanelMargin,
-      bottomPanelMargin: bottomPanelMargin ?? this.bottomPanelMargin,
       scale: scale ?? _scale,
       minTableScale: minTableScale ?? this.minTableScale,
       maxTableScale: maxTableScale ?? this.maxTableScale,
       maxRowHeaderScale: maxRowHeaderScale ?? this.maxRowHeaderScale,
       maxColumnHeaderScale: maxColumnHeaderScale ?? this.maxColumnHeaderScale,
-      headerHeight: headerHeight ?? this.headerHeight,
       freezePadding: freezePadding ?? this.freezePadding,
       unfreezePadding: unfreezePadding ?? this.unfreezePadding,
       autoFreezeAreasX: autoFreezeAreasX ?? this.autoFreezeAreasX,

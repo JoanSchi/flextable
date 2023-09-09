@@ -13,7 +13,7 @@ and the Flutter guide for
 
 # FlexTable
 
-FlexTable is a "lazy" table with headers, splitView, freezeView, autoFreeze, zoom and scrollbars. The table consist of a model, a viewmodel and builders. Fig. 1 shows some options. The table can scrolls in two directions at the same time. Nevertheless if the first scroll is horizontal or vertical, the cross direction is locked until the ballistic scroll ends  to prevent a unwanted drift if the user scrolls enthousiatic for serveral pages.
+FlexTable is a customizable table with headers, splitView, freezeView, autoFreeze, zoom and scrollbars. The table consist of a model, a viewmodel and builders. Fig. 1 shows some options. The table can scrolls in two directions at the same time. If the first scroll is however horizontal or vertical, the cross direction is locked until the ballistic scroll ends  to prevent a unwanted drift if the user scrolls enthousiatic for serveral pages.
 
 It is also possible to place the FlexTable in a customScrollView by wrapping the FlexTable in a adaptive sliver, wrapped in a sliver the table can only scroll in one direction at the same time.
 

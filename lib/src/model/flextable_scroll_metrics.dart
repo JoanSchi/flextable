@@ -7,7 +7,7 @@ import 'model.dart';
 import 'properties/flextable_grid_layout.dart';
 import 'view_model.dart';
 
-abstract class TableScrollMetrics {
+mixin TableScrollMetrics {
   List<GridLayout> get tableLayoutX;
 
   List<GridLayout> get tableLayoutY;

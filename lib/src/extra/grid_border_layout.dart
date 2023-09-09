@@ -297,47 +297,6 @@ class _Grid {
   }
 }
 
-// class BorderLayoutPosition {
-//   final int row;
-//   final int column;
-//   final int rows;
-//   final int columns;
-//   final bool measureHeight;
-//   final bool measureWidth;
-//   final double? squeezeRatio;
-
-//   BorderLayoutPosition(
-//       {required this.row,
-//       required this.column,
-//       this.rows = 1,
-//       this.columns = 1,
-//       this.measureHeight = false,
-//       this.measureWidth = false,
-//       this.squeezeRatio});
-
-//   const BorderLayoutPosition.table(
-//       {this.row = 1,
-//       this.column = 1,
-//       this.rows = 1,
-//       this.columns = 1,
-//       this.measureHeight = false,
-//       this.measureWidth = false,
-//       this.squeezeRatio = 2.0});
-
-//   const BorderLayoutPosition.bottom(
-//       {this.row = 2,
-//       this.column = 1,
-//       this.rows = 1,
-//       this.columns = 1,
-//       this.measureHeight = true,
-//       this.measureWidth = false,
-//       this.squeezeRatio = 1.0});
-
-//   int get lastRow => row + rows - 1;
-
-//   int get lastColumn => column + columns - 1;
-// }
-
 class BorderGridLayoutParentData extends ContainerBoxParentData<RenderBox> {
   BorderGridLayoutParentData(
       {this.row = 1,

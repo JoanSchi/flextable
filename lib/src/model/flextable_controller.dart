@@ -2,12 +2,10 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-import '../listeners/scroll_change_notifier.dart';
+import 'package:flextable/flextable.dart';
 import 'package:flutter/widgets.dart';
 import '../gesture_scroll/table_scroll_physics.dart';
-import '../listeners/scale_change_notifier.dart';
-import 'model.dart';
-import 'view_model.dart';
+import '../listeners/default_change_notifier.dart';
 
 class FlexTableController extends ChangeNotifier {
   FlexTableController();
@@ -58,18 +56,23 @@ class FlexTableController extends ChangeNotifier {
   }
 
   FlexTableViewModel createScrollPosition(
-      TableScrollPhysics physics,
-      ScrollContext context,
-      FlexTableViewModel? oldViewModel,
-      FlexTableModel flexTableModel,
-      FlexTableScrollChangeNotifier scrollChangeNotifier,
-      FlexTableScaleChangeNotifier scaleChangeNotifier) {
+    TableScrollPhysics physics,
+    ScrollContext context,
+    FlexTableViewModel? oldViewModel,
+    FlexTableModel flexTableModel,
+    TableBuilder tableBuilder,
+    ScrollChangeNotifier scrollChangeNotifier,
+    ScaleChangeNotifier scaleChangeNotifier,
+    List<FlexTableChangeNotifier> flexTableChangeNotifiers,
+  ) {
     return FlexTableViewModel(
         physics: physics,
         context: context,
         oldPosition: oldViewModel,
         ftm: flexTableModel,
+        tableBuilder: tableBuilder,
         scrollChangeNotifier: scrollChangeNotifier,
-        scaleChangeNotifier: scaleChangeNotifier);
+        scaleChangeNotifier: scaleChangeNotifier,
+        flexTableChangeNotifiers: flexTableChangeNotifiers);
   }
 }

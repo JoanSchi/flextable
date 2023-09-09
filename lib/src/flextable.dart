@@ -4,15 +4,16 @@
 
 import 'package:flextable/flextable.dart';
 import 'package:flutter/material.dart';
-import 'adjust/adjust_table_freeze.dart';
-import 'adjust/adjust_table_move_freeze.dart';
-import 'adjust/adjust_table_split.dart';
+import 'adjust/split/adjust_table_split.dart';
+import 'adjust/freeze/adjust_table_freeze.dart';
+import 'adjust/freeze/adjust_table_move_freeze.dart';
+import 'adjust/freeze/freeze_options.dart';
+import 'adjust/split/split_options.dart';
 import 'adjust/zoom/adjust_table_zoom.dart';
 import 'adjust/zoom/combi_key.dart';
-
+import 'listeners/default_change_notifier.dart';
 import 'panels/table_multi_panel_viewport.dart';
 import 'panels/table_view_scrollable.dart';
-
 import 'panels/hit_test_stack.dart';
 import 'panels/table_scrollbar.dart';
 
@@ -21,24 +22,25 @@ class FlexTable extends StatefulWidget {
     super.key,
     required this.flexTableModel,
     this.flexTableController,
-    this.splitPositionProperties = const SplitPositionProperties(),
-    this.freezePositionProperties = const FreezeOptions(),
-    this.moveFreezePositionProperties = const MoveFreezePositionProperties(),
+    this.splitPositionProperties = const SplitOptions(),
+    this.freezeOptions = const FreezeOptions(),
     TableBuilder? tableBuilder,
     this.backgroundColor,
     this.scrollChangeNotifier,
     this.scaleChangeNotifier,
-  }) : tableBuilder = tableBuilder ?? DefaultTableBuilder();
+    List<FlexTableChangeNotifier>? flexTableChangeNotifiers,
+  })  : tableBuilder = tableBuilder ?? DefaultTableBuilder(),
+        flexTableChangeNotifiers = flexTableChangeNotifiers ?? [];
 
   final FlexTableModel flexTableModel;
   final FlexTableController? flexTableController;
-  final SplitPositionProperties splitPositionProperties;
-  final FreezeOptions freezePositionProperties;
-  final MoveFreezePositionProperties moveFreezePositionProperties;
+  final SplitOptions splitPositionProperties;
+  final FreezeOptions freezeOptions;
   final TableBuilder tableBuilder;
   final Color? backgroundColor;
-  final FlexTableScrollChangeNotifier? scrollChangeNotifier;
-  final FlexTableScaleChangeNotifier? scaleChangeNotifier;
+  final ScrollChangeNotifier? scrollChangeNotifier;
+  final ScaleChangeNotifier? scaleChangeNotifier;
+  final List<FlexTableChangeNotifier> flexTableChangeNotifiers;
 
   @override
   State<StatefulWidget> createState() => FlexTableState();
@@ -50,13 +52,13 @@ class FlexTableState extends State<FlexTable> {
   FlexTableController get flexTableController =>
       _flexTableController ??= FlexTableController();
 
-  FlexTableScrollChangeNotifier? _scrollChangeNotifier;
-  FlexTableScrollChangeNotifier get scrollChangeNotifier =>
-      _scrollChangeNotifier ?? FlexTableScrollChangeNotifier();
+  ScrollChangeNotifier? _scrollChangeNotifier;
+  ScrollChangeNotifier get scrollChangeNotifier =>
+      _scrollChangeNotifier ??= ScrollChangeNotifier();
 
-  FlexTableScaleChangeNotifier? _scaleChangeNotifier;
-  FlexTableScaleChangeNotifier get scaleChangeNotifier =>
-      _scaleChangeNotifier ?? FlexTableScaleChangeNotifier();
+  ScaleChangeNotifier? _scaleChangeNotifier;
+  ScaleChangeNotifier get scaleChangeNotifier =>
+      _scaleChangeNotifier ?? ScaleChangeNotifier(widget.flexTableModel);
 
   CombiKeyNotification? _combiKeyNotification;
 
@@ -85,7 +87,9 @@ class FlexTableState extends State<FlexTable> {
       _scrollChangeNotifier = null;
     }
 
-    if (widget.scaleChangeNotifier != null) {
+    bool updateFlexTable = widget.flexTableModel != oldWidget.flexTableModel;
+
+    if (widget.scaleChangeNotifier != null || updateFlexTable) {
       _scaleChangeNotifier?.dispose();
       _scaleChangeNotifier = null;
     }
@@ -96,6 +100,8 @@ class FlexTableState extends State<FlexTable> {
   @override
   void dispose() {
     _flexTableController?.dispose();
+    _scaleChangeNotifier?.dispose();
+    _scaleChangeNotifier = null;
     super.dispose();
   }
 
@@ -109,10 +115,12 @@ class FlexTableState extends State<FlexTable> {
   Widget build(BuildContext context) {
     Widget table = TableViewScrollable(
         flexTableModel: widget.flexTableModel,
+        tableBuilder: widget.tableBuilder,
         controller: widget.flexTableController ?? flexTableController,
         scrollChangeNotifier:
             widget.scrollChangeNotifier ?? scrollChangeNotifier,
         scaleChangeNotifier: widget.scaleChangeNotifier ?? scaleChangeNotifier,
+        flexTableChangeNotifiers: widget.flexTableChangeNotifiers,
         viewportBuilder:
             (BuildContext context, FlexTableViewModel flexTableViewModel) {
           final theme = Theme.of(context);
@@ -138,26 +146,19 @@ class FlexTableState extends State<FlexTable> {
           }
 
           return MultiHitStack(children: [
-            TableMultiPanelViewport(
+            TableMultiPanel(
               flexTableViewModel: flexTableViewModel,
               tableBuilder: widget.tableBuilder,
               tableScale: flexTableViewModel.tableScale,
             ),
-            // TablePanel(
-            //   flexTableViewModel: flexTableViewModel,
-            //   tableBuilder: widget.tableBuilder,
-            // ),
-            if (flexTableViewModel.ftm.manualFreezePossible &&
-                widget.moveFreezePositionProperties.useMoveFreezePosition)
+            if (widget.freezeOptions.useMoveFreezePosition)
               TableMoveFreeze(
-                moveFreezePositionProperties:
-                    widget.moveFreezePositionProperties,
+                freezeOptions: widget.freezeOptions,
                 flexTableViewModel: flexTableViewModel,
               ),
-            if (flexTableViewModel.ftm.manualFreezePossible &&
-                widget.freezePositionProperties.useFreezePosition)
+            if (widget.freezeOptions.useFreezePosition)
               TableFreeze(
-                freezeOptions: widget.freezePositionProperties,
+                freezeOptions: widget.freezeOptions,
                 flexTableViewModel: flexTableViewModel,
               ),
             tableZoom,

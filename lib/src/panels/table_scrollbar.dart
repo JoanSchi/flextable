@@ -4,15 +4,15 @@
 
 import 'dart:async';
 import 'dart:ui';
-import '../listeners/scroll_change_notifier.dart';
+import '../../flextable.dart';
+import '../listeners/default_change_notifier.dart';
 import '../model/view_model.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'dart:math' as math;
 import '../gesture_scroll/table_drag_details.dart';
 import '../gesture_scroll/table_gesture.dart';
-import '../model/model.dart';
 import '../model/flextable_scroll_metrics.dart';
+import 'dart:math' as math;
 
 const double _kMinThumbExtent = 18.0;
 const double _kMinThumbHitExtent = 32.0;
@@ -63,8 +63,7 @@ class TableScrollbar extends StatefulWidget {
 }
 
 class _TableScrollbarState extends State<TableScrollbar>
-    with TickerProviderStateMixin
-    implements FlexTableScrollNotification {
+    with TickerProviderStateMixin {
   Map<Type, GestureRecognizerFactory> _gestureRecognizers =
       const <Type, GestureRecognizerFactory>{};
   TableScrollDirection _lastScrollDirection = TableScrollDirection.unknown;
@@ -86,14 +85,16 @@ class _TableScrollbarState extends State<TableScrollbar>
   double _paddingTrackOutside = 0.0;
   DeviceGestureSettings? _mediaQueryGestureSettings;
   late FlexTableViewModel _flexTableViewModel;
-  late FlexTableScrollChangeNotifier _scrollChangeNotifier;
+  late ScrollChangeNotifier _scrollChangeNotifier;
+  bool scrolling = false;
 
   @override
   void initState() {
     _flexTableViewModel = widget.flexTableViewModel;
+    scrolling = _flexTableViewModel.scrolling;
 
     _scrollChangeNotifier = _flexTableViewModel.scrollChangeNotifier
-      ..addListener(this);
+      ..addListener(changeScroll);
 
     scrollBarSelection = ScrollBarSelection();
 
@@ -126,9 +127,9 @@ class _TableScrollbarState extends State<TableScrollbar>
     }
 
     if (_scrollChangeNotifier != _flexTableViewModel.scrollChangeNotifier) {
-      _scrollChangeNotifier.removeListener(this);
+      _scrollChangeNotifier.removeListener(changeScroll);
       _scrollChangeNotifier = _flexTableViewModel.scrollChangeNotifier
-        ..addListener(this);
+        ..addListener(changeScroll);
     }
 
     _scrollbarPainter.setFlexTableViewModel(widget.flexTableViewModel);
@@ -240,7 +241,7 @@ class _TableScrollbarState extends State<TableScrollbar>
     // _verticalSideBarController?.dispose();
     // _horizontalSideBarController?.dispose();
     _flexTableViewModel.removeListener(updateScrollBarPainter);
-    _scrollChangeNotifier.removeListener(this);
+    _scrollChangeNotifier.removeListener(changeScroll);
     super.dispose();
   }
 
@@ -396,15 +397,27 @@ class _TableScrollbarState extends State<TableScrollbar>
     fade();
   }
 
-  @override
-  didStartScroll(TableScrollMetrics metrics, BuildContext? context) {
-    _fadeoutAnimationController.forward();
+  void changeScroll() {
+    if (_scrollChangeNotifier.scrolling != scrolling) {
+      scrolling = _scrollChangeNotifier.scrolling;
+
+      if (scrolling) {
+        _fadeoutAnimationController.forward();
+      } else {
+        fade();
+      }
+    }
   }
 
-  @override
-  didEndScroll(TableScrollMetrics metrics, BuildContext? context) {
-    fade();
-  }
+  // @override
+  // didStartScroll(TableScrollMetrics metrics, BuildContext? context) {
+  //   _fadeoutAnimationController.forward();
+  // }
+
+  // @override
+  // didEndScroll(TableScrollMetrics metrics, BuildContext? context) {
+  //   fade();
+  // }
 
   fade() {
     if (!_isAlwaysShown) {

@@ -3,6 +3,7 @@
 // license that can be found in the LICENSE file.
 
 import 'dart:collection';
+import '../model/model.dart';
 import '../model/view_model.dart';
 import 'package:flextable/src/panels/table_multi_panel_viewport.dart';
 import 'package:flutter/material.dart';
@@ -11,8 +12,11 @@ import 'package:flutter/widgets.dart';
 import '../model/properties/flextable_grid_info.dart';
 import '../builders/table_builder.dart';
 
-class TableHeaderViewport extends RenderObjectWidget {
-  const TableHeaderViewport(
+typedef HeaderIndexBuilder = Widget Function(FlexTableModel flexTableModel,
+    TableHeaderIndex tableHeaderIndex, BuildContext context);
+
+class TableHeader extends StatelessWidget {
+  const TableHeader(
       {super.key,
       required this.flexTableViewModel,
       required this.panelIndex,
@@ -27,6 +31,36 @@ class TableHeaderViewport extends RenderObjectWidget {
   final double headerScale;
 
   @override
+  Widget build(BuildContext context) {
+    return TableHeaderViewport(
+      flexTableViewModel: flexTableViewModel,
+      panelIndex: panelIndex,
+      tableScale: tableScale,
+      headerScale: headerScale,
+      headerIndexBuilder: tableBuilder.buildHeaderIndex,
+      divider: tableBuilder.lineHeader(flexTableViewModel, panelIndex),
+    );
+  }
+}
+
+class TableHeaderViewport extends RenderObjectWidget {
+  const TableHeaderViewport(
+      {super.key,
+      required this.flexTableViewModel,
+      required this.panelIndex,
+      required this.headerIndexBuilder,
+      required this.tableScale,
+      required this.headerScale,
+      required this.divider});
+
+  final FlexTableViewModel flexTableViewModel;
+  final int panelIndex;
+  final HeaderIndexBuilder headerIndexBuilder;
+  final double tableScale;
+  final double headerScale;
+  final LineHeader divider;
+
+  @override
   TableHeaderChildRenderObjectElement createElement() =>
       TableHeaderChildRenderObjectElement(this);
 
@@ -37,7 +71,7 @@ class TableHeaderViewport extends RenderObjectWidget {
       ..flexTableViewModel = flexTableViewModel
       ..tableScale = tableScale
       ..headerScale = headerScale
-      ..divider = tableBuilder.lineHeader(flexTableViewModel, panelIndex);
+      ..divider = divider;
   }
 
   @override
@@ -51,7 +85,7 @@ class TableHeaderViewport extends RenderObjectWidget {
         panelIndex: panelIndex,
         tableScale: tableScale,
         headerScale: headerScale,
-        divider: tableBuilder.lineHeader(flexTableViewModel, panelIndex));
+        divider: divider);
   }
 }
 
@@ -305,8 +339,8 @@ class TableHeaderChildRenderObjectElement extends RenderObjectElement
       //         color: tableCellIndex.row % 2 == 0 ? Colors.grey[50] : Colors.grey[100],
       //         child: Center(child: Text('R${tableCellIndex.row}C${tableCellIndex.column}')));
 
-      return widget.tableBuilder
-          .buildHeaderIndex(widget.flexTableViewModel.ftm, tableHeaderIndex);
+      return widget.headerIndexBuilder(
+          widget.flexTableViewModel.ftm, tableHeaderIndex, this);
     });
   }
 }
@@ -786,7 +820,7 @@ class TableHeaderParentData extends ContainerBoxParentData<RenderBox> {
   TableHeaderIndex tableHeaderIndex = TableHeaderIndex();
 }
 
-class TableHeaderIndex extends Comparable<TableHeaderIndex> {
+class TableHeaderIndex implements Comparable<TableHeaderIndex> {
   TableHeaderIndex({
     this.panelIndex = -1,
     this.index = -1,

@@ -201,8 +201,6 @@ class TableClampingScrollPhysics extends TableScrollPhysics {
       } else if (pixels < minScrollExtent) {
         end = minScrollExtent;
       } else {
-        assert(end != null,
-            'pixels $pixels minScrollExtent $minScrollExtent maxScrollExtent $maxScrollExtent outOfRange $outOfRange');
         return noBallisticSimulation;
       }
 

@@ -8,14 +8,14 @@
             "name": "example_flextable",
             "type": "dart",
             "request": "launch",
-            "cwd": "example/multiple_tables",
+            "cwd": "example/table_examples",
             "program": "lib/main.dart"
         },
         {
             "name": "example_flextable (profile mode)",
             "type": "dart",
             "request": "launch",
-            "cwd": "example/multiple_tables",
+            "cwd": "example/table_examples",
             "program": "lib/main.dart",
             "flutterMode": "profile"
         },
