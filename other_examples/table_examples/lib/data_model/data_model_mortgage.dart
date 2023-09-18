@@ -43,7 +43,7 @@ MortgageTableModel createMorgageTableModel(
 class MortgageTableModel {
   MortgageTableModel({required this.tableRows, required this.tableColumns});
 
-  final data = FlexTableDataModelCR();
+  final data = FlexTableDataModel();
   var df = DateFormat('dd-MM-yyyy');
   var nf = NumberFormat('###', 'nl_NL');
   final years = 30;
@@ -72,55 +72,45 @@ class MortgageTableModel {
     double monthlyInterest;
 
     final h = data.horizontalLineList;
+    final line = Line(width: lineWidth, color: lineColor);
 
-    final horizontalNoGap = h.createLineNodeRange(
-        (requestModelIndex) => LineNodeRange(requestNewIndex: requestModelIndex)
-          ..createLineNodes((requestModelIndex, create) {
-            create(LineNode(
-                startIndex: requestModelIndex(columnStart),
-                before: const Line.noLine(),
-                after: Line(width: lineWidth, color: lineColor)));
+    final horizontalNoGap = LineNodeRange(create: (add) {
+      add(LineNode(
+          startIndex: columnStart, before: const Line.no(), after: line));
 
-            create(LineNode(
-                startIndex: requestModelIndex(columnStart + 9),
-                before: Line(width: lineWidth, color: lineColor),
-                after: const Line.noLine()));
-          }));
+      add(LineNode(
+          startIndex: columnStart + 9, before: line, after: const Line.no()));
+    });
 
-    final horizontalGaps = h.createLineNodeRange((requestModelIndex) =>
-        LineNodeRange(requestNewIndex: requestModelIndex, lineNodes: [
-          LineNode(
-              startIndex: requestModelIndex(columnStart),
-              before: const Line.noLine(),
-              after: Line(width: lineWidth, color: lineColor)),
-          LineNode(
-              startIndex: requestModelIndex(columnStart + 4),
-              before: Line(width: lineWidth, color: lineColor),
-              after: const Line.noLine())
-        ]));
+    final horizontalGaps = LineNodeRange(create: (add) {
+      add(LineNode(
+          startIndex: columnStart, before: const Line.no(), after: line));
+
+      add(LineNode(
+          startIndex: columnStart + 4, before: line, after: const Line.no()));
+    });
 
     /// Header
     ///
     ///
-    h.createLineRanges(
-      (requestLineRangeModelIndex, requestModelIndex, create) {
-        create(LineRange(
-            startIndex: requestLineRangeModelIndex(rowStart),
-            lineNodeRange:
-                LineNodeRange(requestNewIndex: requestModelIndex, lineNodes: [
+    h.addLineRanges(
+      (add) {
+        add(LineRange(
+            startIndex: rowStart,
+            lineNodeRange: LineNodeRange(list: [
               LineNode(
-                  startIndex: requestModelIndex(columnStart + 2),
-                  before: const Line.noLine(),
-                  after: Line(width: lineWidth, color: lineColor)),
+                  startIndex: columnStart + 2,
+                  before: const Line.no(),
+                  after: line),
               LineNode(
-                  startIndex: requestModelIndex(columnStart + 4),
-                  before: Line(width: lineWidth, color: lineColor),
-                  after: const Line.noLine())
+                  startIndex: columnStart + 4,
+                  before: line,
+                  after: const Line.no())
             ])));
 
-        create(LineRange(
-            startIndex: requestLineRangeModelIndex(rowStart + 1),
-            endIndex: requestLineRangeModelIndex(rowStart + 2),
+        add(LineRange(
+            startIndex: rowStart + 1,
+            endIndex: rowStart + 2,
             lineNodeRange: horizontalNoGap));
       },
     );
@@ -220,16 +210,13 @@ class MortgageTableModel {
                 attr: {CellAttr.background: rowColor}));
 
         if (month == 0) {
-          h.createLineRange((requestLineRangeModelIndex, requestModelIndex) =>
-              LineRange(
-                  startIndex: requestLineRangeModelIndex(row),
-                  lineNodeRange: horizontalNoGap));
+          h.addLineRange(
+              LineRange(startIndex: row, lineNodeRange: horizontalNoGap));
         } else if (month == 1) {
-          h.createLineRange((requestLineRangeModelIndex, requestModelIndex) =>
-              LineRange(
-                  startIndex: requestLineRangeModelIndex(row),
-                  endIndex: requestLineRangeModelIndex(row + 10),
-                  lineNodeRange: horizontalGaps));
+          h.addLineRange(LineRange(
+              startIndex: row,
+              endIndex: row + 10,
+              lineNodeRange: horizontalGaps));
         } else if (month == 11) {
           final yearColorBlock = i % 2 == 0 ? bc1 : bc2;
           final yearColorBlockNext = i % 2 == 1 ? bc1 : bc2;
@@ -278,44 +265,34 @@ class MortgageTableModel {
       }
     }
 
-    data.verticalLineList.createLineRanges(
-        (requestLineRangeModelIndex, requestModelIndex, create) {
-      create(LineRange(
-          startIndex: requestLineRangeModelIndex(columnStart),
-          endIndex: requestLineRangeModelIndex(columnStart + 9),
-          lineNodeRange:
-              LineNodeRange(requestNewIndex: requestModelIndex, lineNodes: [
+    data.verticalLineList.addLineRanges((add) {
+      add(LineRange(
+          startIndex: columnStart,
+          endIndex: columnStart + 9,
+          lineNodeRange: LineNodeRange(list: [
             LineNode(
-              startIndex: requestModelIndex(rowStart + 1),
-              after: Line(width: lineWidth, color: lineColor),
+              startIndex: rowStart + 1,
+              after: line,
             ),
-            LineNode(
-                startIndex: requestModelIndex(row + 1),
-                endIndex: requestModelIndex(row + 1),
-                before: Line(width: lineWidth, color: lineColor)),
+            LineNode(startIndex: row + 1, endIndex: row + 1, before: line),
           ])));
 
       final lineNodes = [
         LineNode(
-          startIndex: requestModelIndex(rowStart),
-          after: Line(width: lineWidth, color: lineColor),
+          startIndex: rowStart,
+          after: line,
         ),
-        LineNode(
-            startIndex: requestModelIndex(row + 1),
-            endIndex: requestModelIndex(row + 1),
-            before: Line(width: lineWidth, color: lineColor)),
+        LineNode(startIndex: row + 1, endIndex: row + 1, before: line),
       ];
 
       // Per maand Vertical lines
-      create(LineRange(
-          startIndex: requestLineRangeModelIndex(columnStart + 2),
-          lineNodeRange: LineNodeRange(
-              requestNewIndex: requestModelIndex, lineNodes: lineNodes)));
+      add(LineRange(
+          startIndex: columnStart + 2,
+          lineNodeRange: LineNodeRange(list: lineNodes)));
 
-      create(LineRange(
-          startIndex: requestLineRangeModelIndex(columnStart + 4),
-          lineNodeRange: LineNodeRange(
-              requestNewIndex: requestModelIndex, lineNodes: lineNodes)));
+      add(LineRange(
+          startIndex: columnStart + 4,
+          lineNodeRange: LineNodeRange(list: lineNodes)));
     });
 
     lastRow = row + 2;

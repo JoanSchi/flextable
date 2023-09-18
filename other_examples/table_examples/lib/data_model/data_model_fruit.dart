@@ -60,37 +60,31 @@ class DataModelFruit {
 
     if (endTableRows < row) endTableRows = row;
 
-    dataTable.verticalLineList.createLineRange(
-        (requestLineRangeModelIndex, requestModelIndex) => LineRange(
-            startIndex: requestLineRangeModelIndex(1),
-            lineNodeRange:
-                LineNodeRange(requestNewIndex: requestModelIndex, lineNodes: [
-              LineNode(
-                startIndex: requestModelIndex(2),
-                after: Line(color: Colors.lime[100]!, width: 1.0),
-              ),
-              LineNode(
-                startIndex: requestModelIndex(3),
-                after: Line(color: Colors.lime[500]!, width: 1.0),
-                before: Line(color: Colors.lime[100]!, width: 1.0),
-              ),
-              LineNode(
-                  startIndex: requestModelIndex(row),
-                  before: Line(color: Colors.lime[500]!))
-            ])));
+    dataTable.verticalLineList.addLineRange(LineRange(
+        startIndex: 1,
+        lineNodeRange: LineNodeRange(list: [
+          LineNode(
+            startIndex: 2,
+            after: Line(color: Colors.lime[100]!, width: 1.0),
+          ),
+          LineNode(
+            startIndex: 3,
+            after: Line(color: Colors.lime[500]!, width: 1.0),
+            before: Line(color: Colors.lime[100]!, width: 1.0),
+          ),
+          LineNode(
+              startIndex: row,
+              before: Line(color: Colors.lime[500]!, width: 0.5))
+        ])));
 
-    dataTable.horizontalLineList.createLineRange(
-        (requestLineRangeModelIndex, requestModelIndex) => LineRange(
-            startIndex: requestLineRangeModelIndex(2),
-            lineNodeRange:
-                LineNodeRange(requestNewIndex: requestModelIndex, lineNodes: [
-              LineNode(
-                  startIndex: requestModelIndex(0),
-                  after: Line(color: Colors.lime[100]!, width: 1.0)),
-              LineNode(
-                  startIndex: requestModelIndex(5),
-                  before: Line(color: Colors.lime[100]!, width: 1.0))
-            ])));
+    dataTable.horizontalLineList.addLineRange(LineRange(
+        startIndex: 2,
+        lineNodeRange: LineNodeRange(list: [
+          LineNode(
+              startIndex: 0, after: Line(color: Colors.lime[100]!, width: 1.0)),
+          LineNode(
+              startIndex: 5, before: Line(color: Colors.lime[100]!, width: 1.0))
+        ])));
   }
 
   final dataTable = FlexTableDataModel();

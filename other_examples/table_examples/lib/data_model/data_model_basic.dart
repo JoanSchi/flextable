@@ -13,7 +13,7 @@ class DataModelBasic {
 
   DataModelBasic.positions({this.rows = 500, this.columns = 200}) {
     data = FlexTableDataModel();
-    final lineColor = Colors.blue[900]!;
+    final line = Line(width: 0.5, color: Colors.blue[900]!);
 
     for (int r = 0; r < rows; r++) {
       for (int c = 0; c < columns; c++) {
@@ -29,33 +29,19 @@ class DataModelBasic {
       }
     }
 
-    data.horizontalLineList
-        .createLineRange((requestLineRangeModelIndex, requestModelIndex) {
-      return LineRange(
-          startIndex: requestLineRangeModelIndex(0),
-          endIndex: requestLineRangeModelIndex(rows),
-          lineNodeRange:
-              LineNodeRange(requestNewIndex: requestModelIndex, lineNodes: [
-            LineNode(
-                startIndex: requestModelIndex(1),
-                endIndex: requestModelIndex(columns),
-                before: Line(color: lineColor),
-                after: Line(color: lineColor))
-          ]));
-    });
+    data.horizontalLineList.addLineRange(LineRange(
+        startIndex: 0,
+        endIndex: rows,
+        lineNodeRange: LineNodeRange(list: [
+          LineNode(startIndex: 1, endIndex: columns, before: line, after: line)
+        ])));
 
-    data.verticalLineList.createLineRange(
-        (requestLineRangeModelIndex, requestModelIndex) => LineRange(
-            startIndex: requestLineRangeModelIndex(1),
-            endIndex: requestLineRangeModelIndex(rows),
-            lineNodeRange:
-                LineNodeRange(requestNewIndex: requestModelIndex, lineNodes: [
-              LineNode(
-                  startIndex: requestModelIndex(0),
-                  endIndex: requestModelIndex(rows),
-                  after: Line(color: lineColor),
-                  before: Line(color: lineColor))
-            ])));
+    data.verticalLineList.addLineRange(LineRange(
+        startIndex: 1,
+        endIndex: rows,
+        lineNodeRange: LineNodeRange(list: [
+          LineNode(startIndex: 0, endIndex: rows, after: line, before: line)
+        ])));
   }
 
   FlexTableModel makeTable(

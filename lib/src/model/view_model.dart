@@ -2297,6 +2297,17 @@ class FlexTableViewModel extends ChangeNotifier
     final oldStateSplitX = stateSplitX;
     final oldStateSplitY = stateSplitY;
 
+    final widthChanged = _widthMainPanel != width;
+    final heightChanged = _heightMainPanel != height;
+
+    if (widthChanged) {
+      _widthMainPanel = width;
+    }
+
+    if (heightChanged) {
+      _heightMainPanel = height;
+    }
+
     if (!modifySplit &&
         tableScrollDirection != TableScrollDirection.horizontal) {
       adjustSplitStateAfterWidthResize(width);
@@ -2328,8 +2339,16 @@ class FlexTableViewModel extends ChangeNotifier
             maxWidthNoSplit + sizeScrollBarRight + rightHeaderLayoutLength,
         width: width);
 
-    if (_widthMainPanel != width ||
-        _heightMainPanel != height ||
+    if (widthChanged) {
+      calculateAutoScrollX();
+    }
+
+    if (heightChanged) {
+      calculateAutoScrollY();
+    }
+
+    if (widthChanged ||
+        heightChanged ||
         stateSplitX != oldStateSplitX ||
         stateSplitY != oldStateSplitY) {
       scheduleMicrotask(() {
@@ -2337,11 +2356,7 @@ class FlexTableViewModel extends ChangeNotifier
       });
     }
 
-    if (_widthMainPanel != width ||
-        _heightMainPanel != height ||
-        scheduleCorrectOffScroll) {
-      _widthMainPanel = width;
-      _heightMainPanel = height;
+    if (widthChanged || heightChanged || scheduleCorrectOffScroll) {
       scheduleCorrectOffScroll = false;
       correctOffScroll(0, 0);
     }

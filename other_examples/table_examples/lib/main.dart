@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:table_examples/examples.dart/example_appbar_overlap.dart';
 import 'package:table_examples/examples.dart/example_energy.dart';
 import 'package:table_examples/examples.dart/example_fruit.dart';
+import 'package:table_examples/examples.dart/example_international_trade.dart';
 import 'package:table_examples/examples.dart/example_mortgage.dart';
 import 'about/about.dart';
 import 'examples.dart/example_tables_in_sliver.dart';
@@ -64,6 +65,10 @@ class _TableExamplesState extends State<TableExamples> {
         ExampleEnergy(openDrawer: openDrawer),
       ),
       ExampleInfo(
+        'Trade',
+        ExampleInternationalTrade(openDrawer: openDrawer),
+      ),
+      ExampleInfo(
         'Fruit',
         ExampleFruit(openDrawer: openDrawer),
       ),
@@ -105,7 +110,7 @@ class _TableExamplesState extends State<TableExamples> {
               style: titleSmall,
             ),
           ),
-          ...exampleDestinations.sublist(i, i += 4).map(
+          ...exampleDestinations.sublist(i, i += 5).map(
             (ExampleInfo destination) {
               return NavigationDrawerDestination(
                 label: Text(destination.label),

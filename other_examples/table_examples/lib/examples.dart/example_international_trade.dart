@@ -69,6 +69,7 @@ class _ExampleInternationalTradeState extends State<ExampleInternationalTrade>
   Widget build(BuildContext context) {
     Widget table = FlexTable(
       flexTableController: _flexTableController,
+      scaleChangeNotifier: scaleChangeNotifier,
       backgroundColor: Colors.grey[50],
       flexTableModel: flexTableModel,
       tableBuilder: DefaultTableBuilder(),

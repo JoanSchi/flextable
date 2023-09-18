@@ -1,89 +1,73 @@
+// ignore_for_file: public_member_api_docs, sort_constructors_first
 // Copyright 2023 Joan Schipper. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-import 'package:flutter/material.dart';
-import 'cells.dart';
+import 'package:flutter/widgets.dart';
 
-enum TableLineOptions { grid, no, custom }
+enum LineOptions { no, line }
 
-const _emptyLine = _EmptyLine();
-const gridLine = Line.grid();
-//const noLine = Line.NoLine();
+const noLine = Line.no();
 
-typedef Merge<E extends LineLinkedListEntry<E>> = E Function(E link, E merge);
-typedef RequestModelIndex = Index Function(int newIndex);
+typedef LineLinkedMerge<E extends LineLinkedListEntry<E>> = E Function(
+    E link, E merge);
 
-var check = false;
+bool check = false;
 
 class TableLinesOneDirection extends LineLinkedList<LineRange> {
-  TableLinesOneDirection(
-      {required RequestModelIndex requestLineRangeModelIndex,
-      required this.requestModelIndex,
-      bool addEmpty = false})
-      : super(requestNewIndex: requestLineRangeModelIndex, addEmpty: addEmpty);
-
-  RequestModelIndex requestModelIndex;
-
-  void createLineRange(
-    LineRange Function(RequestModelIndex requestLineRangeModelIndex,
-            RequestModelIndex requestModelIndex)
-        create,
-  ) {
-    add(
-      create(requestNewIndex, requestModelIndex),
-      merge,
-    );
-  }
+  TableLinesOneDirection() : super(addEmpty: false);
 
   void addLineRange(
     LineRange lineRange,
   ) {
-    add(
+    _add(
       lineRange,
       merge,
     );
   }
 
-  void createLineRanges(
-      Function(
-              RequestModelIndex requestLineRangeModelIndex,
-              RequestModelIndex requestModelIndex,
-              Function(LineRange lineRange) create)
-          lineRanges,
+  void addLineRanges(Function(Function(LineRange lineRange) add) create,
       {addEmpty = false}) {
-    lineRanges(
-        requestNewIndex,
-        requestModelIndex,
-        (LineRange lineRange) => add(
-              lineRange,
-              merge,
-            ));
+    create((LineRange lineRange) => _add(
+          lineRange,
+          merge,
+        ));
   }
 
-  LineNodeRange createLineNodeRange(
-          LineNodeRange Function(RequestModelIndex requestModelIndex) create) =>
-      create(requestModelIndex);
-
-  LineRange merge(LineRange link, LineRange merge) {
+  LineRange merge(LineRange found, LineRange link) {
     // assert(link is LineRange);
     // assert(merge is LineRange);
 
-    final list = link.lineNodeRange.copy();
-    final mergeLineNodes = merge.lineNodeRange;
+    final list = link.lineNodeRange;
+    final newLineNodeRange = found.lineNodeRange._copy();
 
-    var mergeLineNode = mergeLineNodes.first;
+    LineNode? node = list.first;
 
-    while (mergeLineNode != null) {
-      list._addMerge(mergeLineNode);
-      mergeLineNode = mergeLineNode.next;
+    /// The node is in a list and therefore copy wil be made with
+    ///
+    ///
+    while (node != null) {
+      newLineNodeRange.addLineNode(node);
+      node = node.next;
     }
 
     return LineRange(
-        lineNodeRange: list,
-        startIndex: merge.startIndex,
-        endIndex: merge.endIndex);
+        lineNodeRange: newLineNodeRange,
+        startIndex: link.startIndex,
+        endIndex: link.endIndex);
   }
+
+  @override
+  String toString() => 'LineRanges in TableLinesOneDirection: ${() {
+        LineRange? n = first;
+        String toString = n == null ? '\n empty' : '';
+        while (n != null) {
+          toString += '\n ${n.toString()}';
+          n = n.next;
+        }
+
+        return toString;
+      }()}';
 }
 
 class LineRange extends LineLinkedListEntry<LineRange> {
@@ -93,28 +77,22 @@ class LineRange extends LineLinkedListEntry<LineRange> {
     required this.lineNodeRange,
   });
 
-  LineRange.empty({
-    required super.startIndex,
-    super.endIndex,
-  }) : lineNodeRange =
-            LineNodeRange(requestNewIndex: (_) => const DummyIndex(0));
-
   LineNodeRange lineNodeRange;
 
   @override
-  bool operator <(o) => startIndex < o.startIndex;
+  bool operator <(LineRange o) => startIndex < o.startIndex;
 
   @override
-  bool operator >(o) => endIndex > o.endIndex;
+  bool operator >(LineRange o) => endIndex > o.endIndex;
 
   @override
-  bool goToNext(entry) {
+  bool goToNext(LineRange entry) {
     return endIndex < entry.startIndex &&
         (next != null && next!.startIndex <= entry.startIndex);
   }
 
   @override
-  bool goToPrevious(entry) {
+  bool goToPrevious(LineRange entry) {
     return entry.endIndex < startIndex ||
         (previous != null && entry.startIndex <= previous!.endIndex);
   }
@@ -130,12 +108,6 @@ class LineRange extends LineLinkedListEntry<LineRange> {
   int get hashCode => lineNodeRange.hashCode;
 
   @override
-  LineRange copy() => LineRange(
-      startIndex: startIndex,
-      endIndex: endIndex,
-      lineNodeRange: lineNodeRange.copy());
-
-  @override
   bool equalLink(LineRange? o) {
     if (identical(this, o)) return true;
 
@@ -143,88 +115,86 @@ class LineRange extends LineLinkedListEntry<LineRange> {
   }
 
   @override
-  bool get isNotEmpty {
+  bool get isEmpty {
     if (lineNodeRange.isEmpty) {
-      return false;
+      return true;
     } else {
       var link = lineNodeRange.first;
 
       while (link != null) {
         if (link.isNotEmpty) {
-          return true;
+          return false;
         }
         link = link.next;
       }
     }
-    return false;
+    return true;
   }
 
   @override
-  String toString() =>
-      'Fy(lineList: startIndex $startIndex endIndex $endIndex)';
-}
+  bool get isNotEmpty => !isEmpty;
 
-void printTableList(TableLinesOneDirection list) {
-  var link = list.first;
+  @override
+  String toString() => '- LineNodeRange $startIndex-$endIndex: $lineNodeRange';
 
-  while (link != null) {
-    printList(link.lineNodeRange);
-    link = link.next;
+  @override
+  LineRange _copy() => LineRange(
+      startIndex: startIndex,
+      endIndex: endIndex,
+      lineNodeRange: lineNodeRange._copy());
+
+  @override
+  LineRange _shallowCopy() {
+    return LineRange(
+      startIndex: startIndex,
+      endIndex: endIndex,
+      lineNodeRange: lineNodeRange,
+    );
   }
 }
 
 class LineNodeRange extends LineLinkedList<LineNode> {
-  LineNodeRange(
-      {required RequestModelIndex requestNewIndex,
-      List<LineNode> lineNodes = const [],
-      addEmpty = false})
-      : super(requestNewIndex: requestNewIndex, addEmpty: addEmpty) {
-    for (LineNode lineNode in lineNodes) {
-      add(lineNode, merge);
+  LineNodeRange({
+    List<LineNode>? list,
+    Function(Function(LineNode lineNode) add)? create,
+  }) : super(addEmpty: true) {
+    if (list != null) {
+      for (LineNode lineNode in list) {
+        _add(lineNode, merge);
+      }
     }
+
+    create?.call((lineNode) => _add(lineNode, merge));
   }
 
-  _addMerge(
+  LineNodeRange._noEmptyNodes() : super(addEmpty: false);
+
+  addLineNode(
     LineNode lineNode,
   ) {
-    if (_length == 0) {
-      _insertBefore(null, lineNode, updateFirst: false);
-    } else {
-      add(lineNode, merge);
-    }
+    _add(
+      lineNode,
+      merge,
+    );
   }
 
-  createLineNode(
-    LineNode Function(RequestModelIndex requestModelIndex) create,
+  addLineNodes(
+    Function(Function(LineNode lineNode) create) create,
   ) {
-    if (_length == 0) {
-      _insertBefore(null, create(requestNewIndex), updateFirst: false);
-    } else {
-      add(
-        create(requestNewIndex),
-        merge,
-      );
-    }
+    create((lineNode) => _add(lineNode, merge));
   }
 
-  createLineNodes(
-    Function(RequestModelIndex requestModelIndex,
-            Function(LineNode lineNode) create)
-        lineNodes,
-  ) {
-    lineNodes(requestNewIndex, (lineNode) => add(lineNode, merge));
-  }
-
-  LineNodeRange copy() {
-    final lineList = LineNodeRange(requestNewIndex: requestNewIndex);
+  LineNodeRange _copy() {
+    final lineList = LineNodeRange._noEmptyNodes();
     LineNode? link = _first;
     LineNode? entryCopy;
 
     while (link != null) {
-      final copyLink = link.copy();
-      lineList._insertAfter(entryCopy, copyLink);
-      entryCopy = copyLink;
-
+      if (link.isNotEmpty) {
+        final copyLink = link._copy();
+        lineList._insertAfter(entryCopy, copyLink);
+        entryCopy = copyLink;
+      }
       link = link.next;
     }
 
@@ -232,7 +202,19 @@ class LineNodeRange extends LineLinkedList<LineNode> {
   }
 
   LineNode merge(LineNode lineNode, LineNode merge) {
-    return lineNode.mergeLineNode(lineIntercept: merge);
+    return lineNode.merge(merge);
+  }
+
+  @override
+  String toString() {
+    LineNode? n = first;
+    String toString = n == null ? 'empty' : '';
+    while (n != null) {
+      toString += '\n -> ${n.toString()}';
+      n = n.next;
+    }
+
+    return toString;
   }
 }
 
@@ -245,7 +227,7 @@ abstract class LineLinkedList<E extends LineLinkedListEntry<E>> {
   E? d1d0;
   E? d0d1;
   E? d1d1;
-  bool addEmpty;
+  final bool _addEmpty;
 
   E begin(var index, int demensionOne, int demensionTwo, bool lock) {
     if (demensionOne == 0 || lock) {
@@ -281,34 +263,25 @@ abstract class LineLinkedList<E extends LineLinkedListEntry<E>> {
     }
   }
 
-  RequestModelIndex requestNewIndex;
+  LineLinkedList({required bool addEmpty}) : _addEmpty = addEmpty;
 
-  LineLinkedList({required this.requestNewIndex, required this.addEmpty});
-
-  add(E link, Merge<E> merge) {
+  _add(E link, LineLinkedMerge<E> merge) {
     /// The link is already in used if the list is not null.
     /// To prevent breaking of the the LinkedList the link will be coppied.
     ///
-    if (link._list != null) {
-      link = link.copy();
-    }
 
     assert(link.startIndex <= link.endIndex,
         'StartIndex is not smaller or equal compared to endIndex');
 
     if (_length == 0) {
-      if (link.isNotEmpty || addEmpty) {
-        _insertBefore(null, link, updateFirst: false);
+      if (link.isNotEmpty || _addEmpty) {
+        _insertBefore(null, link._copy(), updateFirst: false);
       }
     } else {
       E found = findOrBefore(link);
 
       if (link.endIndex < _first!.startIndex ||
           last!.endIndex < link.startIndex) {
-        if (check) {
-          debugPrint('0: found $found');
-          debugPrint('0: ln $link');
-        }
         _addOutside(
           link,
           found,
@@ -327,49 +300,18 @@ abstract class LineLinkedList<E extends LineLinkedListEntry<E>> {
         //  found: 1___________                                           found: 1___________
         //  li:           ____________ Nothing to do take found  or                              ____________ found to null
 
+        // A shellow copy to prevent change in the indexes in the origal link
+        //
+        //
+
+        link = link._shallowCopy();
+
         if (found.endIndex < link.startIndex && found.next != null) {
           found = found.next!;
         }
 
-        final oriFound = found.copy();
-        if (check) {
-          debugPrint('oriFound $oriFound');
-          debugPrint('found $found');
-          debugPrint('ln $link');
-        }
-
         while (true) {
-          // if(link._list != null){
-          //   link = link.copy();
-          // }
-
-          // if (found == null) {
-          //   if (check) {
-          //     print('0: oriFound $oriFound');
-          //     print('0: found $found');
-          //     print('0: ln $link');
-          //   }
-
-          //   //  Found:     ______               Outside and break
-          //   //  li:                 ___________
-
-          //   _addOutside(link, last, addEmpty);
-          //   break;
-          // }
-
-          // Found:   ___  1  __  2  _____
-          // li:          ________
-          //
-          //   1,2 li.startIndex < found.startFound
-          // Go to previous found!!
-
           if (found.startIndex > link.startIndex) {
-            if (check) {
-              debugPrint('1: oriFound $oriFound');
-              debugPrint('1: found $found');
-              debugPrint('1: ln $link');
-            }
-
             if (link.endIndex < found.startIndex) {
               // 2
               _addOutside(link, found.previous);
@@ -380,14 +322,14 @@ abstract class LineLinkedList<E extends LineLinkedListEntry<E>> {
               final endLink = link.endIndex;
               final startFound = found.startIndex;
 
+              // At first part of the link before found
+              // Reduce the link and merge in the next round
+              //
+
               final newFound = _addOutside(
-                link..endIndex = requestNewIndex(startFound.index - 1),
+                link..endIndex = startFound - 1,
                 found.previous,
               );
-
-              if (link._list != null) {
-                link = link.copy();
-              }
 
               link.startIndex = startFound;
               link.endIndex = endLink;
@@ -403,47 +345,25 @@ abstract class LineLinkedList<E extends LineLinkedListEntry<E>> {
             //    li:     ________
             //    continue
 
-            if (check) {
-              debugPrint('2: oriFound $oriFound');
-              debugPrint('2: found $found');
-              debugPrint('2: ln $link');
-            }
             final endFound = found.endIndex;
             final endLink = link.endIndex;
-            assert(link._list == null);
-            // assert(found != null);
-            found = _addInside(link..endIndex = endFound, found, merge);
 
-            if (_length == 0) {
+            E? nextFound = _addInside(link..endIndex = endFound, found, merge);
+
+            if (_length == 0 || nextFound == null) {
               break;
             }
+            found = nextFound;
 
-            // assert(found != null);
-            if (link._list != null) {
-              link = link.copy();
-            }
-
-            link.startIndex = requestNewIndex(endFound.index + 1);
+            link.startIndex = endFound + 1;
             link.endIndex = endLink;
 
             assert(link.startIndex <= link.endIndex,
                 'start: ${link.startIndex} end: ${link.endIndex}');
-
-            if (check) {
-              debugPrint('2: found after $found');
-            }
           } else if (link.endIndex <= found.endIndex) {
             //    found:  _______________
             //    li:     ________
             //    break
-
-            if (check) {
-              debugPrint('3: oriFound $oriFound');
-              debugPrint('3: found $found');
-              debugPrint('3: ln $link');
-            }
-
-            assert(link._list == null);
 
             _addInside(link, found, merge);
             break;
@@ -470,8 +390,10 @@ abstract class LineLinkedList<E extends LineLinkedListEntry<E>> {
   E? _addOutside(E link, E? found) {
     E? newFound;
 
+    link = link._copy();
+
     if (found == null || link.endIndex < found.startIndex) {
-      if (link.isNotEmpty || addEmpty) {
+      if (link.isNotEmpty || _addEmpty) {
         if (link.equalInterceptAndJoined(_first)) {
           _first!.startIndex = link.startIndex;
           newFound = _first;
@@ -483,143 +405,95 @@ abstract class LineLinkedList<E extends LineLinkedListEntry<E>> {
         }
       }
     } else if (found.endIndex < link.startIndex) {
-      if (link.isNotEmpty || addEmpty) {
+      if (link.isNotEmpty || _addEmpty) {
         _insertAfter(found, link);
         assert(link.next == null || link.endIndex < link.next!.startIndex,
             'Overlap is not alought endIndex: ${link.endIndex} startIndex: ${link._next!.startIndex}');
-        newFound = shrink(link);
-        // assert(newFound != null);
+        newFound = assimilate(link);
       }
     } else {
-      debugPrint('outside: should not happen li: $link');
-      debugPrint('outside: should not happen found: $found');
+      assert(false,
+          'Not ouside with _AddOutside, this should not happen link: $link, found $found');
     }
 
     return newFound;
   }
 
-  E _addInside(E link, E? found, Merge<E> merge) {
-    E newFound;
+  E? _addInside(E link, E found, LineLinkedMerge<E> merge) {
+    E? newFound;
 
-    if (found == null) {
-      if (link.isNotEmpty || addEmpty) {
-        if (link.equalInterceptAndJoined(_first)) {
-          _first!.startIndex = link.startIndex;
-          newFound = _first!;
-        } else {
-          _insertBefore(_first, link, updateFirst: true);
-          assert(link.next == null || link.endIndex < link.next!.startIndex,
-              'Overlap is not alought');
-          newFound = link;
-        }
-      } else {
-        newFound = _first!;
-      }
-
-      // assert(newFound != null);
-    } else if (found.endIndex < link.startIndex) {
-      if (link.isNotEmpty || addEmpty) {
-        _insertAfter(found, link);
-        assert(link.next == null || link.endIndex < link.next!.startIndex,
-            'Overlap is not alought endIndex: ${link.endIndex} startIndex: ${link._next!.startIndex}');
-        newFound = shrink(link);
-      } else {
-        newFound = found;
-      }
-
-      // assert(newFound != null);
-    } else if (found.startIndex == link.startIndex &&
+    if (found.startIndex == link.startIndex &&
         found.endIndex == link.endIndex) {
       final adjusted = merge(found, link);
 
-      if (adjusted.isNotEmpty || addEmpty) {
+      if (adjusted.isNotEmpty || _addEmpty) {
         if (adjusted.differentIntercept(found)) {
           replace(found, adjusted);
-          newFound = shrink(adjusted);
+          newFound = assimilate(adjusted);
         } else {
           newFound = found;
         }
       } else {
-        newFound = identical(_first, found) ? found._next! : found._previous!;
+        newFound = found._next;
         _unlink(found);
       }
-      // if (newFound == null) print('length $_length found $newFound');
-      // assert(_length == 0 || newFound != null);
-      //assert(_length == 0);
     } else if (found.startIndex <= link.startIndex &&
         found.endIndex >= link.endIndex) {
       final adjusted = merge(found, link);
 
-      if (adjusted.differentIntercept(found)) {
-        if (adjusted.startIndex > found.startIndex &&
-            adjusted.endIndex < found.endIndex) {
-          final foundLeft = found;
-          final foundRight = found.copy();
+      if (adjusted.startIndex > found.startIndex &&
+          adjusted.endIndex < found.endIndex) {
+        final foundLeft = found;
+        final foundRight = found._copy();
 
-          foundLeft.endIndex = requestNewIndex(adjusted.startIndex.index - 1);
-          foundRight.startIndex = requestNewIndex(adjusted.endIndex.index + 1);
+        foundLeft.endIndex = adjusted.startIndex - 1;
+        foundRight.startIndex = adjusted.endIndex + 1;
 
-          _insertAfter(foundLeft, foundRight);
+        _insertAfter(foundLeft, foundRight);
 
-          if (adjusted.isNotEmpty || addEmpty) {
-            _insertAfter(foundLeft, adjusted);
-          }
-          newFound = foundRight;
+        if (adjusted.isNotEmpty || _addEmpty) {
+          _insertAfter(foundLeft, adjusted);
+        }
+        newFound = foundRight;
+      } else if (adjusted.startIndex == found.startIndex) {
+        assert(adjusted.endIndex <= found.endIndex,
+            'EndIndex out of bound: ${adjusted.endIndex}, startIndex equal');
 
-          // assert(newFound != null);
-        } else if (adjusted.startIndex == found.startIndex) {
-          assert(adjusted.endIndex <= found.endIndex,
-              'EndIndex out of bound: ${adjusted.endIndex}, startIndex equal');
+        found.startIndex = adjusted.endIndex + 1;
 
-          found.startIndex = requestNewIndex(adjusted.endIndex.index + 1);
-
-          if (adjusted.equalInterceptAndJoined(found.previous)) {
-            newFound = found..previous!.endIndex = adjusted.endIndex;
-          } else if (adjusted.isNotEmpty || addEmpty) {
-            //_insertAfter(found.previous, adjusted);
-            _insertBefore(found, adjusted,
-                updateFirst: identical(found, _first));
-            newFound = adjusted;
-          } else {
-            newFound = found;
-          }
-
-          // No shrink Next not necessary, because the previous is different!
-          // assert(newFound != null);
-        } else if (adjusted.endIndex == found.endIndex) {
-          assert(adjusted.startIndex >= found.startIndex,
-              'StartIndex out of bound ${adjusted.startIndex}, endIndex equal');
-
-          found.endIndex = requestNewIndex(adjusted.startIndex.index - 1);
-
-          if (adjusted.equalInterceptAndJoined(found.next)) {
-            newFound = found..next!.startIndex = adjusted.startIndex;
-          } else if (adjusted.isNotEmpty || addEmpty) {
-            _insertAfter(found, adjusted);
-            newFound = adjusted;
-          } else {
-            newFound = found;
-          }
-
-          // No shrink Previous not necessary, because the previous is different!
-          // assert(newFound != null);
+        if (adjusted.equalInterceptAndJoined(found.previous)) {
+          newFound = found..previous!.endIndex = adjusted.endIndex;
+        } else if (adjusted.isNotEmpty || _addEmpty) {
+          _insertBefore(found, adjusted, updateFirst: identical(found, _first));
+          newFound = adjusted;
         } else {
           newFound = found;
-          throw ('StartIndex ${adjusted.startIndex < found.startIndex ? 'out' : 'in'} bound, endIndex ${adjusted.endIndex > found.endIndex ? 'out' : 'in'} bound');
+        }
+      } else if (adjusted.endIndex == found.endIndex) {
+        assert(adjusted.startIndex >= found.startIndex,
+            'StartIndex out of bound ${adjusted.startIndex}, endIndex equal');
+
+        found.endIndex = adjusted.startIndex - 1;
+
+        if (adjusted.equalInterceptAndJoined(found.next)) {
+          newFound = found..next!.startIndex = adjusted.startIndex;
+        } else if (adjusted.isNotEmpty || _addEmpty) {
+          _insertAfter(found, adjusted);
+          newFound = adjusted;
+        } else {
+          newFound = found;
         }
       } else {
         newFound = found;
+        throw ('StartIndex ${adjusted.startIndex < found.startIndex ? 'out' : 'in'} bound, endIndex ${adjusted.endIndex > found.endIndex ? 'out' : 'in'} bound');
       }
     } else {
       throw ('No option found to add the link in LineLinkedList function _addInside link startIndex: ${link.startIndex}, endIndex ${link.endIndex}, this is a properly a bug');
     }
     return newFound;
-    // throw ('newFound is null');
-    // assert(newFound != null, 'should not happen ln: $link and found: $found');
-    // return newFound!;
   }
 
-  E shrink(E link) {
+  E assimilate(E link) {
     if (link.equalInterceptAndJoined(link.previous)) {
       final previous = link.previous!..endIndex = link.endIndex;
       _unlink(link);
@@ -652,20 +526,6 @@ abstract class LineLinkedList<E extends LineLinkedListEntry<E>> {
 
     return begin!;
   }
-
-  // setIndex(E link, var startLevelIndex, var endLevelIndex) {
-  //   assert(startLevelIndex != null,
-  //       'StartIndex can not be null, Where does the list or LineNode start?');
-  //   link.setIndex(
-  //       startIndex: startLevelIndex is int
-  //           ? requestNewIndex(startLevelIndex)
-  //           : startLevelIndex,
-  //       endIndex: endLevelIndex == null
-  //           ? null
-  //           : (endLevelIndex is int
-  //               ? requestNewIndex(endLevelIndex)
-  //               : endLevelIndex));
-  // }
 
   /* Default linked list functions
    *
@@ -757,13 +617,6 @@ abstract class LineLinkedList<E extends LineLinkedListEntry<E>> {
   bool get isEmpty => _length == 0;
 
   findOrBefore(E entry) {
-    // operator > (LineIntercept o) => startIndex > o.endIndex;
-    // operator < (LineIntercept o) => endIndex < o.startIndex;
-    // operator <= (LineIntercept o) => startIndex <= o.startIndex;
-
-    // if (entry < _first) {
-    //   return null;
-    // }
     assert(_first != null, 'First cannot be null in function findOrBefore');
 
     _current ??= _first;
@@ -773,9 +626,6 @@ abstract class LineLinkedList<E extends LineLinkedListEntry<E>> {
         _current = _current!._next;
       }
     } else {
-      // while(!identical(_current, _first) && _current > entry){
-      //   _current = _current.previous;
-      // }
       while (!identical(_current, _first) && _current!.goToPrevious(entry)) {
         _current = _current!._previous;
       }
@@ -788,8 +638,6 @@ abstract class LineLinkedList<E extends LineLinkedListEntry<E>> {
     if (entry.list != null) {
       throw StateError('LinkedListEntry is already in a LinkedList');
     }
-
-    // _modificationCount++;
 
     entry._list = this;
     replace._next!._previous = entry;
@@ -857,88 +705,44 @@ abstract class LineLinkedList<E extends LineLinkedListEntry<E>> {
   }
 }
 
+class EmptyLineNode extends LineNode {
+  EmptyLineNode({
+    required int startIndex,
+    int? endIndex,
+  }) : super(
+            startIndex: startIndex,
+            endIndex: endIndex,
+            before: noLine,
+            after: noLine);
+}
+
 class LineNode extends LineLinkedListEntry<LineNode> {
   LineNode({
-    this.before = _emptyLine,
-    // this.top = _emptyLine,
-    this.after = _emptyLine,
-    // this.bottom = _emptyLine,
-    super.startIndex,
+    required super.startIndex,
     super.endIndex,
+    this.before,
+    this.after,
   });
 
-  final Line before;
-  // final Line top;
-  final Line after;
-  // final Line bottom;
+  final Line? before;
+  final Line? after;
 
-  extendRight() {}
-
-  @override
-  LineNode copy() {
+  LineNode merge(LineNode lineNode) {
     return LineNode(
-      before: before,
-      // top: top,
-      after: after,
-      // bottom: bottom,
-      startIndex: startIndex,
-      endIndex: endIndex,
-    );
-  }
-
-  copyObject(LineNode lineNode) {
-    return LineNode(
-      before: identical(lineNode.before, _emptyLine)
-          ? before
-          : before.copyObject(o: lineNode.before),
-      // top: identical(lineNode.top, _emptyLine)
-      //     ? top
-      //     : top.copyObject(o: lineNode.top),
-      after: identical(lineNode.after, _emptyLine)
-          ? after
-          : after.copyObject(o: lineNode.after),
-      // bottom: identical(lineNode.bottom, _emptyLine)
-      //     ? bottom
-      //     : bottom.copyObject(o: lineNode.bottom),
+      before: before?.merge(lineNode.before) ?? lineNode.before,
+      after: after?.merge(lineNode.after) ?? lineNode.after,
       startIndex: lineNode.startIndex,
       endIndex: lineNode.endIndex,
     );
   }
 
-  LineNode mergeLineNode(
-      {required LineNode lineIntercept, keepNoLine = false}) {
-    return copyObject(lineIntercept);
-    // return LineNode(
-    //   left: (left == noLine && keepNoLine) ||
-    //           identical(lineIntercept.left, _emptyLine)
-    //       ? left
-    //       : lineIntercept.left,
-    //   top: (top == noLine && keepNoLine) ||
-    //           identical(lineIntercept.top, _emptyLine)
-    //       ? top
-    //       : lineIntercept.top,
-    //   right: (right == noLine && keepNoLine) ||
-    //           identical(lineIntercept.right, _emptyLine)
-    //       ? right
-    //       : lineIntercept.right,
-    //   bottom: (bottom == noLine && keepNoLine) ||
-    //           identical(lineIntercept.bottom, _emptyLine)
-    //       ? bottom
-    //       : lineIntercept.bottom,
-    //   startIndex: lineIntercept.startIndex,
-    //   endIndex: lineIntercept.endIndex,
-    // );
+  @override
+  bool get isEmpty {
+    return (before?.isEmpty ?? true) && (after?.isEmpty ?? true);
   }
 
   @override
-  bool get isNotEmpty {
-    return before != gridLine
-            //  || top != gridLine
-            ||
-            after != gridLine
-        //  || bottom != gridLine
-        ;
-  }
+  bool get isNotEmpty => !isEmpty;
 
   @override
   bool operator >(LineNode o) => startIndex > o.startIndex;
@@ -955,7 +759,7 @@ class LineNode extends LineLinkedListEntry<LineNode> {
 
   @override
   String toString() {
-    return 'LineNode(startIndex: $startIndex, endIndex: $endIndex, before: $before, after: $after)';
+    return 'LineNode $startIndex-$endIndex: before: $before, after: $after';
   }
 
   // entry.endIndex < startIndex
@@ -1002,82 +806,87 @@ class LineNode extends LineLinkedListEntry<LineNode> {
   int get hashCode {
     return before.hashCode ^ after.hashCode;
   }
-}
 
-class _EmptyLine extends Line {
-  const _EmptyLine()
-      : super(
-          line: TableLineOptions.no,
-          width: 0,
-          color: const Color(0xffffffff),
-        );
+  @override
+  LineNode _copy() {
+    return LineNode(
+      before: before,
+      after: after,
+      startIndex: startIndex,
+      endIndex: endIndex,
+    );
+  }
+
+  @override
+  LineNode _shallowCopy() {
+    return LineNode(
+      startIndex: startIndex,
+      endIndex: endIndex,
+      before: before,
+      after: after,
+    );
+  }
 }
 
 class Line {
   const Line({
-    this.line = TableLineOptions.custom,
-    this.width = 0.5,
-    this.color = const Color(0xFF42A5F5),
+    this.line = LineOptions.line,
+    this.width,
+    this.color,
     this.lowestScale = 0.5,
     this.highestScale = 2.0,
-  });
+  }) : assert(
+            (line == null || line == LineOptions.no) ||
+                (line == LineOptions.line && width != null && color != null),
+            'Width and color can not be null if tableLineOption is a line.');
 
-  final TableLineOptions line;
-  final double width;
-  final Color color;
+  const Line.change({
+    this.width,
+    this.color,
+    this.lowestScale = 0.5,
+    this.highestScale = 2.0,
+  }) : line = null;
+
+  const Line.no()
+      : line = LineOptions.no,
+        width = null,
+        color = null,
+        lowestScale = 0.5,
+        highestScale = 2.0;
+
+  final LineOptions? line;
+  final double? width;
+  final Color? color;
   final double lowestScale;
   final double highestScale;
 
-  const Line.grid({
-    this.line = TableLineOptions.grid,
-    this.width = 0.0,
-    this.color = const Color(0xffbdbdbd),
-    bool drawLine = true,
-    this.lowestScale = 0.5,
-    this.highestScale = 2.0,
-  });
-
-  const Line.noLine({
-    this.line = TableLineOptions.no,
-    this.width = 0.0,
-    this.color = const Color(0xffffffff),
-    bool drawLine = false,
-    this.lowestScale = 0.5,
-    this.highestScale = 2.0,
-  });
-
   @override
-  String toString() => 'TableLineOptions: $line';
+  String toString() => 'Line(o:$line, w:$width, c:$color)';
 
-  Line copyObject({
-    required Line o,
-  }) {
+  Line merge(Line? o) {
+    if ((line == null || line == LineOptions.no) && o?.line == null) {
+      return Line(line: line);
+    } else if (o?.line == LineOptions.no) {
+      return const Line(line: LineOptions.no);
+    }
+
     return Line(
-      line: o.line,
-      width: o.width,
-      color: o.color,
-      lowestScale: o.lowestScale,
-      highestScale: o.highestScale,
-    );
+        line: o?.line ?? line,
+        width: o?.width ?? width,
+        color: o?.color ?? color,
+        lowestScale: o?.lowestScale ?? lowestScale,
+        highestScale: o?.highestScale ?? highestScale);
   }
 
+  bool get isEmpty =>
+      line == null || line == LineOptions.no || width == 0.0 || color == null;
+
   widthScaled(double scale) =>
-      width *
-      (scale < lowestScale
-          ? lowestScale
-          : (scale > highestScale ? highestScale : scale));
-
-  // @override
-  // bool operator ==(Object o) {
-  //   if (identical(this, o)) return true;
-
-  //   return o is Line && o.line == line && o.width == width && o.color == color && o.drawLine == drawLine;
-  // }
-
-  // @override
-  // int get hashCode {
-  //   return line.hashCode ^ width.hashCode ^ color.hashCode ^ drawLine.hashCode;
-  // }
+      width ??
+      1.0 *
+          (scale < lowestScale
+              ? lowestScale
+              : (scale > highestScale ? highestScale : scale));
 
   @override
   bool operator ==(Object other) {
@@ -1102,33 +911,18 @@ class Line {
 }
 
 abstract class LineLinkedListEntry<E extends LineLinkedListEntry<E>> {
-  LineLinkedListEntry({Index? startIndex, Index? endIndex}) {
-    if (startIndex != null) {
-      this.startIndex = startIndex;
-      this.endIndex = endIndex ?? startIndex;
-    }
-  }
+  LineLinkedListEntry({required this.startIndex, int? endIndex})
+      : endIndex = endIndex ?? startIndex;
 
   LineLinkedList<E>? _list;
   E? _next;
   E? _previous;
-  late Index startIndex;
-  late Index endIndex;
+  int startIndex;
+  int endIndex;
 
-  // assert(endIndex == null || startIndex <= endIndex,
-  //     'EndIndex ${endIndex.index} is smaller than startIndex ${startIndex.index}! ');
+  int get start => startIndex;
 
-  // Index get startIndex => _startIndex!;
-
-  // Index get endIndex => _endIndex!;
-
-  // set startIndex(value) => _startIndex = value;
-
-  // set endIndex(value) => _endIndex = value;
-
-  int get start => startIndex.index;
-
-  int get end => endIndex.index;
+  int get end => endIndex;
 
   /// Get the linked list containing this element.
   ///
@@ -1176,70 +970,31 @@ abstract class LineLinkedListEntry<E extends LineLinkedListEntry<E>> {
     _list!._insertBefore(this as E, entry, updateFirst: true);
   }
 
-  bool goToNext(covariant entry);
+  bool goToNext(E entry);
 
-  bool goToPrevious(covariant entry);
+  bool goToPrevious(E entry);
 
-  bool operator >(covariant o);
+  bool operator >(E o);
 
-  bool operator <(covariant o);
+  bool operator <(E o);
 
-  bool equalInterceptAndJoined(covariant o) {
-    return equalLink(o) &&
+  bool equalInterceptAndJoined(E? o) {
+    return (o != null) &&
+        equalLink(o) &&
         (startIndex < o.startIndex
-            ? endIndex.index + 1 == o.startIndex.index
-            : startIndex.index - 1 == o.endIndex.index);
+            ? endIndex + 1 == o.startIndex
+            : startIndex - 1 == o.endIndex);
   }
 
   bool equalLink(E? o);
 
+  bool get isEmpty;
+
   bool get isNotEmpty;
 
-  E copy();
+  E _copy();
 
   bool differentIntercept(E o) => !equalLink(o);
+
+  E _shallowCopy();
 }
-
-class DummyIndex with Index {
-  @override
-  final int index;
-
-  const DummyIndex(
-    this.index,
-  );
-}
-
-printList(LineNodeRange lineList) {
-  debugPrint(
-      '> LineNode list --------------------------------------------------');
-  var t = lineList._first;
-
-  while (t != null) {
-    debugPrint(' - $t');
-    t = t.next;
-  }
-}
-
-printListNext(LineNodeRange lineList) {
-  var t = lineList._first;
-
-  while (t != null) {
-    t = t.next;
-  }
-}
-
-printListPrevious(LineNodeRange lineList) {
-  var t = lineList.last;
-
-  while (t != null) {
-    t = t.previous;
-  }
-}
-
-// class EmptyIndex with Index {
-//   final int index = -1;
-
-//   const EmptyIndex();
-// }
-
-// const emptyIndex = EmptyIndex();

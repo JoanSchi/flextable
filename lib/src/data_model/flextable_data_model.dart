@@ -5,89 +5,35 @@
 import '../builders/cells.dart';
 import '../builders/table_line.dart';
 
-class FlexTableDataModelCR extends AbstractFlexTableDataModel {
-  FlexTableDataModelCR() : super();
-
-  final List<TableColumn?> _tableColumnList = [];
-  final List<GridRibbon?> _rowIndices = [];
-
-  @override
-  List<GridRibbon?> get columnIndices => _tableColumnList;
-
-  @override
-  Index initiateColumnIndex(int index) => TableColumn(index);
-
-  @override
-  Index initiateRowIndex(int index) => RowIndex(index);
-
-  @override
-  List<GridRibbon?> get rowIndices => _rowIndices;
-
-  @override
-  void addCell(
-      {required int row,
-      required int column,
-      int rows = 1,
-      int columns = 1,
-      required Cell cell}) {
-    TableColumn tableColumn = retrieveColumnIndex(column) as TableColumn;
-
-    placeCell(tableColumn, row, cell);
-
-    if (rows > 1 || columns > 1) {
-      _addMerged(cell: cell, rows: rows, columns: columns);
-    }
-  }
-
-  placeCell(TableColumn tableColumn, int row, Cell cell) {
-    List<Cell?> rowList = tableColumn.rowList;
-
-    if (row >= rowList.length) {
-      rowList.length = row + 1;
-      rowList[row] = cell;
-    }
-
-    cell
-      ..rowIndex = retrieveRowIndex(row)
-      ..columnIndex = tableColumn;
-
-    rowList[row] = cell;
-
-    return tableColumn;
-  }
-
-  @override
-  Cell? cell({required int row, required int column}) {
-    if (column < _tableColumnList.length) {
-      final tableColumn = _tableColumnList[column];
-
-      final rowList = tableColumn?.rowList;
-
-      if (rowList != null && row < rowList.length) {
-        return rowList[row];
-      }
-    }
-    return null;
-  }
-}
-
 class FlexTableDataModel extends AbstractFlexTableDataModel {
-  FlexTableDataModel() : super();
+  FlexTableDataModel()
+      : _tableRowList = <TableRow?>[],
+        _columnIndices = <GridRibbon?>[],
+        super();
 
-  final List<TableRow?> _tableRowList = <TableRow?>[];
-  final List<GridRibbon?> _columnIndices = <GridRibbon?>[];
+  final List<TableRow?> _tableRowList;
+  final List<GridRibbon?> _columnIndices;
 
-  @override
-  List<GridRibbon?> get columnIndices => _columnIndices;
+  T ribbon<T>(int index, List<T?> list, newRibbon) {
+    T? ribbon;
 
-  @override
-  List<GridRibbon?> get rowIndices => _tableRowList;
+    if (index < list.length) {
+      ribbon = list[index];
 
-  @override
-  Index initiateColumnIndex(int index) => ColumnIndex(index);
+      if (ribbon == null) {
+        ribbon = newRibbon(index);
+        list[index] = ribbon;
+      }
+    } else {
+      list.length = index + 1;
+      ribbon = newRibbon(index);
+      list[index] = ribbon;
+    }
 
-  @override
-  Index initiateRowIndex(int index) => TableRow(index);
+    assert(ribbon != null, 'No Ribbon found');
+
+    return ribbon!;
+  }
 
   @override
   void addCell(
@@ -96,12 +42,14 @@ class FlexTableDataModel extends AbstractFlexTableDataModel {
       int rows = 1,
       int columns = 1,
       required Cell cell}) {
-    TableRow tableRow = retrieveRowIndex(row) as TableRow;
+    TableRow tableRow =
+        ribbon<TableRow>(row, _tableRowList, (int index) => TableRow(index));
 
     _placeCell(tableRow, column, cell);
 
     if (rows > 1 || columns > 1) {
-      _addMerged(cell: cell, rows: rows, columns: columns);
+      _addMerged(
+          cell: cell, row: row, column: column, rows: rows, columns: columns);
     }
   }
 
@@ -112,9 +60,7 @@ class FlexTableDataModel extends AbstractFlexTableDataModel {
       columnList.length = column + 1;
     }
 
-    columnList[column] = cell
-      ..rowIndex = tableRow
-      ..columnIndex = retrieveColumnIndex(column);
+    columnList[column] = cell;
 
     return tableRow;
   }
@@ -132,20 +78,53 @@ class FlexTableDataModel extends AbstractFlexTableDataModel {
     }
     return null;
   }
+
+  @override
+  GridRibbon columnRibbon(int index) {
+    return ribbon<GridRibbon>(
+        index, _columnIndices, (int index) => ColumnIndex(index));
+  }
+
+  @override
+  GridRibbon rowRibbon(int index) {
+    return ribbon<TableRow>(
+        index,
+        _tableRowList,
+        (int index) => TableRow(
+              index,
+            ));
+  }
+
+  @override
+  Merged? findMergedRows(int row, int column) {
+    return (column < _columnIndices.length)
+        ? _columnIndices[column]?.findMerged(
+            find: row,
+            firstIndex: (Merged m) => m.startRow,
+            lastIndex: (Merged m) => m.lastRow)
+        : null;
+  }
+
+  @override
+  Merged? findMergedColumns(int row, int column) {
+    return (row < _tableRowList.length)
+        ? _tableRowList[row]?.findMerged(
+            find: column,
+            firstIndex: (Merged m) => m.startColumn,
+            lastIndex: (Merged m) => m.lastColumn)
+        : null;
+  }
 }
 
 abstract class AbstractFlexTableDataModel {
-  late TableLinesOneDirection horizontalLineList;
-  late TableLinesOneDirection verticalLineList;
+  TableLinesOneDirection horizontalLineList;
+  TableLinesOneDirection verticalLineList;
 
-  AbstractFlexTableDataModel() {
-    horizontalLineList = TableLinesOneDirection(
-        requestLineRangeModelIndex: retrieveRowIndex,
-        requestModelIndex: retrieveColumnIndex);
-    verticalLineList = TableLinesOneDirection(
-        requestLineRangeModelIndex: retrieveColumnIndex,
-        requestModelIndex: retrieveRowIndex);
-  }
+  AbstractFlexTableDataModel(
+      {TableLinesOneDirection? horizontalLineList,
+      TableLinesOneDirection? verticalLineList})
+      : horizontalLineList = horizontalLineList ?? TableLinesOneDirection(),
+        verticalLineList = verticalLineList ?? TableLinesOneDirection();
 
   addCell(
       {required int row,
@@ -154,53 +133,31 @@ abstract class AbstractFlexTableDataModel {
       int columns = 1,
       required Cell cell});
 
-  List<GridRibbon?> get columnIndices;
-
-  List<GridRibbon?> get rowIndices;
-
-  Index index(int value, List<Index?> list, newIndex) {
-    Index? index;
-
-    if (value < list.length) {
-      index = list[value];
-
-      if (index == null) {
-        index = newIndex(value);
-        list[value] = index;
-      }
-    } else {
-      list.length = value + 1;
-      index = newIndex(value);
-      list[value] = index;
-    }
-
-    assert(index != null, 'No index found');
-
-    return index!;
-  }
-
   Cell? cell({required int row, required int column});
 
-  _addMerged({required Cell cell, required int rows, required int columns}) {
-    final rowIndex = cell.rowIndex;
-    final columnIndex = cell.columnIndex;
-
+  _addMerged(
+      {required Cell cell,
+      required int row,
+      required int column,
+      required int rows,
+      required int columns}) {
     cell.merged = Merged(
-        startRow: rowIndex,
-        startColumn: columnIndex,
-        lastRow: indexOfExtendRow(rowIndex, rows),
-        lastColumn: indexOfExtendColumn(columnIndex, columns));
+        startRow: row,
+        startColumn: column,
+        lastRow: row + rows - 1,
+        lastColumn: column + columns - 1);
 
     if (columns == 1) {
       _addMergeOneDirection(
-          gridRibbon: retrieveColumnIndex(columnIndex.index) as GridRibbon,
-          merged: cell.merged!);
+          gridRibbon: columnRibbon(column), merged: cell.merged!);
     } else if (rows == 1) {
-      _addMergeOneDirection(
-          gridRibbon: retrieveRowIndex(rowIndex.index) as GridRibbon,
-          merged: cell.merged!);
-    } else {}
+      _addMergeOneDirection(gridRibbon: rowRibbon(row), merged: cell.merged!);
+    }
   }
+
+  GridRibbon columnRibbon(int index);
+
+  GridRibbon rowRibbon(int index);
 
   _addMergeOneDirection(
       {required GridRibbon gridRibbon, required Merged merged}) {
@@ -214,49 +171,26 @@ abstract class AbstractFlexTableDataModel {
 
     int i = 0;
 
-    while (i < length && startIndex.index > indexInList(i).index) {
+    while (i < length && startIndex > indexInList(i)) {
       i++;
     }
 
     gridRibbon.mergedList.insert(i, merged);
   }
 
-  Index indexOfExtendRow(Index rowIndex, int rows) {
-    if (rows == 1) {
-      return rowIndex;
-    }
-    return retrieveRowIndex(rowIndex.index + rows - 1);
-  }
+  Merged? findMergedRows(int row, int column);
 
-  Index indexOfExtendColumn(Index columnIndex, int columns) {
-    if (columns == 1) {
-      return columnIndex;
-    }
-    return retrieveColumnIndex(columnIndex.index + columns - 1);
-  }
-
-  Index initiateColumnIndex(int index);
-
-  Index initiateRowIndex(int index);
-
-  Index retrieveColumnIndex(int column) =>
-      index(column, columnIndices, initiateColumnIndex);
-
-  Index retrieveRowIndex(int row) => index(row, rowIndices, initiateRowIndex);
-
-  GridRibbon? mergedRows(int column) =>
-      column < columnIndices.length ? columnIndices[column] : null;
-
-  GridRibbon? mergedColumns(int row) =>
-      row < rowIndices.length ? rowIndices[row] : null;
+  Merged? findMergedColumns(int row, int column);
 }
 
 class TableRow extends GridRibbon {
   @override
   int index;
-  List<Cell?> columnList = <Cell?>[];
+  List<Cell?> columnList;
 
-  TableRow(this.index);
+  TableRow(
+    this.index,
+  ) : columnList = <Cell?>[];
 }
 
 class ColumnIndex extends GridRibbon {
@@ -274,9 +208,77 @@ class TableColumn extends GridRibbon {
   TableColumn(this.index);
 }
 
-class RowIndex extends GridRibbon {
-  @override
-  int index;
 
-  RowIndex(this.index);
-}
+
+// class FlexTableDataModelCR extends AbstractFlexTableDataModel {
+//   FlexTableDataModelCR() : super();
+
+//   final List<TableColumn?> _tableColumnList = [];
+//   final List<GridRibbon?> _rowIndices = [];
+
+//   @override
+//   List<GridRibbon?> get columnIndices => _tableColumnList;
+
+//   @override
+//   Index initiateColumnIndex(int index) => TableColumn(index);
+
+//   @override
+//   Index initiateRowIndex(int index) => RowIndex(index);
+
+//   @override
+//   List<GridRibbon?> get rowIndices => _rowIndices;
+
+//   @override
+//   void addCell(
+//       {required int row,
+//       required int column,
+//       int rows = 1,
+//       int columns = 1,
+//       required Cell cell}) {
+//     TableColumn tableColumn = retrieveColumnGridRibbon(column) as TableColumn;
+
+//     placeCell(tableColumn, row, cell);
+
+//     if (rows > 1 || columns > 1) {
+//       _addMerged(
+//           cell: cell, row: row, column: column, rows: rows, columns: columns);
+//     }
+//   }
+
+//   placeCell(TableColumn tableColumn, int row, Cell cell) {
+//     List<Cell?> rowList = tableColumn.rowList;
+
+//     if (row >= rowList.length) {
+//       rowList.length = row + 1;
+//       rowList[row] = cell;
+//     }
+
+//     cell;
+
+//     rowList[row] = cell;
+
+//     return tableColumn;
+//   }
+
+//   @override
+//   Cell? cell({required int row, required int column}) {
+//     if (column < _tableColumnList.length) {
+//       final tableColumn = _tableColumnList[column];
+
+//       final rowList = tableColumn?.rowList;
+
+//       if (rowList != null && row < rowList.length) {
+//         return rowList[row];
+//       }
+//     }
+//     return null;
+//   }
+// }
+
+
+// class RowIndex extends GridRibbon {
+//   @override
+//   int index;
+
+//   RowIndex(this.index);
+// }

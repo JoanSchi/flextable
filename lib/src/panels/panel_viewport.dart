@@ -786,28 +786,28 @@ class TablePanelRenderViewport extends RenderBox
         paintLines(context, offset);
       }
 
-      assert(() {
-        Color color;
-        switch (panelIndex) {
-          case 5:
-            color = Colors.amber.withAlpha(155);
-            break;
-          case 6:
-            color = Colors.pinkAccent.withAlpha(155);
-            break;
-          case 9:
-            color = Colors.lightGreen.withAlpha(155);
-            break;
-          default:
-            color = Colors.blue.withAlpha(155);
-            break;
-        }
-        Paint paint = Paint();
-        paint.color = color;
-        context.canvas.drawCircle(
-            size.bottomRight(offset + const Offset(-25.0, -25.0)), 20, paint);
-        return true;
-      }());
+      // assert(() {
+      //   Color color;
+      //   switch (panelIndex) {
+      //     case 5:
+      //       color = Colors.amber.withAlpha(155);
+      //       break;
+      //     case 6:
+      //       color = Colors.pinkAccent.withAlpha(155);
+      //       break;
+      //     case 9:
+      //       color = Colors.lightGreen.withAlpha(155);
+      //       break;
+      //     default:
+      //       color = Colors.blue.withAlpha(155);
+      //       break;
+      //   }
+      //   Paint paint = Paint();
+      //   paint.color = color;
+      //   context.canvas.drawCircle(
+      //       size.bottomRight(offset + const Offset(-25.0, -25.0)), 20, paint);
+      //   return true;
+      // }());
     });
   }
 
@@ -1068,36 +1068,37 @@ class TablePanelRenderViewport extends RenderBox
       required double levelOnePosition,
       double levelTwoStartPosition = 0.0,
       double levelTwoEndPosition = double.maxFinite}) {
-    if ((first == null || first.after.line == TableLineOptions.no) &&
-        (second == null || second.before.line == TableLineOptions.no)) {
+    final firstAfter = first?.after;
+    final secondBefore = second?.before;
+
+    if (firstAfter != null && !firstAfter.isEmpty) {
+      paint
+        ..color = firstAfter.color!
+        ..strokeWidth = firstAfter.widthScaled(tableScale);
+    } else if (secondBefore != null && !secondBefore.isEmpty) {
+      paint
+        ..color = secondBefore.color!
+        ..strokeWidth = secondBefore.widthScaled(tableScale);
+    } else {
       return;
     }
 
     levelTwoStartPosition = (levelTwoStartPosition - xScroll) * tableScale;
 
+    if (levelTwoStartPosition < 0.0) {
+      levelTwoStartPosition = 0.0;
+    }
+
     levelTwoEndPosition = (levelTwoEndPosition - xScroll) * tableScale;
+
+    if (levelTwoEndPosition > size.width) {
+      levelTwoEndPosition = size.width;
+    }
 
     levelOnePosition = (levelOnePosition - yScroll) * tableScale;
 
-    if (first != null) {
-      paint
-        ..color = first.after.color
-        ..strokeWidth = first.after.widthScaled(tableScale);
-    } else if (second != null) {
-      paint
-        ..color = second.before.color
-        ..strokeWidth = second.before.widthScaled(tableScale);
-    }
-    //paint.color = Color(0xFFFF9000);
-
-    if ((first == null || first.after.line == TableLineOptions.grid) &&
-        (second == null || second.before.line == TableLineOptions.grid)) {
-      canvas.drawLine(Offset(levelTwoStartPosition, levelOnePosition),
-          Offset(levelTwoEndPosition, levelOnePosition), paint);
-    } else {
-      canvas.drawLine(Offset(levelTwoStartPosition, levelOnePosition),
-          Offset(levelTwoEndPosition, levelOnePosition), paint);
-    }
+    canvas.drawLine(Offset(levelTwoStartPosition, levelOnePosition),
+        Offset(levelTwoEndPosition, levelOnePosition), paint);
   }
 
   drawVerticalLine(
@@ -1109,20 +1110,20 @@ class TablePanelRenderViewport extends RenderBox
       required double levelOnePosition,
       double levelTwoStartPosition = 0.0,
       double levelTwoEndPosition = double.maxFinite}) {
-    if ((first == null || first.after.line == TableLineOptions.no) &&
-        (second == null || second.before.line == TableLineOptions.no)) {
+    final firstAfter = first?.after;
+    final secondBefore = second?.before;
+
+    if (firstAfter != null && !firstAfter.isEmpty) {
+      paint.color = firstAfter.color!;
+      paint.strokeWidth = firstAfter.widthScaled(tableScale);
+    } else if (secondBefore != null && !secondBefore.isEmpty) {
+      paint.color = secondBefore.color!;
+      paint.strokeWidth = secondBefore.widthScaled(tableScale);
+    } else {
       return;
     }
 
     levelTwoStartPosition = (levelTwoStartPosition - yScroll) * tableScale;
-
-    if (first != null) {
-      paint.color = first.after.color;
-      paint.strokeWidth = first.after.widthScaled(tableScale);
-    } else if (second != null) {
-      paint.color = second.before.color;
-      paint.strokeWidth = second.before.widthScaled(tableScale);
-    }
 
     if (levelTwoStartPosition < 0.0) {
       levelTwoStartPosition = 0.0;
@@ -1136,14 +1137,8 @@ class TablePanelRenderViewport extends RenderBox
 
     levelOnePosition = (levelOnePosition - xScroll) * tableScale;
 
-    if ((first == null || first.after.line == TableLineOptions.grid) &&
-        (second == null || second.before.line == TableLineOptions.grid)) {
-      canvas.drawLine(Offset(levelOnePosition, levelTwoStartPosition),
-          Offset(levelOnePosition, levelTwoEndPosition), paint);
-    } else {
-      canvas.drawLine(Offset(levelOnePosition, levelTwoStartPosition),
-          Offset(levelOnePosition, levelTwoEndPosition), paint);
-    }
+    canvas.drawLine(Offset(levelOnePosition, levelTwoStartPosition),
+        Offset(levelOnePosition, levelTwoEndPosition), paint);
   }
 }
 

@@ -5,19 +5,19 @@
 mixin Index {
   int get index;
 
-  operator <(object) => index < (object is int ? object : object.index);
+  // operator <(object) => index < (object is int ? object : object.index);
 
-  operator <=(object) => index <= (object is int ? object : object.index);
+  // operator <=(object) => index <= (object is int ? object : object.index);
 
-  operator >(object) => index > (object is int ? object : object.index);
+  // operator >(object) => index > (object is int ? object : object.index);
 
-  operator >=(object) => index >= (object is int ? object : object.index);
+  // operator >=(object) => index >= (object is int ? object : object.index);
 
-  @override
-  bool operator ==(Object object) => object is Index && index == object.index;
+  // @override
+  // bool operator ==(Object object) => object is Index && index == object.index;
 
-  @override
-  int get hashCode => index.hashCode;
+  // @override
+  // int get hashCode => index.hashCode;
 
   @override
   String toString() => '$index';
@@ -28,12 +28,15 @@ abstract class GridRibbon with Index {
   int findIndex = 0;
   List<Merged> mergedList = [];
 
-  findMerged({required int find, firstIndex, lastIndex}) {
+  findMerged(
+      {required int find,
+      required int Function(Merged merged) firstIndex,
+      required int Function(Merged merged) lastIndex}) {
     if (mergedList.isEmpty) {
       return null;
     }
 
-    Merged? contains(find, merged) =>
+    Merged? contains(int find, Merged merged) =>
         find >= firstIndex(merged) && find <= lastIndex(merged) ? merged : null;
 
     final length = mergedList.length;
@@ -71,8 +74,6 @@ class Cell {
   Cell({this.value = '', Map? attr}) : attr = attr ?? {};
 
   late double left, top, width, height;
-  late Index rowIndex;
-  late Index columnIndex;
   double scaleAndZoom = 1.0;
 
   Map attr;
@@ -96,16 +97,16 @@ class Merged {
       required this.startColumn,
       required this.lastColumn});
 
-  Index startRow;
-  Index lastRow;
-  Index startColumn;
-  Index lastColumn;
+  int startRow;
+  int lastRow;
+  int startColumn;
+  int lastColumn;
 
   bool containCell(int row, int column) {
-    return (row >= startRow.index &&
-        row <= lastRow.index &&
-        column >= startColumn.index &&
-        column <= lastColumn.index);
+    return (row >= startRow &&
+        row <= lastRow &&
+        column >= startColumn &&
+        column <= lastColumn);
   }
 
   columnsMerged() => startColumn < lastColumn;
@@ -114,6 +115,6 @@ class Merged {
 
   @override
   String toString() {
-    return 'Merged(startRow: ${startRow.index}, lastRow: ${lastRow.index}, startColumn: ${startColumn.index}, lastColumn: ${lastColumn.index})';
+    return 'Merged(startRow: $startRow, lastRow: $lastRow, startColumn: $startColumn, lastColumn: $lastColumn)';
   }
 }

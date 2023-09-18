@@ -34,7 +34,7 @@ class _ShortExampleState extends State<ShortExample> {
     const columns = 50;
     const rows = 5000;
     dataTable = FlexTableDataModel();
-    const lineColor = Color.fromARGB(255, 70, 78, 38);
+    const line = Line(width: 0.5, color: Color.fromARGB(255, 70, 78, 38));
 
     for (int r = 0; r < rows; r++) {
       for (int c = 0; c < columns; c++) {
@@ -64,23 +64,21 @@ class _ShortExampleState extends State<ShortExample> {
       }
     }
 
-    dataTable.horizontalLineList.createLineRanges(
-        (requestLineRangeModelIndex, requestModelIndex, create) {
+    dataTable.horizontalLineList.addLineRanges((create) {
       for (int r = 0; r < rows; r += 3) {
         /// Horizontal lines
         ///
         ///
         create(LineRange(
-            startIndex: requestLineRangeModelIndex(r),
-            lineNodeRange:
-                LineNodeRange(requestNewIndex: requestModelIndex, lineNodes: [
+            startIndex: r,
+            lineNodeRange: LineNodeRange(list: [
               LineNode(
-                startIndex: requestModelIndex(0),
-                after: const Line(color: lineColor),
+                startIndex: 0,
+                after: line,
               ),
               LineNode(
-                startIndex: requestModelIndex(0),
-                before: const Line(color: lineColor),
+                startIndex: 0,
+                before: line,
               )
             ])));
 
@@ -88,40 +86,37 @@ class _ShortExampleState extends State<ShortExample> {
         ///
         ///
         create(LineRange(
-            startIndex: requestLineRangeModelIndex(r + 1),
-            endIndex: requestLineRangeModelIndex(r + 2),
-            lineNodeRange: LineNodeRange(
-              requestNewIndex: requestModelIndex,
-            )..createLineNodes((requestModelIndex, create) {
+            startIndex: r + 1,
+            endIndex: r + 2,
+            lineNodeRange: LineNodeRange()
+              ..addLineNodes((create) {
                 for (int c = 0; c < columns; c += 2) {
                   create(LineNode(
-                    startIndex: requestModelIndex(c),
-                    after: const Line(color: lineColor),
+                    startIndex: c,
+                    after: line,
                   ));
                   create(LineNode(
-                    startIndex: requestModelIndex(c + 1),
-                    before: const Line(color: lineColor),
+                    startIndex: c + 1,
+                    before: line,
                   ));
                 }
               })));
       }
     });
 
-    dataTable.verticalLineList.createLineRange(
-        (requestLineRangeModelIndex, requestModelIndex) => LineRange(
-            startIndex: requestLineRangeModelIndex(0),
-            endIndex: requestLineRangeModelIndex(columns),
-            lineNodeRange:
-                LineNodeRange(requestNewIndex: requestModelIndex, lineNodes: [
-              LineNode(
-                startIndex: requestModelIndex(0),
-                after: const Line(color: lineColor),
-              ),
-              LineNode(
-                startIndex: requestModelIndex(rows),
-                before: const Line(color: lineColor),
-              ),
-            ])));
+    dataTable.verticalLineList.addLineRange(LineRange(
+        startIndex: 0,
+        endIndex: columns,
+        lineNodeRange: LineNodeRange(list: [
+          LineNode(
+            startIndex: 0,
+            after: line,
+          ),
+          LineNode(
+            startIndex: rows,
+            before: line,
+          ),
+        ])));
 
     final flexTableModel = FlexTableModel(
         columnHeader: true,

@@ -73,21 +73,15 @@ class DataModelInternationalTrade {
 
     if (endTableRows < row) endTableRows = row;
 
-    Color lineColor = Colors.blue[400]!;
+    final line = Line(width: 0.5, color: Colors.blue[400]!);
 
-    dataTable.verticalLineList.createLineRanges(
-        (requestLineRangeModelIndex, requestModelIndex, create) {
+    dataTable.verticalLineList.addLineRanges((create) {
       for (int i = 1; i <= endTableColumns; i += 3) {
         create(LineRange(
-            startIndex: requestLineRangeModelIndex(i),
-            lineNodeRange:
-                LineNodeRange(requestNewIndex: requestModelIndex, lineNodes: [
-              LineNode(
-                  startIndex: requestModelIndex(1),
-                  after: Line(color: lineColor)),
-              LineNode(
-                  startIndex: requestModelIndex(row),
-                  before: Line(color: lineColor)),
+            startIndex: i,
+            lineNodeRange: LineNodeRange(list: [
+              LineNode(startIndex: 1, after: line),
+              LineNode(startIndex: row, before: line),
             ])));
       }
     });

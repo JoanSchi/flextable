@@ -161,8 +161,8 @@ class _FlexTableSettingsState extends State<FlexTableSettings>
 
   bool get enableScrollUnlockX =>
       !tableFitHeight &&
-      splitX == SplitState.split &&
-      (splitY == SplitState.split ||
+      splitY == SplitState.split &&
+      (splitX == SplitState.split ||
           (splitX == SplitState.noSplit && !autoFreezeX));
 
   bool get enableScrollUnlockY =>
@@ -296,7 +296,6 @@ class _FlexTableSettingsState extends State<FlexTableSettings>
   }
 
   changeColumnHeader(bool value) {
-    columnHeader = value;
     widget.flexTableController.lastViewModel()
       ..columnHeader = value
       ..markNeedsLayout();

@@ -8,13 +8,13 @@ library flextable;
 export 'src/model/model.dart' show FlexTableModel, SplitState;
 export 'src/flextable.dart' show FlexTable;
 export 'src/data_model/flextable_data_model.dart'
-    show FlexTableDataModel, AbstractFlexTableDataModel, FlexTableDataModelCR;
+    show FlexTableDataModel, AbstractFlexTableDataModel;
 export 'src/model/view_model.dart' show FlexTableViewModel;
 
 //Build
 export 'src/builders/cells.dart' show Cell;
 export 'src/builders/table_line.dart'
-    show Line, LineNode, LineNodeRange, LineRange;
+    show TableLinesOneDirection, Line, LineNode, LineNodeRange, LineRange;
 export 'src/builders/table_builder.dart' show LineHeader, TableBuilder;
 
 export 'src/builders/default_table_builder.dart' show DefaultTableBuilder;

@@ -49,7 +49,6 @@ void main() {
   );
 }
 
-
 class ShortExample extends StatefulWidget {
   const ShortExample({super.key});
 
@@ -71,7 +70,7 @@ class _ShortExampleState extends State<ShortExample> {
     const columns = 50;
     const rows = 5000;
     dataTable = FlexTableDataModel();
-    const lineColor = Color.fromARGB(255, 70, 78, 38);
+    const line = Line(width: 0.5, color: Color.fromARGB(255, 70, 78, 38));
 
     for (int r = 0; r < rows; r++) {
       for (int c = 0; c < columns; c++) {
@@ -101,23 +100,21 @@ class _ShortExampleState extends State<ShortExample> {
       }
     }
 
-    dataTable.horizontalLineList.createLineRanges(
-        (requestLineRangeModelIndex, requestModelIndex, create) {
+    dataTable.horizontalLineList.addLineRanges((create) {
       for (int r = 0; r < rows; r += 3) {
         /// Horizontal lines
         ///
         ///
         create(LineRange(
-            startIndex: requestLineRangeModelIndex(r),
-            lineNodeRange:
-                LineNodeRange(requestNewIndex: requestModelIndex, lineNodes: [
+            startIndex: r,
+            lineNodeRange: LineNodeRange(list: [
               LineNode(
-                startIndex: requestModelIndex(0),
-                after: const Line(color: lineColor),
+                startIndex: 0,
+                after: line,
               ),
               LineNode(
-                startIndex: requestModelIndex(0),
-                before: const Line(color: lineColor),
+                startIndex: 0,
+                before: line,
               )
             ])));
 
@@ -125,40 +122,37 @@ class _ShortExampleState extends State<ShortExample> {
         ///
         ///
         create(LineRange(
-            startIndex: requestLineRangeModelIndex(r + 1),
-            endIndex: requestLineRangeModelIndex(r + 2),
-            lineNodeRange: LineNodeRange(
-              requestNewIndex: requestModelIndex,
-            )..createLineNodes((requestModelIndex, create) {
+            startIndex: r + 1,
+            endIndex: r + 2,
+            lineNodeRange: LineNodeRange()
+              ..addLineNodes((create) {
                 for (int c = 0; c < columns; c += 2) {
                   create(LineNode(
-                    startIndex: requestModelIndex(c),
-                    after: const Line(color: lineColor),
+                    startIndex: c,
+                    after: line,
                   ));
                   create(LineNode(
-                    startIndex: requestModelIndex(c + 1),
-                    before: const Line(color: lineColor),
+                    startIndex: c + 1,
+                    before: line,
                   ));
                 }
               })));
       }
     });
 
-    dataTable.verticalLineList.createLineRange(
-        (requestLineRangeModelIndex, requestModelIndex) => LineRange(
-            startIndex: requestLineRangeModelIndex(0),
-            endIndex: requestLineRangeModelIndex(columns),
-            lineNodeRange:
-                LineNodeRange(requestNewIndex: requestModelIndex, lineNodes: [
-              LineNode(
-                startIndex: requestModelIndex(0),
-                after: const Line(color: lineColor),
-              ),
-              LineNode(
-                startIndex: requestModelIndex(rows),
-                before: const Line(color: lineColor),
-              ),
-            ])));
+    dataTable.verticalLineList.addLineRange(LineRange(
+        startIndex: 0,
+        endIndex: columns,
+        lineNodeRange: LineNodeRange(list: [
+          LineNode(
+            startIndex: 0,
+            after: line,
+          ),
+          LineNode(
+            startIndex: rows,
+            before: line,
+          ),
+        ])));
 
     final flexTableModel = FlexTableModel(
         columnHeader: true,
@@ -186,8 +180,185 @@ class _ShortExampleState extends State<ShortExample> {
         body: flexTable);
   }
 }
+```
+
+### Table Lines
+The vertical and horizontal lines are added seperatedly to the table in ranges to minimize objects for large tables. The TableLinesOneDirection object contains a LineLinkedList with LineRanges which contains a LineLinkedList with LineNodeRanges for one direction.
+The TableLinesOneDirection object will merge added LineRanges and the containing LineNodes. Equal ranges besides each other will merge into a bigger range. 
+Lines or parts of the line can be deleted by adding EmptyLineNodes (LineNode with noLines) over the desired range. 
+The TableLinesOneDirection will remove the lines where the EmptyLineNode are merged. If the LineRange is empty, the LineRange will be removed automatical.
+A LineNodeRange or LineNode object can be reused for loops, because they are coppied or merged by TableLinesOneDirection object.
+
+It is possible to change the width and color of the existing lines over a large range by using Line.change(width:.., color..). The new properties will merge with the existing lines.
+
 
 ```
+TableLinesOneDirection horizontalLines = TableLinesOneDirection();
+
+const blueLine = Line(
+    width: 0.5,
+    color: Color(0xFF42A5F5),
+  );
+
+  /// 0: --  --
+  /// 1: --  --
+  /// 2: --  --
+  ///
+  
+  horizontalLines.addLineRange(LineRange(
+      startIndex: 0,
+      endIndex: 2,
+      lineNodeRange: LineNodeRange(list: [
+        LineNode(startIndex: 0, after: blueLine),
+        LineNode(startIndex: 2, before: blueLine),
+        LineNode(startIndex: 4, after: blueLine),
+        LineNode(startIndex: 6, before: blueLine),
+      ])));
+ ```
+Output:
+
+LineRanges in TableLinesOneDirection: 
+- LineNodeRange 0-2: 
+  - LineNode 0-0: before: null, after: Line(o:LineOptions.line, w:0.5, c:Color(0xff42a5f5))
+  - LineNode 2-2: before: Line(o:LineOptions.line, w:0.5, c:Color(0xff42a5f5)), after: null
+  - LineNode 4-4: before: null, after: Line(o:LineOptions.line, w:0.5, c:Color(0xff42a5f5))
+  - LineNode 6-6: before: Line(o:LineOptions.line, w:0.5, c:Color(0xff42a5f5)), after: null
+
+```
+  Change to:
+
+  /// 0: --  --
+  /// 1:   --
+  /// 2: --  --
+  ///
+
+  horizontalLines.addLineRange(LineRange(
+      startIndex: 1,
+      lineNodeRange: LineNodeRange(
+        list: [
+          // remove line
+          EmptyLineNode(startIndex: 0, endIndex: 6),
+          //add new line
+          LineNode(startIndex: 2, after: blueLine),
+          LineNode(startIndex: 4, before: blueLine),
+        ],
+      )));
+```
+Output:
+
+LineRanges in TableLinesOneDirection: 
+- LineNodeRange 0-0: 
+  - LineNode 0-0: before: null, after: Line(o:LineOptions.line, w:0.5, c:Color(0xff42a5f5))
+  - LineNode 2-2: before: Line(o:LineOptions.line, w:0.5, c:Color(0xff42a5f5)), after: null
+  - LineNode 4-4: before: null, after: Line(o:LineOptions.line, w:0.5, c:Color(0xff42a5f5))
+  - LineNode 6-6: before: Line(o:LineOptions.line, w:0.5, c:Color(0xff42a5f5)), after: null
+- LineNodeRange 1-1: 
+  - LineNode 2-2: before: Line(o:LineOptions.no, w:null, c:null), after: Line(o:LineOptions.line, w:0.5, c:Color(0xff42a5f5))
+  - LineNode 4-4: before: Line(o:LineOptions.line, w:0.5, c:Color(0xff42a5f5)), after: Line(o:LineOptions.no, w:null, c:null)
+- LineNodeRange 2-2: 
+  - LineNode 0-0: before: null, after: Line(o:LineOptions.line, w:0.5, c:Color(0xff42a5f5))
+  - LineNode 2-2: before: Line(o:LineOptions.line, w:0.5, c:Color(0xff42a5f5)), after: null
+  - LineNode 4-4: before: null, after: Line(o:LineOptions.line, w:0.5, c:Color(0xff42a5f5))
+  - LineNode 6-6: before: Line(o:LineOptions.line, w:0.5, c:Color(0xff42a5f5)), after: null
+
+```
+  Change to:
+
+  /// 0: ------
+  /// 1:   --
+  /// 2: ------
+  ///
+  /// Change all lines to: width = 2.0, color = green 
+
+   horizontalLines.addLineRanges((add) {
+    // replace complete line
+    add(LineRange(
+        startIndex: 0,
+        lineNodeRange: LineNodeRange(
+          list: [
+            LineNode(
+              startIndex: 0,
+              after: blueLine,
+            ),
+            LineNode(
+              startIndex: 1,
+              endIndex: 5,
+              before: blueLine,
+              after: blueLine,
+            ),
+            LineNode(startIndex: 6, before: blueLine),
+          ],
+        )));
+
+    // remove middle part of the line
+    add(LineRange(
+        startIndex: 2,
+        lineNodeRange: LineNodeRange(
+          list: [
+            EmptyLineNode(
+              startIndex: 2,
+              endIndex: 4,
+            ),
+          ],
+        )));
+
+    // Merge changes to existing lines:
+    add(LineRange(
+        startIndex: 0,
+        endIndex: 2,
+        lineNodeRange: LineNodeRange(
+          list: [
+            LineNode(
+                startIndex: 0,
+                endIndex: 6,
+                before: const Line.change(
+                    width: 2.0, color: Color.fromARGB(255, 142, 212, 63)),
+                after: const Line.change(
+                    width: 2.0, color: Color.fromARGB(255, 142, 212, 63))),
+          ],
+        )));
+  });
+```
+Output:
+
+LineRanges in TableLinesOneDirection: 
+- LineNodeRange 0-0: 
+  - LineNode 0-0: before: Line(o:null, w:2.0, c:Color(0xff8ed43f)), after: Line(o:LineOptions.line, w:2.0, c:Color(0xff8ed43f))
+  - LineNode 1-5: before: Line(o:LineOptions.line, w:2.0, c:Color(0xff8ed43f)), after: Line(o:LineOptions.line, w:2.0, c:Color(0xff8ed43f))
+  - LineNode 6-6: before: Line(o:LineOptions.line, w:2.0, c:Color(0xff8ed43f)), after: Line(o:null, w:2.0, c:Color(0xff8ed43f))
+- LineNodeRange 1-1: 
+  - LineNode 2-2: before: Line(o:LineOptions.no, w:null, c:null), after: Line(o:LineOptions.line, w:2.0, c:Color(0xff8ed43f))
+  - LineNode 4-4: before: Line(o:LineOptions.line, w:2.0, c:Color(0xff8ed43f)), after: Line(o:LineOptions.no, w:null, c:null)
+- LineNodeRange 2-2: 
+  - LineNode 0-0: before: Line(o:null, w:2.0, c:Color(0xff8ed43f)), after: Line(o:LineOptions.line, w:2.0, c:Color(0xff8ed43f))
+  - LineNode 6-6: before: Line(o:LineOptions.line, w:2.0, c:Color(0xff8ed43f)), after: Line(o:null, w:2.0, c:Color(0xff8ed43f))
+
+```
+  Change to:
+
+  /// 0: remove
+  /// 1:   --
+  /// 2: remove
+  ///
+  
+  horizontalLines.addLineRanges((add) {
+    // Reuse of emptyLineNodeRange to remove row 0 and 2
+
+    final emptyLineNodeRange = LineNodeRange(
+      list: [EmptyLineNode(startIndex: 0, endIndex: 6)],
+    );
+
+    for (int i in [0, 2]) {
+      add(LineRange(startIndex: i, lineNodeRange: emptyLineNodeRange));
+    }
+  });
+```
+
+Output:
+LineRanges in TableLinesOneDirection: 
+- LineNodeRange 1-1: 
+  - LineNode 2-2: before: Line(o:LineOptions.no, w:null, c:null), after: Line(o:LineOptions.line, w:2.0, c:Color(0xff8ed43f))
+  - LineNode 4-4: before: Line(o:LineOptions.line, w:2.0, c:Color(0xff8ed43f)), after: Line(o:LineOptions.no, w:null, c:null)
 
 ## Additional information
 

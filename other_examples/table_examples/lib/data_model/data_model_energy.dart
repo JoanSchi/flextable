@@ -90,38 +90,35 @@ class DataModelEngery {
     double lineWidth = 1.0;
     Color lineColor = Colors.blueGrey[200]!;
 
-    dataTable.horizontalLineList.createLineRanges(
-        (requestLineRangeModelIndex, requestModelIndex, create) {
+    dataTable.horizontalLineList.addLineRanges((create) {
       final linesHeader = [
         LineNode(
-            startIndex: requestModelIndex(2),
-            before: const Line.noLine(),
+            startIndex: 2,
+            before: const Line.no(),
             after: Line(width: lineWidth, color: lineColor)),
         LineNode(
-            startIndex: requestModelIndex(endTableColumn),
+            startIndex: endTableColumn,
             before: Line(width: lineWidth, color: lineColor),
-            after: const Line.noLine())
+            after: const Line.no())
       ];
 
       create(LineRange(
-          startIndex: requestLineRangeModelIndex(0),
-          endIndex: requestLineRangeModelIndex(2),
-          lineNodeRange: LineNodeRange(
-              requestNewIndex: requestModelIndex, lineNodes: linesHeader)));
+          startIndex: 0,
+          endIndex: 2,
+          lineNodeRange: LineNodeRange(list: linesHeader)));
 
       for (int i in [3, 16, 29]) {
         create(LineRange(
-            startIndex: requestLineRangeModelIndex(i),
-            lineNodeRange:
-                LineNodeRange(requestNewIndex: requestModelIndex, lineNodes: [
+            startIndex: i,
+            lineNodeRange: LineNodeRange(list: [
               LineNode(
-                  startIndex: requestModelIndex(0),
-                  before: const Line.noLine(),
+                  startIndex: 0,
+                  before: const Line.no(),
                   after: Line(width: lineWidth, color: lineColor)),
               LineNode(
-                  startIndex: requestModelIndex(endTableColumn),
+                  startIndex: endTableColumn,
                   before: Line(width: lineWidth, color: lineColor),
-                  after: const Line.noLine())
+                  after: const Line.no())
             ])));
       }
     });
@@ -161,13 +158,13 @@ class DataModelEngery {
           RangeProperties(min: 1, length: 210.0),
           RangeProperties(min: 2, length: 150.0),
           RangeProperties(min: 8, length: 150.0),
-          RangeProperties(min: dataTable.columnIndices.length - 1, length: 2.0)
+          RangeProperties(min: endTableColumn, length: 2.0)
         ],
         specificHeight: [
           RangeProperties(min: 2, length: 55.0),
         ],
-        maximumColumns: dataTable.columnIndices.length,
-        maximumRows: dataTable.rowIndices.length);
+        maximumColumns: endTableColumn,
+        maximumRows: endTableRow);
   }
 }
 

@@ -95,11 +95,11 @@ class TableInterator {
         final m = cell!.merged!;
         cell!
           ..width = m.columnsMerged()
-              ? findPositionColumn(m.lastColumn.index).endPosition -
+              ? findPositionColumn(m.lastColumn).endPosition -
                   columnInfo.position
               : columnInfo.length
           ..height = m.rowsMerged()
-              ? findPositionRow(m.lastRow.index).endPosition - rowInfo.position
+              ? findPositionRow(m.lastRow).endPosition - rowInfo.position
               : rowInfo.length;
       }
     } else if (rowIndex == firstRowIndex || columnIndex == firstColumnIndex) {
@@ -112,19 +112,16 @@ class TableInterator {
   bool get isEmpty => length == 0;
 
   bool rowMergeLayout() {
-    Merged? m = dataTable.mergedRows(columnIndex)?.findMerged(
-        find: rowIndex,
-        firstIndex: (Merged m) => m.startRow.index,
-        lastIndex: (Merged m) => m.lastRow.index);
+    Merged? m = dataTable.findMergedRows(rowIndex, columnIndex);
 
     if (m != null) {
-      rowIndex = m.startRow.index;
-      columnIndex = m.startColumn.index;
+      rowIndex = m.startRow;
+      columnIndex = m.startColumn;
 
       cell = dataTable.cell(row: rowIndex, column: columnIndex);
 
       final top = findPositionRow(rowIndex);
-      final bottom = findPositionRow(m.lastRow.index);
+      final bottom = findPositionRow(m.lastRow);
       cell!
         ..left = columnInfo.position
         ..top = top.position
@@ -137,19 +134,16 @@ class TableInterator {
   }
 
   bool columnMergeLayout() {
-    Merged? m = dataTable.mergedColumns(rowIndex)?.findMerged(
-        find: columnIndex,
-        firstIndex: (Merged m) => m.startColumn.index,
-        lastIndex: (Merged m) => m.lastColumn.index);
+    Merged? m = dataTable.findMergedColumns(rowIndex, columnIndex);
 
     if (m != null) {
-      rowIndex = m.startRow.index;
-      columnIndex = m.startColumn.index;
+      rowIndex = m.startRow;
+      columnIndex = m.startColumn;
 
       cell = dataTable.cell(row: rowIndex, column: columnIndex);
 
       final left = findPositionColumn(columnIndex);
-      final right = findPositionColumn(m.lastColumn.index);
+      final right = findPositionColumn(m.lastColumn);
       cell!
         ..left = left.position
         ..top = rowInfo.position
