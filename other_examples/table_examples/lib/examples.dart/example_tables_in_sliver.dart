@@ -53,7 +53,7 @@ class _ExampleSliverInTablesState extends State<ExampleSliverInTables> {
         required FlexTableModel flexTableModel,
         TableBuilder? tableBuilder}) {
       ScaleChangeNotifier scaleChangeNotifier =
-          ScaleChangeNotifier(flexTableModel);
+          ScaleChangeNotifier(flexTableModel: flexTableModel);
 
       Widget table = FlexTable(
         scaleChangeNotifier: scaleChangeNotifier,

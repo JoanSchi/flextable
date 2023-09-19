@@ -6,10 +6,14 @@ import 'package:flutter/widgets.dart';
 import '../model/model.dart';
 
 class ScaleChangeNotifier extends ChangeNotifier {
-  ScaleChangeNotifier(FlexTableModel flexTableModel)
-      : scale = flexTableModel.tableScale,
-        min = flexTableModel.minTableScale,
-        max = flexTableModel.maxTableScale;
+  ScaleChangeNotifier(
+      {FlexTableModel? flexTableModel,
+      double scale = 1.0,
+      double min = 0.5,
+      double max = 4.0})
+      : scale = flexTableModel?.tableScale ?? scale,
+        min = flexTableModel?.minTableScale ?? min,
+        max = flexTableModel?.maxTableScale ?? max;
 
   double min = 0.5;
   double max = 3.0;

@@ -51,7 +51,7 @@ class _ExampleInternationalTradeState extends State<ExampleInternationalTrade>
     );
 
     if (scaleSlider) {
-      scaleChangeNotifier = ScaleChangeNotifier(flexTableModel);
+      scaleChangeNotifier = ScaleChangeNotifier(flexTableModel: flexTableModel);
     }
 
     _flexTableController = FlexTableController();

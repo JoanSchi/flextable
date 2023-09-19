@@ -42,7 +42,7 @@ class _ExampleEnergyState extends State<ExampleEnergy>
         DataModelEngery().makeTable(platform: defaultTargetPlatform);
 
     if (scaleSlider) {
-      scaleChangeNotifier = ScaleChangeNotifier(flexTableModel);
+      scaleChangeNotifier = ScaleChangeNotifier(flexTableModel: flexTableModel);
     }
 
     _flexTableController = FlexTableController();

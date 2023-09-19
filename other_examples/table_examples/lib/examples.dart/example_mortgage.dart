@@ -42,7 +42,7 @@ class _ExampleMortgageState extends State<ExampleMortgage>
       (_) => false
     };
 
-    scaleChangeNotifier = ScaleChangeNotifier(flexTableModel);
+    scaleChangeNotifier = ScaleChangeNotifier(flexTableModel: flexTableModel);
 
     super.initState();
   }

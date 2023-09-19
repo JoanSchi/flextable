@@ -30,7 +30,7 @@ class _ExampleAppBarOverlapState extends State<ExampleAppBarOverlap> {
       autoFreezeListX: true,
       autoFreezeListY: true,
     );
-    scaleChangeNotifier = ScaleChangeNotifier(flexTableModel);
+    scaleChangeNotifier = ScaleChangeNotifier(flexTableModel: flexTableModel);
     super.initState();
   }
 

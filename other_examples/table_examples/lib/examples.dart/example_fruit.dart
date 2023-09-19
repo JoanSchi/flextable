@@ -41,7 +41,7 @@ class _ExampleFruitState extends State<ExampleFruit> with SettingsBottomSheet {
         DataModelFruit().makeTable(platform: defaultTargetPlatform);
 
     if (scaleSlider) {
-      scaleChangeNotifier = ScaleChangeNotifier(flexTableModel);
+      scaleChangeNotifier = ScaleChangeNotifier(flexTableModel: flexTableModel);
     }
 
     _flexTableController = FlexTableController();

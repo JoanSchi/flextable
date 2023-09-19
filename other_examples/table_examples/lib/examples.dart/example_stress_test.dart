@@ -43,7 +43,7 @@ class _ExampleStressTestState extends State<ExampleStressTest>
     );
 
     if (scaleSlider) {
-      scaleChangeNotifier = ScaleChangeNotifier(flexTableModel);
+      scaleChangeNotifier = ScaleChangeNotifier(flexTableModel: flexTableModel);
     }
 
     _flexTableController = FlexTableController();

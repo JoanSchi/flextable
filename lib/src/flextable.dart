@@ -58,7 +58,8 @@ class FlexTableState extends State<FlexTable> {
 
   ScaleChangeNotifier? _scaleChangeNotifier;
   ScaleChangeNotifier get scaleChangeNotifier =>
-      _scaleChangeNotifier ?? ScaleChangeNotifier(widget.flexTableModel);
+      _scaleChangeNotifier ??
+      ScaleChangeNotifier(flexTableModel: widget.flexTableModel);
 
   CombiKeyNotification? _combiKeyNotification;
 
