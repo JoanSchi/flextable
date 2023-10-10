@@ -19,6 +19,15 @@
             "program": "lib/main.dart",
             "flutterMode": "profile"
         },
+
+        {
+            "name": "example_flextable (release mode)",
+            "type": "dart",
+            "request": "launch",
+            "cwd": "other_examples/table_examples",
+            "program": "lib/main.dart",
+            "flutterMode": "release"
+        },
        
         {
             "name": "short_example",

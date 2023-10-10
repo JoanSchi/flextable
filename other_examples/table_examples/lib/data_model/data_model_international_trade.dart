@@ -6,15 +6,29 @@ import 'package:flextable/flextable.dart';
 import 'package:flutter/material.dart';
 
 class DataModelInternationalTrade {
-  final dataTable = FlexTableDataModel();
-  int endTableRows = 0;
-  int endTableColumns = 0;
+  DefaultFtModel makeTable(
+      {double tableScale = 1.0,
+      scrollUnlockX = false,
+      scrollUnlockY = false,
+      List<AutoFreezeArea> autofreezeAreaX = const [],
+      List<AutoFreezeArea> autofreezeAreasY = const []}) {
+    final ftModel = DefaultFtModel(
+        defaultWidthCell: 80.0,
+        defaultHeightCell: 50.0,
+        tableScale: tableScale,
+        scrollUnlockX: scrollUnlockX,
+        scrollUnlockY: scrollUnlockY,
+        autoFreezeAreasX: autofreezeAreaX,
+        autoFreezeAreasY: autofreezeAreasY,
+        specificWidth: [RangeProperties(min: 0, max: 0, length: 160.0)],
+        specificHeight: [RangeProperties(min: 1, max: 2, length: 30.0)]);
 
-  DataModelInternationalTrade() {
+    int endTableColumns = 0;
+    int endTableRows = 0;
     int row = 0;
     int column = 0;
 
-    dataTable.addCell(
+    ftModel.addCell(
         row: 0,
         column: 0,
         columns: 8 * 3,
@@ -31,7 +45,7 @@ class DataModelInternationalTrade {
     row++;
 
     for (var element in _columnHeader1) {
-      dataTable.addCell(
+      ftModel.addCell(
           row: 1,
           column: tempColumn,
           columns: tempColumn == column ? 1 : 3,
@@ -53,15 +67,20 @@ class DataModelInternationalTrade {
         if (row == 2) {
           attr = {
             CellAttr.background: Colors.blue[100]!,
-            if (tempColumn == 0) CellAttr.alignment: Alignment.centerLeft,
           };
         } else {
           attr = {
-            if ((row % 2 == 0)) 'background': Colors.blue[50]!,
-            if (tempColumn == 0) 'alignment': Alignment.centerLeft,
+            if ((row.isEven))
+              CellAttr.background: const Color.fromARGB(255, 209, 227, 242),
           };
         }
-        dataTable.addCell(
+        if (tempColumn <= 1) {
+          attr.addAll({
+            CellAttr.alignment: Alignment.centerLeft,
+            CellAttr.textAlign: TextAlign.left
+          });
+        }
+        ftModel.addCell(
             row: row, column: tempColumn, cell: Cell(value: value, attr: attr));
         tempColumn++;
       }
@@ -75,7 +94,7 @@ class DataModelInternationalTrade {
 
     final line = Line(width: 0.5, color: Colors.blue[400]!);
 
-    dataTable.verticalLineList.addLineRanges((create) {
+    ftModel.verticalLines.addLineRanges((create) {
       for (int i = 1; i <= endTableColumns; i += 3) {
         create(LineRange(
             startIndex: i,
@@ -85,37 +104,8 @@ class DataModelInternationalTrade {
             ])));
       }
     });
-  }
 
-  FlexTableModel makeTable(
-      {TargetPlatform? platform,
-      scrollUnlockX = false,
-      scrollUnlockY = false,
-      List<AutoFreezeArea> autofreezeAreaX = const [],
-      List<AutoFreezeArea> autofreezeAreasY = const []}) {
-    var (tableScale, minTableScale, maxTableScale) = switch (platform) {
-      (TargetPlatform.macOS ||
-            TargetPlatform.linux ||
-            TargetPlatform.windows) =>
-        (1.5, 1.0, 4.0),
-      (_) => (1.0, 0.5, 3.0)
-    };
-
-    return FlexTableModel(
-        dataTable: dataTable,
-        defaultWidthCell: 80.0,
-        defaultHeightCell: 50.0,
-        maximumRows: endTableRows,
-        maximumColumns: endTableColumns,
-        scale: tableScale,
-        minTableScale: minTableScale,
-        maxTableScale: maxTableScale,
-        scrollUnlockX: scrollUnlockX,
-        scrollUnlockY: scrollUnlockY,
-        autoFreezeAreasX: autofreezeAreaX,
-        autoFreezeAreasY: autofreezeAreasY,
-        specificWidth: [RangeProperties(min: 0, max: 0, length: 160.0)],
-        specificHeight: [RangeProperties(min: 1, max: 2, length: 30.0)]);
+    return ftModel;
   }
 }
 

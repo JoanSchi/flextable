@@ -5,11 +5,11 @@
 import 'package:flextable/flextable.dart';
 import 'package:flutter/material.dart';
 
-class TableBottomBar extends StatefulWidget {
-  const TableBottomBar({
+class TableScaleSlider extends StatefulWidget {
+  const TableScaleSlider({
     super.key,
     required this.scaleChangeNotifier,
-    required this.flexTableController,
+    required this.controller,
     this.showScaleValue = true,
     this.maxWidthSlider,
     this.trackHeight = 2.0,
@@ -17,7 +17,7 @@ class TableBottomBar extends StatefulWidget {
     this.overlayRadius = 10.0,
   });
 
-  final FlexTableController flexTableController;
+  final FtController controller;
   final bool showScaleValue;
   final double? maxWidthSlider;
   final double trackHeight;
@@ -26,10 +26,10 @@ class TableBottomBar extends StatefulWidget {
   final ScaleChangeNotifier scaleChangeNotifier;
 
   @override
-  State<StatefulWidget> createState() => TableBottomBarState();
+  State<StatefulWidget> createState() => TableScaleSliderState();
 }
 
-class TableBottomBarState extends State<TableBottomBar> {
+class TableScaleSliderState extends State<TableScaleSlider> {
   late ScaleChangeNotifier _scaleChangeNotifier;
 
   @override
@@ -40,7 +40,7 @@ class TableBottomBarState extends State<TableBottomBar> {
   }
 
   @override
-  void didUpdateWidget(TableBottomBar oldWidget) {
+  void didUpdateWidget(TableScaleSlider oldWidget) {
     super.didUpdateWidget(oldWidget);
 
     if (_scaleChangeNotifier != widget.scaleChangeNotifier) {
@@ -62,7 +62,7 @@ class TableBottomBarState extends State<TableBottomBar> {
 
   @override
   Widget build(BuildContext context) {
-    double scale = _scaleChangeNotifier.scale;
+    double scale = _scaleChangeNotifier.tableScale;
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
@@ -82,9 +82,10 @@ class TableBottomBarState extends State<TableBottomBar> {
   }
 
   Widget buildSlider(BuildContext context) {
-    double min = _scaleChangeNotifier.min;
-    double max = _scaleChangeNotifier.max;
-    double scale = _scaleChangeNotifier.scale;
+    double scale = _scaleChangeNotifier.tableScale;
+    final properties = widget.controller.lastViewModel().properties;
+    final double min = properties.minTableScale;
+    final double max = properties.maxTableScale;
 
     return SliderTheme(
       data: SliderTheme.of(context).copyWith(
@@ -104,10 +105,10 @@ class TableBottomBarState extends State<TableBottomBar> {
         max: max,
         onChanged: (double value) {
           final newScale = (value < 1.0) ? 1.0 / (2.0 - value) : value;
-          widget.flexTableController.lastViewModel().setScaleTable(newScale);
+          widget.controller.lastViewModel().tableScale = newScale;
         },
         onChangeEnd: (double value) {
-          widget.flexTableController.lastViewModel().correctOffScroll(0, 0);
+          widget.controller.lastViewModel().correctOffScroll(0, 0);
         },
       ),
     );

@@ -7,7 +7,7 @@ import 'package:flutter/widgets.dart';
 import '../gesture_scroll/table_drag_details.dart';
 import '../gesture_scroll/table_gesture.dart';
 import '../panels/table_view_scrollable.dart';
-import 'hit_container.dart';
+import 'hit_box.dart';
 
 class HitAndDrag extends StatefulWidget {
   const HitAndDrag({super.key, required this.hitAndDragDelegate, this.child});
@@ -53,7 +53,7 @@ class HitAndDragState extends State<HitAndDrag> {
   Widget build(BuildContext context) {
     return RawGestureDetector(
         gestures: _gestureRecognizers,
-        child: FlexTableHit(
+        child: HitBox(
           hit: _hitAndDragDelegate.hit,
           child: widget.child,
         ));

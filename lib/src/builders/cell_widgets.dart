@@ -5,55 +5,15 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
-import '../model/model.dart';
-import '../panels/panel_viewport.dart';
-import 'table_builder.dart';
 import 'dart:math' as math;
 
-enum CellAttr { textStyle, alignment, background, percentagBackground, rotate }
-
-mixin DefaultCellBuilder on TableBuilder {
-  @override
-  Widget? cellBuilder(FlexTableModel flexTableModel,
-      TableCellIndex tableCellIndex, BuildContext context) {
-    //RepaintBoundary for canvas layer
-
-    final cell = flexTableModel.dataTable
-        .cell(row: tableCellIndex.row, column: tableCellIndex.column);
-
-    if (cell == null) {
-      return null;
-    }
-
-    Widget text = Text(
-      '${cell.value}',
-      style: cell.attr[CellAttr.textStyle],
-      textScaleFactor: flexTableModel.tableScale,
-    );
-
-    if (cell.attr.containsKey(CellAttr.rotate)) {
-      text = TableTextRotate(
-          angle: math.pi * 2.0 / 360 * cell.attr[CellAttr.rotate], child: text);
-    }
-
-    Widget container = Container(
-        padding: const EdgeInsets.symmetric(vertical: 2.0, horizontal: 5.0) *
-            flexTableModel.tableScale,
-        alignment: cell.attr[CellAttr.alignment] ?? Alignment.center,
-        color: cell.attr[CellAttr.background],
-        child: text);
-
-    if (cell.attr.containsKey(CellAttr.percentagBackground)) {
-      final pbg =
-          cell.attr[CellAttr.percentagBackground] as PercentageBackground;
-      return CustomPaint(
-        painter: PercentagePainter(pbg),
-        child: container,
-      );
-    } else {
-      return container;
-    }
-  }
+enum CellAttr {
+  textStyle,
+  alignment,
+  background,
+  percentagBackground,
+  rotate,
+  textAlign
 }
 
 class PercentagePainter extends CustomPainter {

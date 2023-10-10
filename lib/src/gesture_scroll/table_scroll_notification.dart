@@ -3,7 +3,7 @@
 // license that can be found in the LICENSE file.
 
 import 'package:flutter/widgets.dart';
-import '../model/flextable_scroll_metrics.dart';
+import '../model/scroll_metrics.dart';
 import 'table_drag_details.dart';
 
 abstract class TableScrollNotification extends LayoutChangedNotification

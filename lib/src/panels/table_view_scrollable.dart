@@ -3,13 +3,13 @@
 // license that can be found in the LICENSE file.
 
 import 'dart:async';
+import 'package:flextable/src/properties.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 import '../../flextable.dart';
-import '../listeners/default_change_notifier.dart';
-import 'table_multi_panel_viewport.dart';
+import '../listeners/inner_change_notifiers.dart';
 import '../gesture_scroll/table_drag_details.dart';
 import '../gesture_scroll/table_gesture.dart';
 import 'dart:math' as math;
@@ -25,13 +25,12 @@ const Set<PointerDeviceKind> kTouchLikeDeviceTypes = <PointerDeviceKind>{
   PointerDeviceKind.unknown,
 };
 
-typedef TableViewportBuilder = Widget Function(
-    BuildContext context, FlexTableViewModel viewModel);
+typedef TableViewportBuilder<T extends AbstractFtModel<C>,
+        C extends AbstractCell>
+    = Widget Function(BuildContext context, FtViewModel<T, C> viewModel);
 
-class TableViewScrollable extends StatefulWidget {
-  /// Creates a widget that scrolls.
-  ///
-  /// The [axisDirectionY] and [viewportBuilder] arguments must not be null.
+class TableViewScrollable<T extends AbstractFtModel<C>, C extends AbstractCell>
+    extends StatefulWidget {
   const TableViewScrollable(
       {Key? key,
       required this.controller,
@@ -40,17 +39,19 @@ class TableViewScrollable extends StatefulWidget {
       this.excludeFromSemantics = false,
       this.semanticChildCount,
       this.dragStartBehavior = DragStartBehavior.start,
-      required this.flexTableModel,
+      required this.model,
       required this.tableBuilder,
-      required this.scrollChangeNotifier,
-      required this.scaleChangeNotifier,
-      required this.flexTableChangeNotifiers})
+      required this.innerScrollChangeNotifier,
+      required this.innerScaleChangeNotifier,
+      this.rebuildNotifier,
+      required this.tableChangeNotifiers,
+      required this.properties})
       : assert(semanticChildCount == null || semanticChildCount >= 0),
         super(key: key);
 
-  final FlexTableController controller;
+  final FtController<T, C> controller;
   final TableScrollPhysics? physics;
-  final TableViewportBuilder viewportBuilder;
+  final TableViewportBuilder<T, C> viewportBuilder;
 
   final bool excludeFromSemantics;
 
@@ -58,18 +59,22 @@ class TableViewScrollable extends StatefulWidget {
 
   final DragStartBehavior dragStartBehavior;
 
-  final FlexTableModel flexTableModel;
+  final T model;
 
-  final TableBuilder tableBuilder;
+  final AbstractTableBuilder<T, C> tableBuilder;
 
-  final ScrollChangeNotifier scrollChangeNotifier;
+  final InnerScrollChangeNotifier innerScrollChangeNotifier;
 
-  final ScaleChangeNotifier scaleChangeNotifier;
+  final InnerScaleChangeNotifier innerScaleChangeNotifier;
 
-  final List<FlexTableChangeNotifier> flexTableChangeNotifiers;
+  final ChangeNotifier? rebuildNotifier;
+
+  final List<TableChangeNotifier> tableChangeNotifiers;
+
+  final FtProperties properties;
 
   @override
-  TableViewScrollableState createState() => TableViewScrollableState();
+  TableViewScrollableState<T, C> createState() => TableViewScrollableState();
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
@@ -77,9 +82,11 @@ class TableViewScrollable extends StatefulWidget {
     properties.add(DiagnosticsProperty<TableScrollPhysics>('physics', physics));
   }
 
-  static TableViewScrollableState? of(BuildContext context) {
-    final _ScrollableScope? widget =
-        context.dependOnInheritedWidgetOfExactType<_ScrollableScope>();
+  static TableViewScrollableState<T, C>?
+      of<T extends AbstractFtModel<C>, C extends AbstractCell>(
+          BuildContext context) {
+    final _ScrollableScope<T, C>? widget =
+        context.dependOnInheritedWidgetOfExactType<_ScrollableScope<T, C>>();
     return widget?.scrollable;
   }
 
@@ -118,44 +125,32 @@ class TableViewScrollable extends StatefulWidget {
 
 // Enable Scrollable.of() to work as if ScrollableState was an inherited widget.
 // ScrollableState.build() always rebuilds its _ScrollableScope.
-class _ScrollableScope extends InheritedWidget {
+class _ScrollableScope<T extends AbstractFtModel<C>, C extends AbstractCell>
+    extends InheritedWidget {
   const _ScrollableScope({
     Key? key,
     required this.scrollable,
-    required this.flexTableViewModel,
+    required this.viewModel,
     required Widget child,
   }) : super(key: key, child: child);
 
-  final TableViewScrollableState scrollable;
-  final FlexTableViewModel flexTableViewModel;
+  final TableViewScrollableState<T, C> scrollable;
+  final FtViewModel<T, C> viewModel;
 
   @override
   bool updateShouldNotify(_ScrollableScope old) {
-    return flexTableViewModel != old.flexTableViewModel;
+    return viewModel != old.viewModel;
   }
 }
 
-/// State object for a [TableViewScrollable] widget.
-///
-/// To manipulate a [TableViewScrollable] widget's scroll position, use the object
-/// obtained from the [viewModel] property.
-///
-/// To be informed of when a [TableViewScrollable] widget is scrolling, use a
-/// [NotificationListener] to listen for [ScrollNotification] notifications.
-///
-/// This class is not intended to be subclassed. To specialize the behavior of a
-/// [TableViewScrollable], provide it with a [ScrollPhysics].
-class TableViewScrollableState extends State<TableViewScrollable>
+class TableViewScrollableState<T extends AbstractFtModel<C>,
+        C extends AbstractCell> extends State<TableViewScrollable<T, C>>
     with TickerProviderStateMixin
     implements ScrollContext {
-  /// The manager for this [TableViewScrollable] widget's viewport position.
-  ///
-  /// To control what kind of [ScrollPosition] is created for a [TableViewScrollable],
-  /// provide it with custom [ScrollController] that creates the appropriate
-  /// [ScrollPosition] in its [ScrollController.createScrollPosition] method.
-  FlexTableViewModel get viewModel => _viewModel!;
-  FlexTableViewModel? _viewModel;
-  ScaleChangeNotifier? _scaleChangeNotifier;
+  FtViewModel<T, C> get viewModel => _viewModel!;
+  FtViewModel<T, C>? _viewModel;
+  InnerScaleChangeNotifier? _scaleChangeNotifier;
+  ChangeNotifier? _rebuildNotifier;
 
   @override
   AxisDirection get axisDirection => AxisDirection.down;
@@ -169,8 +164,8 @@ class TableViewScrollableState extends State<TableViewScrollable>
     _configuration = const TableScrollBehavior();
     _physics = _configuration.getScrollPhysics(context);
     if (widget.physics != null) _physics = widget.physics!.applyTo(_physics);
-    final FlexTableController controller = widget.controller;
-    final FlexTableViewModel? oldViewModel = _viewModel;
+    final FtController<T, C> controller = widget.controller;
+    final FtViewModel<T, C>? oldViewModel = _viewModel;
     if (oldViewModel != null) {
       controller.detach(oldViewModel);
       // It's important that we not dispose the old position until after the
@@ -179,21 +174,28 @@ class TableViewScrollableState extends State<TableViewScrollable>
       scheduleMicrotask(oldViewModel.dispose);
     }
 
-    if (_scaleChangeNotifier != widget.scaleChangeNotifier) {
-      _scaleChangeNotifier?.removeListener(scaleChange);
-      _scaleChangeNotifier = widget.scaleChangeNotifier
-        ..addListener(scaleChange);
+    if (_scaleChangeNotifier != widget.innerScaleChangeNotifier) {
+      _scaleChangeNotifier?.removeListener(rebuildTable);
+      _scaleChangeNotifier = widget.innerScaleChangeNotifier
+        ..addListener(rebuildTable);
     }
 
-    _viewModel = controller.createScrollPosition(
+    if (_rebuildNotifier != widget.rebuildNotifier) {
+      _rebuildNotifier?.removeListener(rebuildTable);
+      _rebuildNotifier = widget.rebuildNotifier?..addListener(rebuildTable);
+    }
+
+    _viewModel = controller.createViewModel(
         _physics!,
         this,
         oldViewModel,
-        widget.flexTableModel,
+        widget.model,
         widget.tableBuilder,
-        widget.scrollChangeNotifier,
+        widget.innerScrollChangeNotifier,
         _scaleChangeNotifier!,
-        widget.flexTableChangeNotifiers);
+        widget.tableChangeNotifiers,
+        widget.properties);
+
     assert(_viewModel != null);
 
     controller.attach(viewModel);
@@ -218,11 +220,14 @@ class TableViewScrollableState extends State<TableViewScrollable>
       oldPhysics = oldPhysics?.parent;
     } while (newPhysics != null || oldPhysics != null);
 
-    if (widget.flexTableModel != oldWidget.flexTableModel ||
+    if (widget.model != oldWidget.model ||
         widget.tableBuilder != oldWidget.tableBuilder ||
-        widget.flexTableChangeNotifiers != oldWidget.flexTableChangeNotifiers ||
-        widget.scrollChangeNotifier != oldWidget.scrollChangeNotifier ||
-        widget.scaleChangeNotifier != oldWidget.scaleChangeNotifier) {
+        widget.tableChangeNotifiers != oldWidget.tableChangeNotifiers ||
+        widget.innerScrollChangeNotifier !=
+            oldWidget.innerScrollChangeNotifier ||
+        widget.innerScaleChangeNotifier != oldWidget.innerScaleChangeNotifier ||
+        widget.rebuildNotifier != oldWidget.rebuildNotifier ||
+        widget.properties != oldWidget.properties) {
       return true;
     }
 
@@ -230,7 +235,7 @@ class TableViewScrollableState extends State<TableViewScrollable>
   }
 
   @override
-  void didUpdateWidget(TableViewScrollable oldWidget) {
+  void didUpdateWidget(TableViewScrollable<T, C> oldWidget) {
     super.didUpdateWidget(oldWidget);
 
     if (widget.controller != oldWidget.controller) {
@@ -245,7 +250,8 @@ class TableViewScrollableState extends State<TableViewScrollable>
 
   @override
   void dispose() {
-    _scaleChangeNotifier?.removeListener(scaleChange);
+    _scaleChangeNotifier?.removeListener(rebuildTable);
+    _rebuildNotifier?.removeListener(rebuildTable);
     widget.controller.detach(viewModel);
     viewModel.dispose();
     super.dispose();
@@ -493,9 +499,9 @@ class TableViewScrollableState extends State<TableViewScrollable>
 
   @override
   Widget build(BuildContext context) {
-    Widget result = _ScrollableScope(
+    Widget result = _ScrollableScope<T, C>(
         scrollable: this,
-        flexTableViewModel: viewModel,
+        viewModel: viewModel,
         child: Listener(
           onPointerSignal: _receivedPointerSignal,
           child: RawGestureDetector(
@@ -532,8 +538,7 @@ class TableViewScrollableState extends State<TableViewScrollable>
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties
-        .add(DiagnosticsProperty<FlexTableViewModel>('position', _viewModel));
+    properties.add(DiagnosticsProperty<FtViewModel>('position', _viewModel));
   }
 
   @override
@@ -562,7 +567,7 @@ class TableViewScrollableState extends State<TableViewScrollable>
     assert(event is PointerScrollEvent);
     final double delta = _pointerSignalEventDelta(event as PointerScrollEvent);
 
-    TablePanelLayoutIndex si = viewModel.findScrollIndex(event.localPosition);
+    LayoutPanelIndex si = viewModel.findScrollIndex(event.localPosition);
 
     final scrollIndexX =
         viewModel.stateSplitX == SplitState.freezeSplit ? 1 : si.xIndex;
@@ -613,7 +618,7 @@ class TableViewScrollableState extends State<TableViewScrollable>
     );
   }
 
-  void scaleChange() {
+  void rebuildTable() {
     setState(() {});
   }
 }

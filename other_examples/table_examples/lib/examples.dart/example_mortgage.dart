@@ -22,11 +22,10 @@ class ExampleMortgage extends StatefulWidget {
 class _ExampleMortgageState extends State<ExampleMortgage>
     with SettingsBottomSheet {
   final _globalKey = const GlobalObjectKey<ScaffoldState>('mortgage');
-  FlexTableController flexTableController = FlexTableController();
+  final _ftController = DefaultFtController();
   late ScaleChangeNotifier scaleChangeNotifier;
 
-  final flexTableModel =
-      createMorgageTableModel(horizontalTables: 2).tableModel(
+  final ftModel = MortgageTableModel(horizontalTables: 2).makeTable(
     autoFreezeListX: true,
     autoFreezeListY: true,
   );
@@ -34,42 +33,33 @@ class _ExampleMortgageState extends State<ExampleMortgage>
 
   @override
   void initState() {
-    scaleSlider = switch (defaultTargetPlatform) {
+    var (tableScale, scaleSlider) = switch (defaultTargetPlatform) {
       (TargetPlatform.macOS ||
             TargetPlatform.linux ||
             TargetPlatform.windows) =>
-        true,
-      (_) => false
+        (1.5, true),
+      (_) => (1.0, false)
     };
+    this.scaleSlider = scaleSlider;
 
-    scaleChangeNotifier = ScaleChangeNotifier(flexTableModel: flexTableModel);
+    scaleChangeNotifier = ScaleChangeNotifier(tableScale: tableScale);
 
     super.initState();
   }
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-  }
-
-  @override
-  void didUpdateWidget(covariant ExampleMortgage oldWidget) {
-    super.didUpdateWidget(oldWidget);
-  }
-
-  @override
   void dispose() {
-    flexTableController.dispose();
+    _ftController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    Widget table = FlexTable(
-      scaleChangeNotifier: scaleChangeNotifier,
-      flexTableController: flexTableController,
+    Widget table = DefaultFlexTable(
+      tableChangeNotifiers: [scaleChangeNotifier],
+      controller: _ftController,
       backgroundColor: Colors.white,
-      flexTableModel: flexTableModel,
+      model: ftModel,
       tableBuilder: MortgageTableBuilder(),
     );
 
@@ -80,9 +70,9 @@ class _ExampleMortgageState extends State<ExampleMortgage>
             row: 2,
             squeezeRatio: 1.0,
             measureHeight: true,
-            child: TableBottomBar(
+            child: TableScaleSlider(
                 scaleChangeNotifier: scaleChangeNotifier,
-                flexTableController: flexTableController,
+                controller: _ftController,
                 maxWidthSlider: 200.0))
       ]);
     }
@@ -103,7 +93,7 @@ class _ExampleMortgageState extends State<ExampleMortgage>
           ),
           IconButton(
             icon: const Icon(Icons.settings),
-            onPressed: () => toggleSheet(_globalKey, flexTableController),
+            onPressed: () => toggleSheet(_globalKey, _ftController),
           ),
         ],
         centerTitle: true,

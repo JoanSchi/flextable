@@ -4,7 +4,7 @@
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
-import '../model/flextable_scroll_metrics.dart';
+import '../model/scroll_metrics.dart';
 import '../model/view_model.dart';
 import 'table_drag_details.dart';
 import 'table_animation_controller.dart';
@@ -78,12 +78,7 @@ abstract class TableScrollActivityDelegate {
     int scrollIndexY,
   );
 
-  alignCells(
-    int scrollIndexX,
-    int scrollIndexY,
-    bool alignX,
-    bool alignY,
-  );
+  void cancelSplit();
 }
 
 class HoldTableScrollActivity extends TableScrollActivity
@@ -707,7 +702,7 @@ class CorrrectOffScrollActivity extends TableScrollActivity {
 }
 
 class AdjustScroll {
-  final FlexTableViewModel flexTableViewModel;
+  final FtViewModel viewModel;
   TableScrollDirection direction = TableScrollDirection.both;
   TickerProvider vsync;
   int scrollIndexX;
@@ -723,7 +718,7 @@ class AdjustScroll {
   bool stop = false;
 
   AdjustScroll(
-      {required this.flexTableViewModel,
+      {required this.viewModel,
       required this.direction,
       required this.scrollIndexX,
       required this.scrollIndexY,
@@ -736,12 +731,10 @@ class AdjustScroll {
         ))
       ..addListener(() {
         if (!scrollX) {
-          flexTableViewModel.setPixelsX(
-              scrollIndexX, scrollIndexY, _animation.value);
+          viewModel.setPixelsX(scrollIndexX, scrollIndexY, _animation.value);
         }
         if (!scrollY) {
-          flexTableViewModel.setPixelsY(
-              scrollIndexX, scrollIndexY, _animation.value);
+          viewModel.setPixelsY(scrollIndexX, scrollIndexY, _animation.value);
         }
       });
     _animation = _controller.drive(CurveTween(curve: Curves.ease)).drive(tween);
@@ -750,8 +743,8 @@ class AdjustScroll {
   start({required DragStartDetails details}) {
     if (_controller.status != AnimationStatus.forward) {
       _startPosition = details.localPosition;
-      startX = flexTableViewModel.scrollPixelsX(scrollIndexX, scrollIndexY);
-      startY = flexTableViewModel.scrollPixelsY(scrollIndexX, scrollIndexY);
+      startX = viewModel.scrollPixelsX(scrollIndexX, scrollIndexY);
+      startY = viewModel.scrollPixelsY(scrollIndexX, scrollIndexY);
 
       switch (direction) {
         case TableScrollDirection.horizontal:
@@ -802,8 +795,7 @@ class AdjustScroll {
             if (delta.dx.abs() < opposite) {
               scrollX = false;
 
-              final end =
-                  flexTableViewModel.scrollPixelsX(scrollIndexX, scrollIndexY);
+              final end = viewModel.scrollPixelsX(scrollIndexX, scrollIndexY);
 
               tween
                 ..begin = end
@@ -813,8 +805,7 @@ class AdjustScroll {
             } else if (delta.dy.abs() < opposite) {
               scrollY = false;
               // print('No scrollY $delta');
-              final end =
-                  flexTableViewModel.scrollPixelsY(scrollIndexX, scrollIndexY);
+              final end = viewModel.scrollPixelsY(scrollIndexX, scrollIndexY);
 
               tween
                 ..begin = end

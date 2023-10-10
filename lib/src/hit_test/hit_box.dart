@@ -7,8 +7,8 @@ import 'package:flutter/widgets.dart';
 
 typedef HitTestCallback = bool Function(Offset position);
 
-class FlexTableHit extends SingleChildRenderObjectWidget {
-  const FlexTableHit({
+class HitBox extends SingleChildRenderObjectWidget {
+  const HitBox({
     super.key,
     required this.hit,
     super.child,

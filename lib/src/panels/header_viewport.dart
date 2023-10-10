@@ -10,35 +10,38 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 import '../model/properties/flextable_grid_info.dart';
-import '../builders/table_builder.dart';
+import '../builders/abstract_table_builder.dart';
 
-typedef HeaderIndexBuilder = Widget Function(FlexTableModel flexTableModel,
-    TableHeaderIndex tableHeaderIndex, BuildContext context);
+typedef HeaderIndexBuilder<T extends AbstractFtModel> = Widget Function(
+    BuildContext context,
+    T model,
+    TableHeaderIndex tableHeaderIndex,
+    double scale);
 
 class TableHeader extends StatelessWidget {
   const TableHeader(
       {super.key,
-      required this.flexTableViewModel,
+      required this.viewModel,
       required this.panelIndex,
       required this.tableBuilder,
       required this.tableScale,
       required this.headerScale});
 
-  final FlexTableViewModel flexTableViewModel;
+  final FtViewModel viewModel;
   final int panelIndex;
-  final TableBuilder tableBuilder;
+  final AbstractTableBuilder tableBuilder;
   final double tableScale;
   final double headerScale;
 
   @override
   Widget build(BuildContext context) {
     return TableHeaderViewport(
-      flexTableViewModel: flexTableViewModel,
+      viewModel: viewModel,
       panelIndex: panelIndex,
       tableScale: tableScale,
       headerScale: headerScale,
       headerIndexBuilder: tableBuilder.buildHeaderIndex,
-      divider: tableBuilder.lineHeader(flexTableViewModel, panelIndex),
+      divider: tableBuilder.lineHeader(viewModel, panelIndex),
     );
   }
 }
@@ -46,14 +49,14 @@ class TableHeader extends StatelessWidget {
 class TableHeaderViewport extends RenderObjectWidget {
   const TableHeaderViewport(
       {super.key,
-      required this.flexTableViewModel,
+      required this.viewModel,
       required this.panelIndex,
       required this.headerIndexBuilder,
       required this.tableScale,
       required this.headerScale,
       required this.divider});
 
-  final FlexTableViewModel flexTableViewModel;
+  final FtViewModel viewModel;
   final int panelIndex;
   final HeaderIndexBuilder headerIndexBuilder;
   final double tableScale;
@@ -68,7 +71,7 @@ class TableHeaderViewport extends RenderObjectWidget {
   void updateRenderObject(
       BuildContext context, TableHeaderRenderViewport renderObject) {
     renderObject
-      ..flexTableViewModel = flexTableViewModel
+      ..viewModel = viewModel
       ..tableScale = tableScale
       ..headerScale = headerScale
       ..divider = divider;
@@ -81,7 +84,7 @@ class TableHeaderViewport extends RenderObjectWidget {
 
     return TableHeaderRenderViewport(
         childManager: element,
-        flexTableViewModel: flexTableViewModel,
+        viewModel: viewModel,
         panelIndex: panelIndex,
         tableScale: tableScale,
         headerScale: headerScale,
@@ -172,8 +175,8 @@ class TableHeaderChildRenderObjectElement extends RenderObjectElement
   void update(covariant TableHeaderViewport newWidget) {
     final TableHeaderViewport oldWidget = widget;
     super.update(newWidget);
-    final FlexTableViewModel newDelegate = newWidget.flexTableViewModel;
-    final FlexTableViewModel oldDelegate = oldWidget.flexTableViewModel;
+    final FtViewModel newDelegate = newWidget.viewModel;
+    final FtViewModel oldDelegate = oldWidget.viewModel;
     if ((newDelegate != oldDelegate &&
             (newDelegate.runtimeType != oldDelegate.runtimeType ||
                 newDelegate.shouldRebuild(oldDelegate))) ||
@@ -330,17 +333,12 @@ class TableHeaderChildRenderObjectElement extends RenderObjectElement
 
   Widget? _build(TableHeaderIndex tableHeaderIndex) {
     return _childWidgets.putIfAbsent(tableHeaderIndex, () {
-      // return Container(
-      //   color: tableCellIndex.row % 2 == 0 ? Colors.grey[50] : Colors.grey[100],
-      // );
-
-      // return //RepaintBoundary(
-      //     Container(
-      //         color: tableCellIndex.row % 2 == 0 ? Colors.grey[50] : Colors.grey[100],
-      //         child: Center(child: Text('R${tableCellIndex.row}C${tableCellIndex.column}')));
-
       return widget.headerIndexBuilder(
-          widget.flexTableViewModel.ftm, tableHeaderIndex, this);
+        this,
+        widget.viewModel.model,
+        tableHeaderIndex,
+        widget.viewModel.scaleHeader(tableHeaderIndex),
+      );
     });
   }
 }
@@ -369,43 +367,43 @@ class TableHeaderRenderViewport extends RenderBox
         ContainerRenderObjectMixin<RenderBox, TableHeaderParentData>,
         RenderBoxContainerDefaultsMixin<RenderBox, TableHeaderParentData> {
   TableHeaderRenderViewport({
-    required FlexTableViewModel flexTableViewModel,
+    required FtViewModel viewModel,
     required this.childManager,
     required this.panelIndex,
     required double tableScale,
     required double headerScale,
     required this.divider,
-  })  : _flexTableViewModel = flexTableViewModel,
+  })  : _viewModel = viewModel,
         _tableScale = tableScale,
         _headerScale = headerScale {
-    iterator = TableHeaderIterator(
-        flexTableViewModel: flexTableViewModel, panelIndex: panelIndex);
+    iterator =
+        TableHeaderIterator(viewModel: viewModel, panelIndex: panelIndex);
   }
 
   // TableScrollPosition _offset;
   // ScrollPosition? _sliverPosition;
   TableHeaderRenderChildManager childManager;
   int panelIndex;
-  late TablePanelLayoutIndex tpli;
+  late LayoutPanelIndex tpli;
   late TableHeaderIterator iterator;
   late double xScroll, yScroll;
   double _tableScale;
   double _headerScale;
   // late double panelWidth, panelHeight;
   // late double leftMargin, topMargin, rightMargin, bottomMargin;
-  FlexTableViewModel _flexTableViewModel;
+  FtViewModel _viewModel;
   int garbageCollectFrom = -1;
   LineHeader divider;
 
-  FlexTableViewModel get flexTableViewModel => _flexTableViewModel;
+  FtViewModel get viewModel => _viewModel;
 
-  set flexTableViewModel(FlexTableViewModel value) {
-    if (value == _flexTableViewModel) return;
-    if (attached) _flexTableViewModel.removeListener(markNeedsLayout);
-    _flexTableViewModel = value;
-    if (attached) _flexTableViewModel.addListener(markNeedsLayout);
+  set viewModel(FtViewModel value) {
+    if (value == _viewModel) return;
+    if (attached) _viewModel.removeListener(markNeedsLayout);
+    _viewModel = value;
+    if (attached) _viewModel.addListener(markNeedsLayout);
 
-    iterator.flexTableViewModel = value;
+    iterator.viewModel = value;
 
     garbageCollectFrom = 0;
 
@@ -461,16 +459,14 @@ class TableHeaderRenderViewport extends RenderBox
 
     RenderBox? child;
 
-    final tableScale = flexTableViewModel.tableScale;
+    final tableScale = viewModel.tableScale;
 
-    tpli = _flexTableViewModel.layoutIndex(panelIndex);
-    xScroll =
-        flexTableViewModel.getScrollX(tpli.scrollIndexX, tpli.scrollIndexY);
-    yScroll =
-        flexTableViewModel.getScrollY(tpli.scrollIndexX, tpli.scrollIndexY);
+    tpli = _viewModel.layoutPanelIndex(panelIndex);
+    xScroll = viewModel.getScrollX(tpli.scrollIndexX, tpli.scrollIndexY);
+    yScroll = viewModel.getScrollY(tpli.scrollIndexX, tpli.scrollIndexY);
 
-    final layoutX = flexTableViewModel.widthLayoutList[tpli.xIndex];
-    final layoutY = flexTableViewModel.heightLayoutList[tpli.yIndex];
+    final layoutX = viewModel.widthLayoutList[tpli.xIndex];
+    final layoutY = viewModel.heightLayoutList[tpli.yIndex];
 
     iterator.reset(tpli);
 
@@ -741,14 +737,14 @@ class TableHeaderRenderViewport extends RenderBox
     super.attach(owner);
     // _offset.addListener(markNeedsLayout);
     // _sliverPosition?.addListener(markNeedsLayout);
-    _flexTableViewModel.addListener(markNeedsLayout);
+    _viewModel.addListener(markNeedsLayout);
   }
 
   @override
   void detach() {
     // _offset.removeListener(markNeedsLayout);
     // _sliverPosition?.removeListener(markNeedsLayout);
-    _flexTableViewModel.removeListener(markNeedsLayout);
+    _viewModel.removeListener(markNeedsLayout);
     super.detach();
   }
 
@@ -765,7 +761,7 @@ class TableHeaderRenderViewport extends RenderBox
   paintLines(PaintingContext context, Offset offset) {
     final canvas = context.canvas;
     final paint = Paint();
-    final tableScale = flexTableViewModel.tableScale;
+    final tableScale = viewModel.tableScale;
     paint.color = divider.color;
     paint.strokeWidth = divider.width;
 
@@ -777,8 +773,7 @@ class TableHeaderRenderViewport extends RenderBox
     if (tpli.isRowHeader) {
       const x1 = 0.0;
       final x2 = size.width;
-      final marginBegin =
-          flexTableViewModel.heightLayoutList[tpli.yIndex].marginBegin;
+      final marginBegin = viewModel.heightLayoutList[tpli.yIndex].marginBegin;
 
       iterator.reset(tpli);
       while (iterator.next) {
@@ -790,8 +785,7 @@ class TableHeaderRenderViewport extends RenderBox
     } else if (tpli.isColumnHeader) {
       const y1 = 0.0;
       final y2 = size.height;
-      final marginBegin =
-          flexTableViewModel.widthLayoutList[tpli.xIndex].marginBegin;
+      final marginBegin = viewModel.widthLayoutList[tpli.xIndex].marginBegin;
 
       iterator.reset(tpli);
 
@@ -870,11 +864,10 @@ class TableHeaderIndex implements Comparable<TableHeaderIndex> {
 
 class TableHeaderIterator {
   TableHeaderIterator(
-      {required FlexTableViewModel flexTableViewModel,
-      required this.panelIndex})
-      : _flexTableViewModel = flexTableViewModel;
+      {required FtViewModel viewModel, required this.panelIndex})
+      : _viewModel = viewModel;
 
-  FlexTableViewModel _flexTableViewModel;
+  FtViewModel _viewModel;
   late List<GridInfo> headerInfoList;
   int panelIndex;
   int index = 0;
@@ -883,31 +876,31 @@ class TableHeaderIterator {
   int firstIndex = 0;
   int lastIndex = 0;
 
-  set flexTableViewModel(value) {
-    if (_flexTableViewModel != value) {
-      _flexTableViewModel = value;
+  set viewModel(value) {
+    if (_viewModel != value) {
+      _viewModel = value;
     }
   }
 
-  reset(TablePanelLayoutIndex tpli) {
+  reset(LayoutPanelIndex tpli) {
     count = 0;
 
     if (tpli.isRowHeader) {
-      headerInfoList = _flexTableViewModel.getRowInfoList(
-          tpli.scrollIndexX, tpli.scrollIndexY);
+      headerInfoList =
+          _viewModel.getRowInfoList(tpli.scrollIndexX, tpli.scrollIndexY);
     } else {
-      headerInfoList = _flexTableViewModel.getColumnInfoList(
-          tpli.scrollIndexX, tpli.scrollIndexY);
+      headerInfoList =
+          _viewModel.getColumnInfoList(tpli.scrollIndexX, tpli.scrollIndexY);
     }
 
     length = headerInfoList.length;
 
     if (tpli.xIndex == 0 || tpli.xIndex == 3) {
-      headerInfoList = _flexTableViewModel.getRowInfoList(
-          tpli.scrollIndexX, tpli.scrollIndexY);
+      headerInfoList =
+          _viewModel.getRowInfoList(tpli.scrollIndexX, tpli.scrollIndexY);
     } else {
-      headerInfoList = _flexTableViewModel.getColumnInfoList(
-          tpli.scrollIndexX, tpli.scrollIndexY);
+      headerInfoList =
+          _viewModel.getColumnInfoList(tpli.scrollIndexX, tpli.scrollIndexY);
     }
 
     if (length > 0) {

@@ -14,25 +14,25 @@ class FlexTableToSliverBox extends SingleChildRenderObjectWidget {
   const FlexTableToSliverBox({
     super.key,
     super.child,
-    required this.flexTableController,
+    required this.ftController,
     this.maxOverlap,
   });
 
-  final FlexTableController flexTableController;
+  final FtController ftController;
   final double? maxOverlap;
 
   @override
   void updateRenderObject(
       BuildContext context, RenderFlexTableToSliverBox renderObject) {
     renderObject
-      ..flexTableController = flexTableController
+      ..flexTableController = ftController
       ..maxOverlap = maxOverlap;
   }
 
   @override
   RenderFlexTableToSliverBox createRenderObject(BuildContext context) =>
       RenderFlexTableToSliverBox(
-          flexTableController: flexTableController, maxOverlap: maxOverlap);
+          flexTableController: ftController, maxOverlap: maxOverlap);
 }
 
 class RenderFlexTableToSliverBox extends RenderSliverSingleBoxAdapter {
@@ -40,7 +40,7 @@ class RenderFlexTableToSliverBox extends RenderSliverSingleBoxAdapter {
       {super.child, required this.flexTableController, double? maxOverlap})
       : _maxOverlap = maxOverlap;
 
-  FlexTableController flexTableController;
+  FtController flexTableController;
   double? _maxOverlap;
 
   set maxOverlap(double? value) {

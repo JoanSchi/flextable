@@ -9,17 +9,15 @@ import '../../gesture_scroll/table_scroll_activity.dart';
 import '../../hit_test/hit_and_drag.dart';
 import '../../model/model.dart';
 import '../split/adjust_table_split.dart';
-import 'freeze_options.dart';
+import 'adjust_freeze_properties.dart';
 
 class TableMoveFreeze extends StatefulWidget {
   const TableMoveFreeze({
     super.key,
-    required this.flexTableViewModel,
-    required this.freezeOptions,
+    required this.viewModel,
   });
 
-  final FlexTableViewModel flexTableViewModel;
-  final FreezeOptions freezeOptions;
+  final FtViewModel viewModel;
 
   @override
   State<StatefulWidget> createState() => TableMoveFreezeState();
@@ -31,16 +29,14 @@ class TableMoveFreezeState extends State<TableMoveFreeze> {
   @override
   void didChangeDependencies() {
     _moveFreeze = MoveFreeze(
-        flexTableViewModel: widget.flexTableViewModel,
-        freezeOptions: widget.freezeOptions);
+      viewModel: widget.viewModel,
+    );
     super.didChangeDependencies();
   }
 
   @override
   void didUpdateWidget(TableMoveFreeze oldWidget) {
-    _moveFreeze
-      ..flexTableViewModel = widget.flexTableViewModel
-      ..freezeOptions = widget.freezeOptions;
+    _moveFreeze.viewModel = widget.viewModel;
 
     super.didUpdateWidget(oldWidget);
   }
@@ -60,35 +56,34 @@ class TableMoveFreezeState extends State<TableMoveFreeze> {
 }
 
 class MoveFreeze extends ChangeNotifier implements HitAndDragDelegate {
-  MoveFreeze(
-      {required FlexTableViewModel flexTableViewModel,
-      required this.freezeOptions})
-      : _flexTableViewModel = flexTableViewModel;
+  MoveFreeze({
+    required FtViewModel viewModel,
+  }) : _viewModel = viewModel;
 
-  FlexTableViewModel _flexTableViewModel;
-  FreezeOptions freezeOptions;
+  FtViewModel _viewModel;
+  AdjustFreezeProperties? adjustFreezeProperties;
   late FreezeLine freezeLine;
 
-  FlexTableViewModel get flexTableViewModel => _flexTableViewModel;
+  FtViewModel get viewModel => _viewModel;
 
-  set flexTableViewModel(FlexTableViewModel value) {
-    if (_flexTableViewModel == value) return;
+  set viewModel(FtViewModel value) {
+    if (_viewModel == value) return;
 
-    _flexTableViewModel = value;
+    _viewModel = value;
   }
 
   @override
   bool hit(Offset position) {
-    if (flexTableViewModel.stateSplitX == SplitState.freezeSplit ||
-        flexTableViewModel.stateSplitY == SplitState.freezeSplit) {
+    if (viewModel.stateSplitX == SplitState.freezeSplit ||
+        viewModel.stateSplitY == SplitState.freezeSplit) {
       return hitFreezeLine(position) != FreezeLine.none;
     }
     return false;
   }
 
   FreezeLine hitFreezeLine(Offset position) {
-    final xEnd = flexTableViewModel.widthLayoutList[1].panelEndPosition;
-    final yEnd = flexTableViewModel.heightLayoutList[1].panelEndPosition;
+    final xEnd = viewModel.widthLayoutList[1].panelEndPosition;
+    final yEnd = viewModel.heightLayoutList[1].panelEndPosition;
 
     bool contains(
         {required Offset offset,
@@ -102,10 +97,11 @@ class MoveFreeze extends ChangeNotifier implements HitAndDragDelegate {
           offset.dy < bottom;
     }
 
-    final size = freezeOptions.sizeMoveFreezeButton;
+    final size =
+        viewModel.properties.adjustFreeze?.sizeMoveFreezeButton ?? 50.0;
 
-    if ((flexTableViewModel.stateSplitX == SplitState.freezeSplit &&
-            flexTableViewModel.stateSplitY == SplitState.freezeSplit) &&
+    if ((viewModel.stateSplitX == SplitState.freezeSplit &&
+            viewModel.stateSplitY == SplitState.freezeSplit) &&
         contains(
             offset: position,
             left: xEnd - size,
@@ -135,15 +131,14 @@ class MoveFreeze extends ChangeNotifier implements HitAndDragDelegate {
   @override
   TableDrag drag(DragStartDetails details, VoidCallback dragCancelCallback) {
     final FreezeDragController drag = FreezeDragController(
-        delegate: flexTableViewModel,
+        delegate: viewModel,
         details: details,
         onDragCanceled: dragCancelCallback,
         freezeLine: freezeLine);
 
-    flexTableViewModel
-        .beginActivity(DragTableSplitActivity(flexTableViewModel));
-    assert(flexTableViewModel.currentDrag == null);
-    flexTableViewModel.currentDrag = drag;
+    viewModel.beginActivity(DragTableSplitActivity(viewModel));
+    assert(viewModel.currentChange == null);
+    viewModel.currentChange = drag;
     return drag;
   }
 
@@ -169,41 +164,18 @@ class FreezeDragController implements TableDrag {
 
   @override
   void cancel() {
-    _delegate.goIdle(0, 0);
+    _delegate
+      ..cancelSplit()
+      ..correctOffScroll(0, 0);
   }
 
   @override
   void end(TableDragEndDetails details) {
     dragEnd = true;
 
-    bool alignX = false;
-    bool alignY = false;
-
-    switch (freezeLine) {
-      case FreezeLine.both:
-        {
-          alignX = true;
-          alignY = true;
-          break;
-        }
-      case FreezeLine.horizontal:
-        {
-          alignY = true;
-          break;
-        }
-      case FreezeLine.vertical:
-        {
-          alignX = true;
-          break;
-        }
-      default:
-        {
-          _delegate.goIdle(0, 0);
-          return;
-        }
-    }
-
-    _delegate.alignCells(0, 0, alignX, alignY);
+    _delegate
+      ..cancelSplit()
+      ..correctOffScroll(0, 0);
   }
 
   @override
@@ -234,63 +206,6 @@ class FreezeDragController implements TableDrag {
   @mustCallSuper
   void dispose() {
     onDragCanceled?.call();
-  }
-
-  @override
-  get lastDetails => null;
-}
-
-class FreezeMoveController implements TableDrag {
-  FreezeMoveController(
-      {required TableScrollActivityDelegate delegate,
-      this.onDragCanceled,
-      required this.scrollX,
-      required this.moveToScrollX,
-      required this.scrollY,
-      required this.moveToScrollY,
-      required TickerProvider vsync})
-      : _delegate = delegate {
-    _controller = AnimationController(
-        vsync: vsync, duration: const Duration(milliseconds: 200));
-    _animation = _controller.drive(CurveTween(curve: Curves.ease));
-    _animation.addListener(_tick);
-    _controller.forward();
-  }
-  final VoidCallback? onDragCanceled;
-  final TableScrollActivityDelegate _delegate;
-  final double scrollX;
-  final double scrollY;
-  final double moveToScrollX;
-  final double moveToScrollY;
-  bool dragEnd = false;
-  late AnimationController _controller;
-  late Animation _animation;
-
-  @override
-  void cancel() {
-    _delegate.goIdle(0, 0);
-  }
-
-  @override
-  void end(TableDragEndDetails details) {
-    dragEnd = true;
-    _delegate.goIdle(0, 0);
-  }
-
-  @override
-  void update(TableDragUpdateDetails details) {}
-
-  @override
-  @mustCallSuper
-  void dispose() {
-    onDragCanceled?.call();
-    _controller.dispose();
-  }
-
-  _tick() {
-    final x = scrollX + (moveToScrollX - scrollX) * _animation.value;
-    final y = scrollY + (moveToScrollY - scrollY) * _animation.value;
-    _delegate.setPixels(0, 0, Offset(x, y));
   }
 
   @override

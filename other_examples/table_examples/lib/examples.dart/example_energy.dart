@@ -23,9 +23,9 @@ class ExampleEnergy extends StatefulWidget {
 class _ExampleEnergyState extends State<ExampleEnergy>
     with SettingsBottomSheet {
   final _globalKey = const GlobalObjectKey<ScaffoldState>('energy');
-  late FlexTableController _flexTableController;
-  ScaleChangeNotifier? scaleChangeNotifier;
-  late FlexTableModel flexTableModel;
+  final _ftController = DefaultFtController();
+  late ScaleChangeNotifier tableScaleChangeNotifier;
+  late DefaultFtModel ftModel;
   bool scaleSlider = false;
 
   @override
@@ -38,31 +38,34 @@ class _ExampleEnergyState extends State<ExampleEnergy>
       (_) => false
     };
 
-    flexTableModel =
-        DataModelEngery().makeTable(platform: defaultTargetPlatform);
+    final tableScale = switch (defaultTargetPlatform) {
+      (TargetPlatform.macOS ||
+            TargetPlatform.linux ||
+            TargetPlatform.windows) =>
+        1.5,
+      (_) => 1.0
+    };
 
-    if (scaleSlider) {
-      scaleChangeNotifier = ScaleChangeNotifier(flexTableModel: flexTableModel);
-    }
+    ftModel = DataModelEngery.makeTable(tableScale: tableScale);
 
-    _flexTableController = FlexTableController();
+    tableScaleChangeNotifier = ScaleChangeNotifier(tableScale: tableScale);
     super.initState();
   }
 
   @override
   void dispose() {
-    _flexTableController.dispose();
-    scaleChangeNotifier?.dispose();
+    _ftController.dispose();
+    tableScaleChangeNotifier.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    Widget table = FlexTable(
-      flexTableController: _flexTableController,
-      scaleChangeNotifier: scaleChangeNotifier,
+    Widget table = DefaultFlexTable(
+      controller: _ftController,
+      tableChangeNotifiers: [tableScaleChangeNotifier],
       backgroundColor: Colors.grey[50],
-      flexTableModel: flexTableModel,
+      model: ftModel,
       tableBuilder: DefaultTableBuilder(
           headerBackgroundColor: const Color.fromARGB(255, 244, 246, 248)),
     );
@@ -74,9 +77,9 @@ class _ExampleEnergyState extends State<ExampleEnergy>
             row: 2,
             measureHeight: true,
             squeezeRatio: 1.0,
-            child: TableBottomBar(
-                scaleChangeNotifier: scaleChangeNotifier!,
-                flexTableController: _flexTableController,
+            child: TableScaleSlider(
+                scaleChangeNotifier: tableScaleChangeNotifier,
+                controller: _ftController,
                 maxWidthSlider: 200.0))
       ]);
     }
@@ -97,7 +100,7 @@ class _ExampleEnergyState extends State<ExampleEnergy>
           ),
           IconButton(
             icon: const Icon(Icons.settings),
-            onPressed: () => toggleSheet(_globalKey, _flexTableController),
+            onPressed: () => toggleSheet(_globalKey, _ftController),
           ),
         ],
         centerTitle: true,

@@ -19,36 +19,35 @@ class ExampleAppBarOverlap extends StatefulWidget {
 }
 
 class _ExampleAppBarOverlapState extends State<ExampleAppBarOverlap> {
-  late FlexTableController flexTableController;
+  final ftController = DefaultFtController();
   late ScaleChangeNotifier scaleChangeNotifier;
-  late FlexTableModel flexTableModel;
+  late DefaultFtModel ftModel;
 
   @override
   void initState() {
-    flexTableController = FlexTableController();
-    flexTableModel = createMorgageTableModel(horizontalTables: 1).tableModel(
+    ftModel = MortgageTableModel(horizontalTables: 1).makeTable(
       autoFreezeListX: true,
       autoFreezeListY: true,
     );
-    scaleChangeNotifier = ScaleChangeNotifier(flexTableModel: flexTableModel);
+    scaleChangeNotifier = ScaleChangeNotifier();
     super.initState();
   }
 
   @override
   void dispose() {
-    flexTableController.dispose();
+    ftController.dispose();
     scaleChangeNotifier.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    Widget table = FlexTable(
-      scaleChangeNotifier: scaleChangeNotifier,
-      flexTableController: flexTableController,
+    Widget flexTable = DefaultFlexTable(
+      tableChangeNotifiers: [scaleChangeNotifier],
+      controller: ftController,
       tableBuilder: MortgageTableBuilder(),
       backgroundColor: Colors.white,
-      flexTableModel: flexTableModel,
+      model: ftModel,
     );
 
     final scaleSlider = switch (defaultTargetPlatform) {
@@ -60,15 +59,15 @@ class _ExampleAppBarOverlapState extends State<ExampleAppBarOverlap> {
     };
 
     if (scaleSlider) {
-      table = GridBorderLayout(children: [
-        table,
+      flexTable = GridBorderLayout(children: [
+        flexTable,
         GridBorderLayoutPosition(
             row: 2,
             measureHeight: true,
             squeezeRatio: 1.0,
-            child: TableBottomBar(
+            child: TableScaleSlider(
                 scaleChangeNotifier: scaleChangeNotifier,
-                flexTableController: flexTableController,
+                controller: ftController,
                 maxWidthSlider: 200.0))
       ]);
     }
@@ -99,8 +98,8 @@ class _ExampleAppBarOverlapState extends State<ExampleAppBarOverlap> {
           snap: true,
         ),
         FlexTableToSliverBox(
-          flexTableController: flexTableController,
-          child: table,
+          ftController: ftController,
+          child: flexTable,
         )
       ],
     ));

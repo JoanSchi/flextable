@@ -21,19 +21,20 @@ class ShortExample extends StatefulWidget {
 }
 
 class _ShortExampleState extends State<ShortExample> {
-  late FlexTableDataModel dataTable;
-  FlexTableController flexTableController = FlexTableController();
-
-  @override
-  void initState() {
-    super.initState();
-  }
-
   @override
   Widget build(BuildContext context) {
     const columns = 50;
     const rows = 5000;
-    dataTable = FlexTableDataModel();
+
+    final model = DefaultFtModel(
+      columnHeader: true,
+      rowHeader: true,
+      defaultWidthCell: 120.0,
+      defaultHeightCell: 50.0,
+      tableColumns: columns,
+      tableRows: rows,
+    );
+
     const line = Line(width: 0.5, color: Color.fromARGB(255, 70, 78, 38));
 
     for (int r = 0; r < rows; r++) {
@@ -56,7 +57,7 @@ class _ShortExampleState extends State<ShortExample> {
               fontSize: 20, color: Color.fromARGB(255, 70, 78, 38)),
         };
 
-        dataTable.addCell(
+        model.addCell(
             row: r,
             column: c,
             cell: Cell(value: '${numberToCharacter(c)}$r', attr: attr),
@@ -64,7 +65,7 @@ class _ShortExampleState extends State<ShortExample> {
       }
     }
 
-    dataTable.horizontalLineList.addLineRanges((create) {
+    model.horizontalLines.addLineRanges((create) {
       for (int r = 0; r < rows; r += 3) {
         /// Horizontal lines
         ///
@@ -104,7 +105,7 @@ class _ShortExampleState extends State<ShortExample> {
       }
     });
 
-    dataTable.verticalLineList.addLineRange(LineRange(
+    model.verticalLines.addLineRange(LineRange(
         startIndex: 0,
         endIndex: columns,
         lineNodeRange: LineNodeRange(list: [
@@ -118,29 +119,23 @@ class _ShortExampleState extends State<ShortExample> {
           ),
         ])));
 
-    final flexTableModel = FlexTableModel(
-        columnHeader: true,
-        rowHeader: true,
-        dataTable: dataTable,
-        defaultWidthCell: 120.0,
-        defaultHeightCell: 50.0,
-        autoFreezeAreasY: [
-          for (int r = 0; r < rows - 100; r += 99)
-            AutoFreezeArea(startIndex: r, freezeIndex: r + 3, endIndex: r + 90)
-        ],
-        maximumColumns: columns,
-        maximumRows: rows);
-
-    FlexTable flexTable = FlexTable(
-        backgroundColor: Colors.white,
-        flexTableController: flexTableController,
-        flexTableModel: flexTableModel);
+    model
+      ..autoFreezeAreasY = [
+        for (int r = 0; r < rows - 100; r += 99)
+          AutoFreezeArea(startIndex: r, freezeIndex: r + 3, endIndex: r + 90)
+      ]
+      ..tableColumns = columns
+      ..tableRows = rows;
 
     return Scaffold(
         appBar: AppBar(
           centerTitle: true,
           title: const Text('Short FlexTable example'),
         ),
-        body: flexTable);
+        body: DefaultFlexTable(
+          backgroundColor: Colors.white,
+          model: model,
+          tableBuilder: DefaultTableBuilder(),
+        ));
   }
 }

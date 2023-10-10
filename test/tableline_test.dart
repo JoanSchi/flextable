@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-import 'package:flextable/src/builders/table_line.dart';
+import 'package:flextable/src/model/mergable_lines.dart';
 import 'package:flutter/material.dart';
 
 void main() {

@@ -9,94 +9,103 @@ import '../panels/table_multi_panel_viewport.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import '../builders/cells.dart';
-import '../model/properties/flextable_grid_info.dart';
-import '../builders/table_builder.dart';
+import '../builders/abstract_table_builder.dart';
 import 'table_layout_iterations.dart';
-import '../builders/table_line.dart';
 
-typedef CellBuilder = Widget? Function(FlexTableModel flexTableModel,
-    TableCellIndex tableCellIndex, BuildContext context);
+typedef CellBuilder<T extends AbstractFtModel<C>, C extends AbstractCell>
+    = Widget? Function(
+  BuildContext context,
+  T model,
+  CellIndex tableCellIndex,
+);
 
-class TablePanel extends StatelessWidget {
-  final FlexTableViewModel flexTableViewModel;
+class TablePanel<T extends AbstractFtModel<C>, C extends AbstractCell>
+    extends StatelessWidget {
+  final FtViewModel<T, C> viewModel;
   final int panelIndex;
-  final TableBuilder tableBuilder;
+  final AbstractTableBuilder<T, C> tableBuilder;
   final double tableScale;
 
   const TablePanel(
       {super.key,
-      required this.flexTableViewModel,
+      required this.viewModel,
       required this.panelIndex,
       required this.tableBuilder,
       required this.tableScale});
 
   @override
   Widget build(BuildContext context) {
-    return TablePanelViewport(
-      flexTableViewModel: flexTableViewModel,
+    return TablePanelViewport<T, C>(
+      viewModel: viewModel,
       panelIndex: panelIndex,
-      cellBuilder: tableBuilder.cellBuilder,
+      tableBuilder: tableBuilder,
       tableScale: tableScale,
     );
   }
 }
 
-class TablePanelViewport extends RenderObjectWidget {
+class TablePanelViewport<T extends AbstractFtModel<C>, C extends AbstractCell>
+    extends RenderObjectWidget {
   const TablePanelViewport(
       {super.key,
-      required this.flexTableViewModel,
+      required this.viewModel,
       required this.panelIndex,
-      required this.cellBuilder,
+      required this.tableBuilder,
       required this.tableScale});
 
-  final FlexTableViewModel flexTableViewModel;
+  final FtViewModel<T, C> viewModel;
   final int panelIndex;
-  final CellBuilder cellBuilder;
+  final AbstractTableBuilder<T, C> tableBuilder;
   final double tableScale;
 
   @override
-  TablePanelChildRenderObjectElement createElement() =>
+  TablePanelChildRenderObjectElement<T, C> createElement() =>
       TablePanelChildRenderObjectElement(this);
 
   @override
   void updateRenderObject(
       BuildContext context, TablePanelRenderViewport renderObject) {
     renderObject
-      ..tableModel = flexTableViewModel
+      ..viewModel = viewModel
       ..tableScale = tableScale;
   }
 
   @override
-  RenderObject createRenderObject(BuildContext context) {
+  TablePanelRenderViewport<T, C> createRenderObject(BuildContext context) {
     final TablePanelRenderChildManager element =
         context as TablePanelRenderChildManager;
 
     return TablePanelRenderViewport(
       childManager: element,
-      flexTableViewModel: flexTableViewModel,
+      viewModel: viewModel,
       panelIndex: panelIndex,
       tableScale: tableScale,
+      tableBuilder: tableBuilder,
     );
   }
+
+  LayoutPanelIndex get layoutPanelIndex =>
+      viewModel.layoutPanelIndex(panelIndex);
 }
 
-class TablePanelChildRenderObjectElement extends RenderObjectElement
-    implements TablePanelRenderChildManager {
+class TablePanelChildRenderObjectElement<T extends AbstractFtModel<C>,
+        C extends AbstractCell> extends RenderObjectElement
+    implements TablePanelRenderChildManager<C> {
   TablePanelChildRenderObjectElement(super.widget);
 
-  final Map<TableCellIndex, Widget?> _childWidgets =
-      HashMap<TableCellIndex, Widget?>();
-  final SplayTreeMap<TableCellIndex, Element?> _childElements =
-      SplayTreeMap<TableCellIndex, Element?>();
+  final Map<CellIndex, Widget?> _childWidgets = HashMap<CellIndex, Widget?>();
+  final SplayTreeMap<CellIndex, Element?> _childElements =
+      SplayTreeMap<CellIndex, Element?>();
   RenderBox? _currentBeforeChild;
-  TableCellIndex? _currentlyUpdatingTableCellIndex;
+  CellIndex? _currentlyUpdatingTableCellIndex;
 
   @override
-  TablePanelViewport get widget => super.widget as TablePanelViewport;
+  TablePanelViewport<T, C> get widget =>
+      super.widget as TablePanelViewport<T, C>;
 
   @override
-  TablePanelRenderViewport get renderObject =>
-      super.renderObject as TablePanelRenderViewport;
+  TablePanelRenderViewport<T, C> get renderObject =>
+      super.renderObject as TablePanelRenderViewport<T, C>;
 
   @protected
   @visibleForTesting
@@ -116,20 +125,21 @@ class TablePanelChildRenderObjectElement extends RenderObjectElement
     _currentBeforeChild = null;
 
     for (var index in _childElements.keys) {
-      final build = _build(index);
+      final build = _buildFromIndex(index);
+
       if (build != null) {
         _childElements[index] =
-            updateChild(_childElements[index], _build(index), index);
+            updateChild(_childElements[index], build, index);
       }
     }
 
     _currentBeforeChild = null;
     assert(_currentlyUpdatingTableCellIndex == null);
     try {
-      final SplayTreeMap<TableCellIndex, Element?> newChildren =
-          SplayTreeMap<TableCellIndex, Element?>();
+      final SplayTreeMap<CellIndex, Element?> newChildren =
+          SplayTreeMap<CellIndex, Element?>();
 
-      void processElement(TableCellIndex index) {
+      void processElement(CellIndex index) {
         _currentlyUpdatingTableCellIndex = index;
         if (_childElements[index] != null &&
             _childElements[index] != newChildren[index]) {
@@ -138,7 +148,7 @@ class TablePanelChildRenderObjectElement extends RenderObjectElement
               updateChild(_childElements[index], null, index);
         }
         final Element? newChild =
-            updateChild(newChildren[index], _build(index), index);
+            updateChild(newChildren[index], _buildFromIndex(index), index);
         if (newChild != null) {
           _childElements[index] = newChild;
           _currentBeforeChild = newChild.renderObject as RenderBox?;
@@ -147,7 +157,7 @@ class TablePanelChildRenderObjectElement extends RenderObjectElement
         }
       }
 
-      for (TableCellIndex index in _childElements.keys.toList()) {
+      for (CellIndex index in _childElements.keys.toList()) {
         newChildren.putIfAbsent(index, () => _childElements[index]);
       }
 
@@ -168,12 +178,18 @@ class TablePanelChildRenderObjectElement extends RenderObjectElement
     }
   }
 
+  Widget? _buildFromIndex(CellIndex index) {
+    C? cell = widget.viewModel.model.cell(row: index.row, column: index.column);
+
+    return cell != null ? _build(cell, widget.layoutPanelIndex, index) : null;
+  }
+
   @override
-  void update(covariant TablePanelViewport newWidget) {
-    final TablePanelViewport oldWidget = widget;
+  void update(TablePanelViewport<T, C> newWidget) {
+    final TablePanelViewport<T, C> oldWidget = widget;
     super.update(newWidget);
-    final FlexTableViewModel newDelegate = newWidget.flexTableViewModel;
-    final FlexTableViewModel oldDelegate = oldWidget.flexTableViewModel;
+    final FtViewModel<T, C> newDelegate = newWidget.viewModel;
+    final FtViewModel<T, C> oldDelegate = oldWidget.viewModel;
     if ((newDelegate != oldDelegate &&
             (newDelegate.runtimeType != oldDelegate.runtimeType ||
                 newDelegate.shouldRebuild(oldDelegate))) ||
@@ -181,7 +197,7 @@ class TablePanelChildRenderObjectElement extends RenderObjectElement
   }
 
   @override
-  void createChild(TableCellIndex tableCellIndex, {RenderBox? after}) {
+  void createChild(CellIndex tableCellIndex, C cell, {RenderBox? after}) {
     assert(_currentlyUpdatingTableCellIndex == null);
     owner!.buildScope(this, () {
       final bool insertFirst = after == null;
@@ -199,8 +215,10 @@ class TablePanelChildRenderObjectElement extends RenderObjectElement
       Element? newChild;
       try {
         _currentlyUpdatingTableCellIndex = tableCellIndex;
-        newChild = updateChild(_childElements[tableCellIndex],
-            _build(tableCellIndex), tableCellIndex);
+        newChild = updateChild(
+            _childElements[tableCellIndex],
+            _build(cell, widget.layoutPanelIndex, tableCellIndex),
+            tableCellIndex);
       } finally {
         _currentlyUpdatingTableCellIndex = null;
       }
@@ -213,7 +231,7 @@ class TablePanelChildRenderObjectElement extends RenderObjectElement
   }
 
   @override
-  bool containsElement(TableCellIndex key) {
+  bool containsElement(CellIndex key) {
     return _childElements.containsKey(key);
   }
 
@@ -250,7 +268,7 @@ class TablePanelChildRenderObjectElement extends RenderObjectElement
   }
 
   @override
-  void insertRenderObjectChild(RenderObject child, TableCellIndex slot) {
+  void insertRenderObjectChild(RenderObject child, CellIndex slot) {
     // assert(slot != null);
     assert(_currentlyUpdatingTableCellIndex == slot);
     assert(renderObject.debugValidateChild(child));
@@ -274,7 +292,7 @@ class TablePanelChildRenderObjectElement extends RenderObjectElement
 
   @override
   void removeChild(RenderBox child) {
-    final TableCellIndex index = renderObject.indexOf(child);
+    final CellIndex index = renderObject.indexOf(child);
     assert(_currentlyUpdatingTableCellIndex == null);
 
     owner!.buildScope(this, () {
@@ -328,16 +346,23 @@ class TablePanelChildRenderObjectElement extends RenderObjectElement
   @override
   void setDidUnderflow(bool value) {}
 
-  Widget? _build(TableCellIndex tableCellIndex) {
-    return _childWidgets.putIfAbsent(tableCellIndex, () {
-      return widget.cellBuilder(
-          widget.flexTableViewModel.ftm, tableCellIndex, this);
+  Widget? _build(
+      C cell, LayoutPanelIndex layoutPanelIndex, CellIndex cellIndex) {
+    return _childWidgets.putIfAbsent(cellIndex, () {
+      return widget.tableBuilder.cellBuilder(
+        this,
+        widget.viewModel,
+        cell,
+        layoutPanelIndex,
+        cellIndex,
+      );
     });
   }
 }
 
-abstract class TablePanelRenderChildManager {
-  void createChild(TableCellIndex tableCellIndex, {required RenderBox? after});
+abstract class TablePanelRenderChildManager<C extends AbstractCell> {
+  void createChild(CellIndex tableCellIndex, C cell,
+      {required RenderBox? after});
 
   void removeChild(RenderBox child);
 
@@ -352,45 +377,48 @@ abstract class TablePanelRenderChildManager {
   bool debugAssertChildListLocked() => true;
 
   //Added by Joan
-  bool containsElement(TableCellIndex tableCellIndex);
+  bool containsElement(CellIndex tableCellIndex);
 }
 
-class TablePanelRenderViewport extends RenderBox
+class TablePanelRenderViewport<T extends AbstractFtModel<C>,
+        C extends AbstractCell> extends RenderBox
     with
         ContainerRenderObjectMixin<RenderBox, TableCellParentData>,
         RenderBoxContainerDefaultsMixin<RenderBox, TableCellParentData> {
   TablePanelRenderViewport({
-    required FlexTableViewModel flexTableViewModel,
+    required FtViewModel<T, C> viewModel,
     ScrollPosition? sliverPosition,
     required this.childManager,
     required this.panelIndex,
     required double tableScale,
-  })  : _flexTableViewModel = flexTableViewModel,
-        _tableScale = tableScale {
-    iterator = TableInterator(flexTableViewModel: flexTableViewModel);
+    required AbstractTableBuilder<T, C> tableBuilder,
+  })  : _viewModel = viewModel,
+        _tableScale = tableScale,
+        _tableBuilder = tableBuilder {
+    iterator = TableInterator(viewModel: viewModel);
   }
 
   TablePanelRenderChildManager childManager;
   int panelIndex;
-  late TablePanelLayoutIndex tpli;
-  late TableInterator iterator;
+  late LayoutPanelIndex tpli;
+  late TableInterator<T, C> iterator;
   late double xScroll, yScroll;
-  late double _tableScale;
+  double _tableScale;
   late double leftMargin, topMargin, rightMargin, bottomMargin;
-  FlexTableViewModel _flexTableViewModel;
+  FtViewModel<T, C> _viewModel;
   int garbageCollectRowsFrom = -1;
   int garbageCollectColumnsFrom = -1;
 
-  FlexTableViewModel get flexTableViewModel => _flexTableViewModel;
+  FtViewModel<T, C> get viewModel => _viewModel;
 
-  set tableModel(FlexTableViewModel value) {
+  set viewModel(FtViewModel<T, C> value) {
     // assert(value != null);
-    if (value == _flexTableViewModel) return;
-    if (attached) _flexTableViewModel.removeListener(markNeedsLayout);
-    _flexTableViewModel = value;
-    if (attached) _flexTableViewModel.addListener(markNeedsLayout);
+    if (value == _viewModel) return;
+    if (attached) _viewModel.removeListener(markNeedsLayout);
+    _viewModel = value;
+    if (attached) _viewModel.addListener(markNeedsLayout);
 
-    iterator.flexTableViewModel = value;
+    iterator.viewModel = value;
 
     garbageCollectRowsFrom = 0;
     garbageCollectColumnsFrom = 0;
@@ -407,6 +435,17 @@ class TablePanelRenderViewport extends RenderBox
     markNeedsLayout();
   }
 
+  AbstractTableBuilder<T, C> _tableBuilder;
+
+  AbstractTableBuilder<T, C> get tableBuilder => _tableBuilder;
+
+  set tableBuilder(AbstractTableBuilder<T, C> value) {
+    if (value == _tableBuilder) return;
+
+    _tableBuilder = value;
+    markNeedsLayout();
+  }
+
   @override
   void setupParentData(RenderBox child) {
     if (child.parentData is! TableCellParentData) {
@@ -414,7 +453,7 @@ class TablePanelRenderViewport extends RenderBox
     }
   }
 
-  TableCellIndex cellIndexOf(RenderBox child) {
+  CellIndex cellIndexOf(RenderBox child) {
     // assert(child != null);
     final TableCellParentData childParentData =
         child.parentData as TableCellParentData;
@@ -437,18 +476,16 @@ class TablePanelRenderViewport extends RenderBox
     size = constraints.biggest;
 
     RenderBox? child;
-    tpli = flexTableViewModel.layoutIndex(panelIndex);
+    tpli = viewModel.layoutPanelIndex(panelIndex);
 
-    xScroll =
-        flexTableViewModel.getScrollX(tpli.scrollIndexX, tpli.scrollIndexY);
-    yScroll =
-        flexTableViewModel.getScrollY(tpli.scrollIndexX, tpli.scrollIndexY);
+    xScroll = viewModel.getScrollX(tpli.scrollIndexX, tpli.scrollIndexY);
+    yScroll = viewModel.getScrollY(tpli.scrollIndexX, tpli.scrollIndexY);
 
-    final layoutX = flexTableViewModel.widthLayoutList[tpli.xIndex];
+    final layoutX = viewModel.widthLayoutList[tpli.xIndex];
     leftMargin = layoutX.marginBegin;
     rightMargin = layoutX.marginEnd;
 
-    final layoutY = flexTableViewModel.heightLayoutList[tpli.yIndex];
+    final layoutY = viewModel.heightLayoutList[tpli.yIndex];
     topMargin = layoutY.marginBegin;
     bottomMargin = layoutY.marginEnd;
 
@@ -461,55 +498,62 @@ class TablePanelRenderViewport extends RenderBox
         lastRowIndex: iterator.lastRowIndex,
         lastColumnIndex: iterator.lastColumnIndex);
 
-    late TableCellIndex indexFirstChild;
-
-    if (firstChild != null) {
-      indexFirstChild =
-          (firstChild!.parentData as TableCellParentData).tableCellIndex;
-      child = firstChild;
-    }
+    child = firstChild;
 
     while (iterator.next) {
-      var cell = iterator.cell;
+      C? cell = iterator.cell;
       final tableCellIndex = iterator.tableCellIndex;
 
       if (cell != null) {
-        if (firstChild == null) {
-          child = insertAndLayoutFirstChild(after: null, index: tableCellIndex);
-          indexFirstChild = tableCellIndex;
+        if (child == null) {
+          assert(firstChild == null);
+          child = insertAndLayoutFirstChild(
+              after: null, index: tableCellIndex, cell: cell);
 
           assert(tableCellIndex ==
               (firstChild!.parentData as TableCellParentData).tableCellIndex);
         } else {
-          assert(child != null,
-              'child can not be null in next $tableCellIndex ${firstChild == null}');
-
           TableCellParentData parentData =
-              child!.parentData as TableCellParentData;
+              child.parentData as TableCellParentData;
 
           if (parentData.tableCellIndex < tableCellIndex) {
-            child = findOrInsert(
-                child: child, index: tableCellIndex, forward: true);
-          } else if (tableCellIndex < indexFirstChild) {
-            child =
-                insertAndLayoutFirstChild(after: null, index: tableCellIndex);
-            indexFirstChild = tableCellIndex;
-
-            assert(tableCellIndex ==
-                (firstChild!.parentData as TableCellParentData).tableCellIndex);
+            child = findOrInsertForward(
+                child: child, index: tableCellIndex, cell: cell);
           } else {
-            child = findOrInsert(
-                child: child, index: tableCellIndex, forward: false);
+            assert(parentData.tableCellIndex >= tableCellIndex);
+            child = findOrInsertBackward(
+                child: child, index: tableCellIndex, cell: cell);
           }
         }
-        layoutChild(child: child, cell: cell);
+        layoutChild(
+            child: child,
+            left: iterator.left,
+            top: iterator.top,
+            width: iterator.width,
+            height: iterator.height);
       } else {
         assert(find(tableCellIndex) == null,
             'Renderbox should be removed, but not yet implemented!');
       }
     }
 
-    child = firstChild;
+    assert(() {
+      RenderBox? testChild = firstChild;
+      RenderBox? previous;
+
+      while (testChild != null) {
+        var parentData = testChild.parentData as TableCellParentData;
+        if (previous != null) {
+          if (parentData.tableCellIndex <=
+              (previous.parentData as TableCellParentData).tableCellIndex) {
+            return false;
+          }
+        }
+        previous = testChild;
+        testChild = parentData.nextSibling;
+      }
+      return true;
+    }(), '$CellIndex not in right order');
 
     childManager.didFinishLayout();
   }
@@ -525,31 +569,71 @@ class TablePanelRenderViewport extends RenderBox
 
   void layoutChild({
     required RenderBox child,
-    required Cell cell,
+    required double left,
+    required double top,
+    required double width,
+    required double height,
     bool parentUsesSize = true,
   }) {
     BoxConstraints constraints = BoxConstraints.tightFor(
-        width: cell.width * tableScale, height: cell.height * tableScale);
+        width: width * tableScale, height: height * tableScale);
 
     child.layout(constraints, parentUsesSize: parentUsesSize);
 
     final TableCellParentData parentData =
         child.parentData as TableCellParentData;
 
-    parentData.offset = Offset(
-        (cell.left - xScroll) * tableScale, (cell.top - yScroll) * tableScale);
+    parentData.offset =
+        Offset((left - xScroll) * tableScale, (top - yScroll) * tableScale);
     assert(!xScroll.isNaN, 'xScroll NaN');
     assert(!yScroll.isNaN, 'yScroll NaN');
-    assert(!cell.left.isNaN, 'Cell left NaN');
-    assert(!cell.top.isNaN, 'Cell top NaN');
+    assert(!left.isNaN, 'Cell left NaN');
+    assert(!top.isNaN, 'Cell top NaN');
     assert(!parentData.offset.dx.isNaN, 'Blb x NaN');
     assert(!parentData.offset.dy.isNaN, 'Blb2 y NaN');
   }
 
-  RenderBox findOrInsert(
-      {required RenderBox child,
-      required TableCellIndex index,
-      required bool forward}) {
+  RenderBox findOrInsertForward({
+    required RenderBox child,
+    required CellIndex index,
+    required C cell,
+  }) {
+    // assert(child != null);
+    assert(child.parent == this);
+    TableCellParentData parentData = child.parentData as TableCellParentData;
+
+    if (parentData.tableCellIndex == index) {
+      return child;
+    }
+
+    RenderBox? shiftChild = parentData.nextSibling;
+
+    while (shiftChild != null) {
+      parentData = shiftChild.parentData as TableCellParentData;
+
+      if (parentData.tableCellIndex < index) {
+        child = shiftChild;
+      } else if (parentData.tableCellIndex == index) {
+        return shiftChild;
+      } else {
+        break;
+      }
+
+      shiftChild = parentData.nextSibling;
+    }
+    assert((child.parentData as TableCellParentData).tableCellIndex < index);
+
+    child = insertAndLayoutChild(after: child, index: index, cell: cell);
+    assert(index == (child.parentData as TableCellParentData).tableCellIndex);
+
+    return child;
+  }
+
+  RenderBox findOrInsertBackward({
+    required RenderBox child,
+    required CellIndex index,
+    required C cell,
+  }) {
     // assert(child != null);
     assert(child.parent == this);
 
@@ -559,48 +643,44 @@ class TablePanelRenderViewport extends RenderBox
       return child;
     }
 
-    RenderBox? shiftChild;
+    RenderBox? shiftChild = child;
 
-    if (forward) {
-      shiftChild = parentData.nextSibling;
+    while (shiftChild != null) {
+      parentData = shiftChild.parentData as TableCellParentData;
 
-      while (shiftChild != null) {
-        parentData = shiftChild.parentData as TableCellParentData;
-
-        if (parentData.tableCellIndex <= index) {
-          child = shiftChild;
-        } else {
-          break;
-        }
-
-        shiftChild = parentData.nextSibling;
+      if (index == parentData.tableCellIndex) {
+        return shiftChild;
+      } else if (index > parentData.tableCellIndex) {
+        break;
       }
-      assert((child.parentData as TableCellParentData).tableCellIndex <= index);
-    } else {
+
       shiftChild = parentData.previousSibling;
-      while (shiftChild != null) {
-        parentData = shiftChild.parentData as TableCellParentData;
-
-        if (index >= parentData.tableCellIndex) {
-          child = shiftChild;
-          break;
-        }
-
-        shiftChild = parentData.previousSibling;
-      }
-
-      assert(index >= (child.parentData as TableCellParentData).tableCellIndex);
     }
 
-    if ((child.parentData as TableCellParentData).tableCellIndex != index) {
-      child = insertAndLayoutChild(after: child, index: index);
-      assert(index == (child.parentData as TableCellParentData).tableCellIndex);
+    assert(
+        shiftChild == null ||
+            index >
+                (shiftChild.parentData as TableCellParentData).tableCellIndex,
+        'Index: $index TableCellIndex ${(child.parentData as TableCellParentData).tableCellIndex}');
+
+    if (shiftChild == null) {
+      shiftChild = insertAndLayoutFirstChild(
+        after: null,
+        index: index,
+        cell: cell,
+      );
+    } else {
+      shiftChild =
+          insertAndLayoutChild(after: shiftChild, index: index, cell: cell);
     }
 
-    return child;
+    assert(
+        index == (shiftChild.parentData as TableCellParentData).tableCellIndex);
+
+    return shiftChild;
   }
 
-  RenderBox? find(TableCellIndex index) {
+  RenderBox? find(CellIndex index) {
     RenderBox? child = firstChild;
 
     while (child != null) {
@@ -635,12 +715,13 @@ class TablePanelRenderViewport extends RenderBox
   @protected
   RenderBox insertAndLayoutFirstChild({
     required RenderBox? after,
-    required TableCellIndex index,
+    required CellIndex index,
+    required C cell,
     bool parentUsesSize = false,
   }) {
     assert(_debugAssertChildListLocked());
 
-    _createOrObtainChild(index, after: after);
+    _createOrObtainChild(index, cell, after: after);
 
     assert(firstChild != null);
     TableCellParentData parentData =
@@ -653,12 +734,13 @@ class TablePanelRenderViewport extends RenderBox
   @protected
   RenderBox insertAndLayoutChild({
     required RenderBox after,
-    required TableCellIndex index,
+    required CellIndex index,
+    required C cell,
     bool parentUsesSize = false,
   }) {
     assert(_debugAssertChildListLocked());
 
-    _createOrObtainChild(index, after: after);
+    _createOrObtainChild(index, cell, after: after);
     final RenderBox? child = childAfter(after);
 
     assert(child != null, 'insertAndLayoutChild child is null');
@@ -684,7 +766,7 @@ class TablePanelRenderViewport extends RenderBox
       while (child != null) {
         TableCellParentData parentData =
             child.parentData as TableCellParentData;
-        TableCellIndex tableCellIndex = parentData.tableCellIndex;
+        CellIndex tableCellIndex = parentData.tableCellIndex;
         var rows = 0;
         int columns = 0;
         final childToRemove = child;
@@ -712,14 +794,77 @@ class TablePanelRenderViewport extends RenderBox
     garbageCollectColumnsFrom = -1;
   }
 
-  void _createOrObtainChild(TableCellIndex index, {required RenderBox? after}) {
+  // garbageCollect() {
+  //   invokeLayoutCallback<BoxConstraints>((BoxConstraints constraints) {
+  //     RenderBox? child = firstChild;
+
+  //     iterator.reset(tpli);
+
+  //     TableCellIndex tableCellIndex = TableCellIndex();
+
+  //     while (iterator.next) {
+  //       tableCellIndex = iterator.tableCellIndex;
+  //       final cell = iterator.cell;
+
+  //       while (child != null &&
+  //           (child.parentData as TableCellParentData).tableCellIndex <=
+  //               tableCellIndex) {
+  //         final t = (child.parentData as TableCellParentData).tableCellIndex;
+
+  //         if (t < tableCellIndex || (cell == null && t == tableCellIndex)) {
+  //           final childToRemove = child;
+  //           child = (child.parentData as TableCellParentData).nextSibling;
+
+  //           childManager.removeChild(childToRemove);
+  //         } else {
+  //           child = (child.parentData as TableCellParentData).nextSibling;
+  //         }
+  //       }
+  //     }
+  //     while (child != null) {
+  //       final childToRemove = child;
+  //       child = (child.parentData as TableCellParentData).nextSibling;
+  //       childManager.removeChild(childToRemove);
+  //     }
+
+  //     assert(() {
+  //       var debugChild = firstChild;
+  //       int i = 0;
+  //       int c = 0;
+
+  //       while (debugChild != null) {
+  //         c++;
+  //         debugChild =
+  //             (debugChild.parentData as TableCellParentData).nextSibling;
+  //       }
+
+  //       iterator.reset(tpli);
+
+  //       while (iterator.next) {
+  //         if (iterator.cell != null) {
+  //           i++;
+  //         }
+  //       }
+
+  //       if (c > i) {
+  //         debugPrint(
+  //             'After garbage collection the number of children should be equal or lower than cells iterated by iterator');
+  //       }
+
+  //       return c <= i;
+  //     }(), 'Error garbage collection!');
+  //   });
+  // }
+
+  void _createOrObtainChild(CellIndex index, C cell,
+      {required RenderBox? after}) {
     invokeLayoutCallback<BoxConstraints>((BoxConstraints constraints) {
       assert(constraints == this.constraints);
-      childManager.createChild(index, after: after);
+      childManager.createChild(index, cell, after: after);
     });
   }
 
-  TableCellIndex indexOf(RenderBox child) {
+  CellIndex indexOf(RenderBox child) {
     return (child.parentData as TableCellParentData).tableCellIndex;
   }
 
@@ -740,7 +885,7 @@ class TablePanelRenderViewport extends RenderBox
   bool _debugVerifyChildOrder() {
     if (_debugChildIntegrityEnabled) {
       RenderBox? child = firstChild;
-      TableCellIndex index;
+      CellIndex index;
       while (child != null) {
         index = cellIndexOf(child);
         child = childAfter(child);
@@ -755,14 +900,14 @@ class TablePanelRenderViewport extends RenderBox
     super.attach(owner);
     // _offset.addListener(markNeedsLayout);
     // _sliverPosition?.addListener(markNeedsLayout);
-    _flexTableViewModel.addListener(markNeedsLayout);
+    _viewModel.addListener(markNeedsLayout);
   }
 
   @override
   void detach() {
     // _offset.removeListener(markNeedsLayout);
     // _sliverPosition?.removeListener(markNeedsLayout);
-    _flexTableViewModel.removeListener(markNeedsLayout);
+    _viewModel.removeListener(markNeedsLayout);
     super.detach();
   }
 
@@ -782,383 +927,48 @@ class TablePanelRenderViewport extends RenderBox
       offset = offset.translate(leftMargin, topMargin);
       defaultPaint(context, offset);
 
-      if (!iterator.isEmpty) {
-        paintLines(context, offset);
-      }
+      tableBuilder.finalPaintPanel(
+        context,
+        offset,
+        size,
+        viewModel,
+        tpli,
+        iterator.rowInfoList,
+        iterator.columnInfoList,
+      );
 
-      // assert(() {
-      //   Color color;
-      //   switch (panelIndex) {
-      //     case 5:
-      //       color = Colors.amber.withAlpha(155);
-      //       break;
-      //     case 6:
-      //       color = Colors.pinkAccent.withAlpha(155);
-      //       break;
-      //     case 9:
-      //       color = Colors.lightGreen.withAlpha(155);
-      //       break;
-      //     default:
-      //       color = Colors.blue.withAlpha(155);
-      //       break;
-      //   }
-      //   Paint paint = Paint();
-      //   paint.color = color;
-      //   context.canvas.drawCircle(
-      //       size.bottomRight(offset + const Offset(-25.0, -25.0)), 20, paint);
-      //   return true;
-      // }());
+      assert(() {
+        Color color;
+        switch (panelIndex) {
+          case 5:
+            color = Colors.amber.withAlpha(155);
+            break;
+          case 6:
+            color = Colors.pinkAccent.withAlpha(155);
+            break;
+          case 9:
+            color = Colors.lightGreen.withAlpha(155);
+            break;
+          default:
+            color = Colors.blue.withAlpha(155);
+            break;
+        }
+        Paint paint = Paint();
+        paint.color = color;
+        context.canvas.drawCircle(
+            size.bottomRight(offset + const Offset(-25.0, -25.0)), 20, paint);
+        return true;
+      }());
     });
   }
-
-  paintLines(PaintingContext context, Offset offset) {
-    final startRow = iterator.firstRowIndex;
-    final endRow = iterator.lastRowIndex;
-
-    final startColumn = iterator.firstColumnIndex;
-    final endColumn = iterator.lastColumnIndex;
-
-    Canvas canvas = context.canvas;
-
-    canvas.save();
-    int debugPreviousCanvasSaveCount = 0;
-
-    assert(() {
-      debugPreviousCanvasSaveCount = canvas.getSaveCount();
-      return true;
-    }());
-
-    if (offset != Offset.zero) canvas.translate(offset.dx, offset.dy);
-
-    calculateLinePosition(
-        canvas: canvas,
-        startLevelOne: startRow,
-        endLevelOne: endRow,
-        startLevelTwo: startColumn,
-        endLevelTwo: endColumn + 1,
-        lineList: flexTableViewModel.dataTable.horizontalLineList,
-        infoLevelOne: iterator.rowInfoList,
-        infoLevelTwo: iterator.columnInfoList,
-        crossNode: (b) => false,
-        drawLineOneDirection: drawHorizontalLine);
-
-    calculateLinePosition(
-        canvas: canvas,
-        startLevelOne: startColumn,
-        endLevelOne: endColumn,
-        startLevelTwo: startRow,
-        endLevelTwo: endRow + 1,
-        lineList: flexTableViewModel.dataTable.verticalLineList,
-        infoLevelOne: iterator.columnInfoList,
-        infoLevelTwo: iterator.rowInfoList,
-        crossNode: (b) => false,
-        drawLineOneDirection: drawVerticalLine);
-
-    assert(() {
-      final int debugNewCanvasSaveCount = canvas.getSaveCount();
-      return debugNewCanvasSaveCount == debugPreviousCanvasSaveCount;
-    }(), 'Previous canvas count is different from the current canvas count!');
-
-    canvas.restore();
-  }
-
-  calculateLinePosition(
-      {required Canvas canvas,
-      required int startLevelOne,
-      required int endLevelOne,
-      required int startLevelTwo,
-      required int endLevelTwo,
-      required TableLinesOneDirection lineList,
-      required List<GridInfo> infoLevelOne,
-      required List<GridInfo> infoLevelTwo,
-      required CrossNode crossNode,
-      required DrawLineOneDirection drawLineOneDirection}) {
-    if (lineList.isEmpty) {
-      return;
-    }
-
-    positionLevelTwo(int index) {
-      int length = infoLevelTwo.length;
-
-      return index < length + startLevelTwo
-          ? infoLevelTwo[index - startLevelTwo].position
-          : infoLevelTwo.last.endPosition;
-    }
-
-    int scrollIndexX = tpli.scrollIndexX;
-    int scrollIndexY = tpli.scrollIndexY;
-
-    LineRange? node =
-        lineList.begin(startLevelOne, scrollIndexX, scrollIndexY, false);
-    Paint paint = Paint();
-
-    while (node != null &&
-        node.startIndex <= endLevelOne &&
-        node.endIndex >= startLevelOne) {
-      int startDrawOne =
-          node.start < startLevelOne ? startLevelOne : node.start;
-      int endDrawOne = node.end > endLevelOne ? endLevelOne : node.end;
-
-      for (int i = startDrawOne; i <= endDrawOne; i++) {
-        LineNode firstNode = node.lineNodeRange
-            .begin(startLevelTwo, scrollIndexX, scrollIndexY, false);
-        LineNode? secondNode = firstNode.next;
-
-        int startWithinBoundery = 0;
-        int endWithinboundery;
-        double startPosition = 0.0;
-        double endPosition = 0.0;
-
-        final positionLevelOne = infoLevelOne[i - startLevelOne].position;
-
-        if (startLevelTwo < firstNode.start) {
-          endWithinboundery =
-              firstNode.start > endLevelTwo ? endLevelTwo : firstNode.start;
-          endPosition = positionLevelTwo(endWithinboundery);
-          drawLineOneDirection(
-              canvas: canvas,
-              paint: paint,
-              second: firstNode,
-              levelTwoEndPosition: endPosition,
-              levelOnePosition: positionLevelOne);
-        }
-
-        while (secondNode != null &&
-            firstNode.start <= endLevelTwo &&
-            secondNode.end >= startLevelTwo) {
-          startWithinBoundery =
-              firstNode.start < startLevelTwo ? startLevelTwo : firstNode.start;
-          endWithinboundery =
-              firstNode.end > endLevelTwo ? endLevelTwo : firstNode.end;
-          // int endWithoutBoundery =
-          //     firstNode.end > endLevelTwo ? endLevelTwo + 1 : firstNode.end;
-
-          // More than one node:  startLevelTwo < previous.end
-          //
-          //
-
-          //assert(startWithinBoundery <= endWithinboundery);
-
-          if (startWithinBoundery < endWithinboundery &&
-              !crossNode(firstNode)) {
-            for (int j = startWithinBoundery; j < endWithinboundery; j++) {
-              startPosition = infoLevelTwo[j - startLevelTwo].position;
-              endPosition = positionLevelTwo(j + 1);
-
-              drawLineOneDirection(
-                  canvas: canvas,
-                  paint: paint,
-                  first: firstNode,
-                  second: firstNode,
-                  levelTwoStartPosition: startPosition,
-                  levelTwoEndPosition: endPosition,
-                  levelOnePosition: positionLevelOne);
-            }
-
-            if (endLevelTwo <= endWithinboundery) {
-              startPosition = endPosition;
-              endPosition = infoLevelTwo.last.endPosition;
-              drawLineOneDirection(
-                  canvas: canvas,
-                  paint: paint,
-                  first: firstNode,
-                  second: firstNode,
-                  levelTwoStartPosition: startPosition,
-                  levelTwoEndPosition: endPosition,
-                  levelOnePosition: positionLevelOne);
-              break;
-            }
-
-            startWithinBoundery = endWithinboundery;
-          }
-
-          startPosition = positionLevelTwo(startWithinBoundery);
-
-          endWithinboundery = secondNode.start < startLevelTwo
-              ? startLevelTwo
-              : (secondNode.start > endLevelTwo
-                  ? endLevelTwo
-                  : secondNode.start);
-
-          if (secondNode.start > endLevelTwo) {
-            endPosition = infoLevelTwo.last.endPosition;
-            drawLineOneDirection(
-                canvas: canvas,
-                paint: paint,
-                first: firstNode,
-                second: secondNode,
-                levelTwoStartPosition: startPosition,
-                levelTwoEndPosition: endPosition,
-                levelOnePosition: positionLevelOne);
-            break;
-          } else {
-            endWithinboundery = secondNode.start < startLevelTwo
-                ? startLevelTwo
-                : secondNode.start;
-            endPosition = positionLevelTwo(endWithinboundery);
-            assert(startWithinBoundery <= endWithinboundery);
-            drawLineOneDirection(
-                canvas: canvas,
-                paint: paint,
-                first: firstNode,
-                second: secondNode,
-                levelTwoStartPosition: startPosition,
-                levelTwoEndPosition: endPosition,
-                levelOnePosition: positionLevelOne);
-          }
-
-          firstNode = secondNode;
-          secondNode = secondNode.next;
-        }
-
-        if (secondNode == null && firstNode.start <= endLevelTwo) {
-          startWithinBoundery =
-              firstNode.start < startLevelTwo ? startLevelTwo : firstNode.start;
-          endWithinboundery =
-              firstNode.end > endLevelTwo ? endLevelTwo : firstNode.end;
-
-          if (!crossNode(firstNode) &&
-              startWithinBoundery < endWithinboundery) {
-            for (int j = startWithinBoundery; j < endWithinboundery; j++) {
-              startPosition = infoLevelTwo[j - startLevelTwo].position;
-              endPosition = positionLevelTwo(j + 1);
-              drawLineOneDirection(
-                  canvas: canvas,
-                  paint: paint,
-                  first: firstNode,
-                  second: firstNode,
-                  levelTwoStartPosition: startPosition,
-                  levelTwoEndPosition: endPosition,
-                  levelOnePosition: positionLevelOne);
-            }
-            startPosition = endPosition;
-            endPosition = infoLevelTwo.last.endPosition;
-            drawLineOneDirection(
-                canvas: canvas,
-                paint: paint,
-                first: firstNode,
-                levelTwoStartPosition: startPosition,
-                levelTwoEndPosition: endPosition,
-                levelOnePosition: positionLevelOne);
-          } else if (startWithinBoundery < endLevelTwo) {
-            startPosition =
-                infoLevelTwo[startWithinBoundery - startLevelTwo].position;
-            endPosition = infoLevelTwo.last.endPosition;
-            drawLineOneDirection(
-                canvas: canvas,
-                paint: paint,
-                first: firstNode,
-                levelTwoStartPosition: startPosition,
-                levelTwoEndPosition: endPosition,
-                levelOnePosition: positionLevelOne);
-          }
-        }
-      }
-
-      node = node.next;
-    }
-  }
-
-  drawHorizontalLine(
-      {required Canvas canvas,
-      Offset? offset,
-      required Paint paint,
-      LineNode? first,
-      LineNode? second,
-      required double levelOnePosition,
-      double levelTwoStartPosition = 0.0,
-      double levelTwoEndPosition = double.maxFinite}) {
-    final firstAfter = first?.after;
-    final secondBefore = second?.before;
-
-    if (firstAfter != null && !firstAfter.isEmpty) {
-      paint
-        ..color = firstAfter.color!
-        ..strokeWidth = firstAfter.widthScaled(tableScale);
-    } else if (secondBefore != null && !secondBefore.isEmpty) {
-      paint
-        ..color = secondBefore.color!
-        ..strokeWidth = secondBefore.widthScaled(tableScale);
-    } else {
-      return;
-    }
-
-    levelTwoStartPosition = (levelTwoStartPosition - xScroll) * tableScale;
-
-    if (levelTwoStartPosition < 0.0) {
-      levelTwoStartPosition = 0.0;
-    }
-
-    levelTwoEndPosition = (levelTwoEndPosition - xScroll) * tableScale;
-
-    if (levelTwoEndPosition > size.width) {
-      levelTwoEndPosition = size.width;
-    }
-
-    levelOnePosition = (levelOnePosition - yScroll) * tableScale;
-
-    canvas.drawLine(Offset(levelTwoStartPosition, levelOnePosition),
-        Offset(levelTwoEndPosition, levelOnePosition), paint);
-  }
-
-  drawVerticalLine(
-      {required Canvas canvas,
-      Offset? offset,
-      required Paint paint,
-      LineNode? first,
-      LineNode? second,
-      required double levelOnePosition,
-      double levelTwoStartPosition = 0.0,
-      double levelTwoEndPosition = double.maxFinite}) {
-    final firstAfter = first?.after;
-    final secondBefore = second?.before;
-
-    if (firstAfter != null && !firstAfter.isEmpty) {
-      paint.color = firstAfter.color!;
-      paint.strokeWidth = firstAfter.widthScaled(tableScale);
-    } else if (secondBefore != null && !secondBefore.isEmpty) {
-      paint.color = secondBefore.color!;
-      paint.strokeWidth = secondBefore.widthScaled(tableScale);
-    } else {
-      return;
-    }
-
-    levelTwoStartPosition = (levelTwoStartPosition - yScroll) * tableScale;
-
-    if (levelTwoStartPosition < 0.0) {
-      levelTwoStartPosition = 0.0;
-    }
-
-    levelTwoEndPosition = (levelTwoEndPosition - yScroll) * tableScale;
-
-    if (levelTwoEndPosition > size.height) {
-      levelTwoEndPosition = size.height;
-    }
-
-    levelOnePosition = (levelOnePosition - xScroll) * tableScale;
-
-    canvas.drawLine(Offset(levelOnePosition, levelTwoStartPosition),
-        Offset(levelOnePosition, levelTwoEndPosition), paint);
-  }
 }
-
-typedef CrossNode = bool Function(LineNode lineNode);
-typedef DrawLineOneDirection = Function(
-    {required Canvas canvas,
-    Offset offset,
-    required Paint paint,
-    LineNode? first,
-    LineNode? second,
-    required double levelOnePosition,
-    double levelTwoStartPosition,
-    double levelTwoEndPosition});
 
 class TableCellParentData extends ContainerBoxParentData<RenderBox> {
-  TableCellIndex tableCellIndex = TableCellIndex();
+  CellIndex tableCellIndex = CellIndex();
 }
 
-class TableCellIndex implements Comparable<TableCellIndex> {
-  TableCellIndex({
+class CellIndex implements Comparable<CellIndex> {
+  CellIndex({
     this.panelIndexX = -1,
     this.panelIndexY = -1,
     this.column = -1,
@@ -1174,20 +984,20 @@ class TableCellIndex implements Comparable<TableCellIndex> {
   int panelIndexX;
   int panelIndexY;
 
-  bool operator >(TableCellIndex index) {
+  bool operator >(CellIndex index) {
     return row > index.row || (row == index.row && column > index.column);
   }
 
-  bool operator <(TableCellIndex index) {
+  bool operator <(CellIndex index) {
     return row < index.row || (row == index.row && column < index.column);
   }
 
-  bool operator <=(TableCellIndex index) {
+  bool operator <=(CellIndex index) {
     // Geen row <= index.row maar row < index.row
     return row < index.row || (row == index.row && column <= index.column);
   }
 
-  bool operator >=(TableCellIndex index) {
+  bool operator >=(CellIndex index) {
     //Geen >= voor row
     return row > index.row || (row == index.row && column >= index.column);
   }
@@ -1195,7 +1005,7 @@ class TableCellIndex implements Comparable<TableCellIndex> {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is TableCellIndex &&
+      other is CellIndex &&
           runtimeType == other.runtimeType &&
           column == other.column &&
           row == other.row;
@@ -1209,13 +1019,13 @@ class TableCellIndex implements Comparable<TableCellIndex> {
   }
 
   @override
-  int compareTo(TableCellIndex other) {
+  int compareTo(CellIndex other) {
     return (row < other.row || (row == other.row && column < other.column))
         ? -1
         : ((row == other.row && column == other.column) ? 0 : 1);
   }
 
-  TableCellIndex copyWith({
+  CellIndex copyWith({
     int? panelIndexX,
     int? panelIndexY,
     int? column,
@@ -1223,7 +1033,7 @@ class TableCellIndex implements Comparable<TableCellIndex> {
     int? columns,
     int? rows,
   }) {
-    return TableCellIndex(
+    return CellIndex(
       panelIndexX: panelIndexX ?? this.panelIndexX,
       panelIndexY: panelIndexY ?? this.panelIndexY,
       column: column ?? this.column,

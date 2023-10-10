@@ -23,43 +23,50 @@ class ExampleSliverInTables extends StatefulWidget {
 }
 
 class _ExampleSliverInTablesState extends State<ExampleSliverInTables> {
-  final FlexTableController _energieFlexTableController = FlexTableController();
-  final FlexTableController _handelFlexTableController = FlexTableController();
-  final FlexTableController _fruitFlexTableController = FlexTableController();
-  final FlexTableController _hypotheekFlexTableController =
-      FlexTableController();
-  final FlexTableController _basicFlexTableController = FlexTableController();
-  bool scaleSlider = false;
+  Map<String, DefaultFtController> controllers = {};
 
+  bool scaleSlider = false;
+  double tableScale = 1.0;
   @override
   void initState() {
-    scaleSlider = switch (defaultTargetPlatform) {
+    var (tableScale, scaleSlider) = switch (defaultTargetPlatform) {
       (TargetPlatform.macOS ||
             TargetPlatform.linux ||
             TargetPlatform.windows) =>
-        true,
-      (_) => false
+        (1.5, true),
+      (_) => (1.0, false)
     };
+    this.tableScale = tableScale;
+    this.scaleSlider = scaleSlider;
+
     super.initState();
   }
 
   @override
+  void dispose() {
+    controllers.forEach((key, value) {
+      value.dispose();
+    });
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    TargetPlatform platform = theme.platform;
-
     Widget makeTable(
-        {required FlexTableController flexTableController,
-        required FlexTableModel flexTableModel,
-        TableBuilder? tableBuilder}) {
+        {required String id,
+        required DefaultFtModel ftModel,
+        DefaultTableBuilder? tableBuilder}) {
       ScaleChangeNotifier scaleChangeNotifier =
-          ScaleChangeNotifier(flexTableModel: flexTableModel);
+          ScaleChangeNotifier(tableScale: ftModel.tableScale);
 
-      Widget table = FlexTable(
-        scaleChangeNotifier: scaleChangeNotifier,
-        flexTableController: flexTableController,
-        tableBuilder: tableBuilder,
-        flexTableModel: flexTableModel,
+      final ftController =
+          controllers.putIfAbsent(id, () => DefaultFtController());
+
+      Widget table = DefaultFlexTable(
+        tableChangeNotifiers: [scaleChangeNotifier],
+        controller: ftController,
+        model: ftModel,
+        tableBuilder: DefaultTableBuilder(),
       );
 
       if (scaleSlider) {
@@ -69,14 +76,13 @@ class _ExampleSliverInTablesState extends State<ExampleSliverInTables> {
               row: 2,
               squeezeRatio: 1.0,
               measureHeight: true,
-              child: TableBottomBar(
+              child: TableScaleSlider(
                   scaleChangeNotifier: scaleChangeNotifier,
-                  flexTableController: flexTableController,
+                  controller: ftController,
                   maxWidthSlider: 200.0))
         ]);
       }
-      return FlexTableToSliverBox(
-          flexTableController: flexTableController, child: table);
+      return FlexTableToSliverBox(ftController: ftController, child: table);
     }
 
     final scrollView = Container(
@@ -91,30 +97,27 @@ class _ExampleSliverInTablesState extends State<ExampleSliverInTables> {
                   title: 'Energy and heat',
                   info: 'Manual Freeze\nVertical split\nzoom'),
               makeTable(
-                  flexTableController: _energieFlexTableController,
-                  flexTableModel:
-                      DataModelEngery().makeTable(platform: platform)),
+                  id: 'Energy',
+                  ftModel: DataModelEngery.makeTable(tableScale: tableScale)),
               const InfoBox(
                   title: 'Trade', info: 'AutoFreeze\nVertical split\nzoom'),
               makeTable(
-                  flexTableController: _handelFlexTableController,
-                  flexTableModel: DataModelInternationalTrade().makeTable(
-                    platform: platform,
+                  id: 'Trade',
+                  ftModel: DataModelInternationalTrade().makeTable(
+                    tableScale: tableScale,
                   )),
               const InfoBox(
                   title: 'Fruit', info: 'Freeze\nVertical split\nzoom'),
               makeTable(
-                  flexTableController: _fruitFlexTableController,
-                  flexTableModel:
-                      DataModelFruit().makeTable(platform: platform)),
+                  id: 'Fruit',
+                  ftModel: DataModelFruit().makeTable(tableScale: tableScale)),
               const InfoBox(
                 title: 'Mortgage',
                 info: 'Autofreeze\nVertical split\nzoom',
               ),
               makeTable(
-                  flexTableController: _hypotheekFlexTableController,
-                  flexTableModel:
-                      createMorgageTableModel(horizontalTables: 2).tableModel(
+                  id: 'Mortgage',
+                  ftModel: MortgageTableModel(horizontalTables: 2).makeTable(
                     autoFreezeListX: true,
                     autoFreezeListY: true,
                   ),
@@ -124,9 +127,7 @@ class _ExampleSliverInTablesState extends State<ExampleSliverInTables> {
                 info: 'Manual freeze\nVertical split\nzoom',
               ),
               makeTable(
-                  flexTableController: _basicFlexTableController,
-                  flexTableModel:
-                      DataModelBasic.positions(rows: 300).makeTable()),
+                  id: 'Basic', ftModel: DataModelBasic.makeTable(rows: 300)),
             ],
           )),
     );

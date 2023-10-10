@@ -26,9 +26,9 @@ class About extends StatelessWidget {
             RichText(
               text: TextSpan(
                 text:
-                    'FlexTable is a customizable table with headers, splitView, freezeView, autoFreeze, zoom and scrollbars. The table consist of a model, a viewmodel and builders. The table can scrolls in two directions at the same time. If the first scroll is however horizontal or vertical, the cross direction is locked until the ballistic scroll ends  to prevent a unwanted drift if the user scrolls enthousiatic for serveral pages.'
+                    'FlexTable is a customizable table with headers, splitView, freezeView, autoFreeze, zoom and scrollbars. The table consist of a model, a viewmodel and builders.'
                     '\n\n'
-                    'Flexbar supports two-way scrolling,to prevent drifting while scrolling flextable use a stabiliser. The scrollbars can be used if they appear after the drag starts.'
+                    'Flextable supports two-way scrolling. If the scroll direction deviates less than 22.5 degrees over a length of 30 in the vertical or horizontal direction the scroll stabiliser kicks in to prevent drifting over several pages with enthusiastic scrolling. The stabiliser corrects the drift in the cross scroll direction, so you see probability a small wobbling. The scrollbars can be used if they appear after the drag starts.'
                     '\n\n'
                     'It is also possible to place the FlexTable in a customScrollView by wrapping the FlexTable in a adaptive sliver, wrapped in a sliver the table can only scroll in one direction at the same time.'
                     '\n\n'

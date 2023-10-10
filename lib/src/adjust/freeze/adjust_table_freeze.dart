@@ -4,211 +4,192 @@
 
 import 'package:flutter/material.dart';
 import '../../../flextable.dart';
-import '../../hit_test/hit_container.dart';
+import '../../gesture_scroll/table_drag_details.dart';
+import '../../gesture_scroll/table_scroll_activity.dart';
+import '../../hit_test/hit_box.dart';
 import '../../model/model.dart';
 import '../../model/properties/flextable_freeze_change.dart';
-import 'freeze_options.dart';
 
 class TableFreeze extends StatefulWidget {
   const TableFreeze({
     super.key,
-    required this.flexTableViewModel,
-    required this.freezeOptions,
+    required this.viewModel,
   });
 
-  final FlexTableViewModel flexTableViewModel;
-  final FreezeOptions freezeOptions;
+  final FtViewModel viewModel;
 
   @override
   State<TableFreeze> createState() => _TableFreezeState();
 }
 
-class _TableFreezeState extends State<TableFreeze>
-    with SingleTickerProviderStateMixin {
-  FreezeChange freezeChange = FreezeChange();
-  late AnimationController _controller;
-  Offset pressPosition = Offset.zero;
-  Color freezeColor = Colors.blue[700]!;
-  Color unFreezeColor = Colors.blueGrey[100]!;
-  late FreezeLinePainter _freezeLinePainter;
+class _TableFreezeState extends State<TableFreeze> {
+  late FtViewModel viewModel = widget.viewModel;
 
   @override
   void initState() {
-    _controller = AnimationController(
-        value: isFrozen() ? 1.0 : 0.0,
-        vsync: this,
-        duration: const Duration(milliseconds: 300));
-
-    _freezeLinePainter = FreezeLinePainter(
-      lineWidth: widget.flexTableViewModel.ftm.spaceSplitFreeze,
-      freezeColor: freezeColor,
-      unFreezeColor: unFreezeColor,
-      hitTestTable: (Offset position) => widget.flexTableViewModel.hitFreeze(
-        position,
-        kSlope: widget.freezeOptions.freezeSlope,
-      ),
-      animation: _controller.view,
-      freezeChange: freezeChange,
-    );
-
     super.initState();
   }
 
   @override
   void didUpdateWidget(TableFreeze oldWidget) {
-    _freezeLinePainter
-      ..freezeChange = freezeChange
-      ..freezeColor = freezeColor
-      ..unFreezeColor = unFreezeColor
-      ..lineWidth = widget.flexTableViewModel.ftm.spaceSplitFreeze
-      ..freezeColor = freezeColor
-      ..unFreezeColor = unFreezeColor;
+    if (viewModel != widget.viewModel) {
+      viewModel = widget.viewModel;
+    }
     super.didUpdateWidget(oldWidget);
   }
 
   @override
   void dispose() {
-    _freezeLinePainter.dispose();
-    _controller.dispose();
     super.dispose();
   }
 
-  void updateFreezeLinePainter() {}
-
   bool isFrozen() {
-    final ftm = widget.flexTableViewModel.ftm;
-    return ftm.stateSplitX == SplitState.freezeSplit ||
-        ftm.stateSplitY == SplitState.freezeSplit;
+    final model = widget.viewModel.model;
+    return model.stateSplitX == SplitState.freezeSplit ||
+        model.stateSplitY == SplitState.freezeSplit;
   }
 
   @override
   Widget build(BuildContext context) {
-    return CustomPaint(
-      painter: _freezeLinePainter,
-      child: GestureDetector(
-        behavior: HitTestBehavior.translucent,
-        onLongPressStart: (LongPressStartDetails details) =>
-            pressPosition = details.localPosition,
-        onLongPress: () => changeFreeze(),
-      ),
-    );
+    return HitBox(
+        hit: (Offset position) => widget.viewModel.hitFreeze(
+              position,
+            ),
+        child: GestureDetector(
+            behavior: HitTestBehavior.translucent,
+            onLongPressStart: longPressStart));
   }
 
-  void changeFreeze() {
-    if (_controller.isAnimating) return;
+  void longPressStart(LongPressStartDetails details) {
+    final FreezeChange freezeChange =
+        widget.viewModel.hitFreezeSplit(details.localPosition);
 
-    _freezeLinePainter.freezeChange = freezeChange = widget.flexTableViewModel
-        .hitFreezeSplit(pressPosition, widget.freezeOptions.freezeSlope);
+    if (freezeChange.action != FreezeAction.noAction) {
+      final controller = FreezeController(
+          onCanceled: () {}, viewModel: viewModel, freezeChange: freezeChange);
+      viewModel.beginActivity(TableFreezeActivity(viewModel, controller));
+      assert(viewModel.currentChange == null);
 
-    if (freezeChange.action == FreezeAction.freeze) {
-      _controller.forward().then((value) => endOfAnimation());
-    } else {
-      _controller.reverse().then((value) => endOfAnimation());
+      viewModel.currentChange = controller;
     }
-  }
-
-  endOfAnimation() {
-    widget.flexTableViewModel.freezeByPosition(freezeChange);
-
-    if (freezeChange.action == FreezeAction.unFreeze) {
-      widget.flexTableViewModel.scheduleCorrectOffScroll = true;
-    }
-    widget.flexTableViewModel.markNeedsLayout();
-
-    freezeChange = FreezeChange();
   }
 }
 
-class FreezeLinePainter extends CustomPainter with ChangeNotifier {
-  FreezeLinePainter({
-    required this.lineWidth,
-    required this.freezeColor,
-    required this.unFreezeColor,
+class FreezeController implements TableChange {
+  FreezeController({
+    required this.onCanceled,
+    required this.viewModel,
     required this.freezeChange,
-    required this.animation,
-    required this.hitTestTable,
   }) {
-    animation.addListener(notifyListeners);
+    switch (freezeChange.action) {
+      case FreezeAction.freeze:
+        {
+          viewModel
+            ..freezeByPosition(freezeChange)
+            ..markNeedsLayout();
+          _controller = AnimationController(
+              vsync: viewModel.context.vsync,
+              duration: const Duration(milliseconds: 200))
+            ..addListener(_animatedChange)
+            ..forward();
+
+          _animation =
+              CurveTween(curve: Curves.easeInOut).animate(_controller!.view);
+
+          _end = 1.0;
+          break;
+        }
+      case FreezeAction.unFreeze:
+        {
+          _controller = AnimationController(
+              value: 1.0,
+              vsync: viewModel.context.vsync,
+              duration: const Duration(milliseconds: 200))
+            ..addListener(_animatedChange)
+            ..reverse().then((value) {
+              viewModel
+                ..freezeByPosition(freezeChange)
+                ..markNeedsLayout();
+            });
+
+          _animation =
+              CurveTween(curve: Curves.easeInOut).animate(_controller!.view);
+
+          _end = 0.0;
+          break;
+        }
+      case FreezeAction.noAction:
+        {}
+    }
   }
-  double lineWidth;
-  Color freezeColor;
-  Color unFreezeColor;
-  FreezeChange freezeChange;
-  Animation<double> animation;
-  HitTestCallback hitTestTable;
+
+  final VoidCallback? onCanceled;
+  final FtViewModel viewModel;
+  final FreezeChange freezeChange;
+  AnimationController? _controller;
+  late Animation<double> _animation;
+  double _end = 0.0;
+
+  void _animatedChange() {
+    _change(_animation.value);
+    viewModel.markNeedsLayout();
+  }
+
+  void endChange() {
+    if (!(_controller?.isAnimating ?? false)) {
+      return;
+    }
+
+    //MarkNeedsLayout probably not needed because activity is pushed out by another activity which will tricker the layout
+    _change(_end);
+
+    if (_end == 0.0) {
+      viewModel.freezeByPosition(freezeChange);
+    }
+  }
+
+  void _change(double value) {
+    if (freezeChange.row != -1) {
+      viewModel.ratioFreezeChangeY = value;
+    }
+
+    if (freezeChange.column != -1) {
+      viewModel.ratioFreezeChangeX = value;
+    }
+  }
+
+  @override
+  @mustCallSuper
+  void dispose() {
+    _controller?.dispose();
+    onCanceled?.call();
+  }
+}
+
+class TableFreezeActivity extends TableScrollActivity {
+  /// Initializes [delegate] for subclasses.
+
+  TableFreezeActivity(
+      TableScrollActivityDelegate delegate, this.freezeController)
+      : super(0, 0, delegate, false);
+
+  FreezeController freezeController;
+
+  @override
+  bool get isScrolling => false;
+
+  @override
+  bool get shouldIgnorePointer => false;
+
+  @override
+  double get xVelocity => 0.0;
+
+  @override
+  double get yVelocity => 0.0;
 
   @override
   void dispose() {
-    animation.removeListener(notifyListeners);
+    freezeController.endChange();
     super.dispose();
   }
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    Paint paint = Paint();
-    final position = freezeChange.position;
-
-    if (animation.isCompleted ||
-        animation.isDismissed ||
-        position == Offset.zero) return;
-
-    if (freezeChange.row > 0) {
-      double left = position.dx - position.dx * animation.value;
-      double right = position.dx + (size.width - position.dx) * animation.value;
-      double top = position.dy - lineWidth / 2.0;
-      double bottom = top + lineWidth;
-
-      switch (freezeChange.action) {
-        case FreezeAction.freeze:
-          {
-            paint.color = freezeColor;
-            canvas.drawRect(Rect.fromLTRB(left, top, right, bottom), paint);
-            break;
-          }
-        case FreezeAction.unFreeze:
-          {
-            paint.color = unFreezeColor;
-            canvas.drawRect(Rect.fromLTRB(0.0, top, left, bottom), paint);
-            canvas.drawRect(
-                Rect.fromLTRB(right, top, size.width, bottom), paint);
-            break;
-          }
-        default:
-      }
-    }
-
-    if (freezeChange.column > 0) {
-      double top = position.dy - position.dy * animation.value;
-      double bottom =
-          position.dy + (size.height - position.dy) * animation.value;
-      double left = position.dx - lineWidth / 2.0;
-      double right = left + lineWidth;
-
-      switch (freezeChange.action) {
-        case FreezeAction.freeze:
-          {
-            paint.color = freezeColor;
-            canvas.drawRect(Rect.fromLTRB(left, top, right, bottom), paint);
-            break;
-          }
-        case FreezeAction.unFreeze:
-          {
-            paint.color = unFreezeColor;
-            canvas.drawRect(Rect.fromLTRB(left, 0.0, right, top), paint);
-            canvas.drawRect(
-                Rect.fromLTRB(left, bottom, right, size.height), paint);
-            break;
-          }
-        default:
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(FreezeLinePainter oldDelegate) {
-    return freezeChange.position != oldDelegate.freezeChange.position;
-  }
-
-  @override
-  bool? hitTest(Offset position) => hitTestTable(position);
 }

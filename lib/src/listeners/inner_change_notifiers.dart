@@ -3,21 +3,24 @@
 // license that can be found in the LICENSE file.
 
 import 'package:flutter/widgets.dart';
-import '../model/model.dart';
 
-class ScaleChangeNotifier extends ChangeNotifier {
-  ScaleChangeNotifier(
-      {FlexTableModel? flexTableModel,
-      double scale = 1.0,
-      double min = 0.5,
-      double max = 4.0})
-      : scale = flexTableModel?.tableScale ?? scale,
-        min = flexTableModel?.minTableScale ?? min,
-        max = flexTableModel?.maxTableScale ?? max;
+class InnerScaleChangeNotifier extends ChangeNotifier {
+  InnerScaleChangeNotifier(
+      {this.minScale = 0.5, this.maxScale = 3.0, this.scale = 1.0});
 
-  double min = 0.5;
-  double max = 3.0;
-  double scale = 1.0;
+  double minScale;
+  double maxScale;
+  double scale;
+
+  setValues({
+    required double minScale,
+    required double maxScale,
+    required double scale,
+  }) {
+    this.scale = scale;
+    this.minScale = minScale;
+    this.maxScale = maxScale;
+  }
 
   void changeScale(double value) {
     if (value != scale) {
@@ -36,8 +39,8 @@ class ScaleChangeNotifier extends ChangeNotifier {
   bool get mounted => _mounted;
 }
 
-class ScrollChangeNotifier extends ChangeNotifier {
-  ScrollChangeNotifier();
+class InnerScrollChangeNotifier extends ChangeNotifier {
+  InnerScrollChangeNotifier();
 
   bool scrolling = false;
 

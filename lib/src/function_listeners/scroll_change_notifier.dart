@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-import '../model/flextable_scroll_metrics.dart';
+import '../model/scroll_metrics.dart';
 import 'package:flutter/widgets.dart';
 import 'flextable_change_by_function_notifier.dart';
 

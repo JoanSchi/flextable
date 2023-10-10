@@ -1,61 +1,58 @@
+// ignore_for_file: public_member_api_docs, sort_constructors_first
 // Copyright 2023 Joan Schipper. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-import 'package:flextable/flextable.dart';
-import 'package:flutter/material.dart';
 import 'dart:math' as math;
+
+import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-MortgageTableModel createMorgageTableModel(
-    {int verticalTables = 6, int horizontalTables = 5}) {
-  MortgageTableModel mortgageTableModel = MortgageTableModel(
-      tableRows: verticalTables, tableColumns: horizontalTables);
+import 'package:flextable/flextable.dart';
 
-  int lengthColors = _tableColors.length;
-  int swiftColors = 2;
+class MortgageTableModel {
+  MortgageTableModel({this.verticalTables = 6, this.horizontalTables = 5})
+      : flexTableModel =
+            FtModel<Cell>(defaultHeightCell: 25.0, defaultWidthCell: 75.0) {
+    int lengthColors = _tableColors.length;
+    int swiftColors = 2;
 
-  for (int c = 0; c < horizontalTables; c++) {
-    bool resetRowCount = true;
-    for (int r = 0; r < verticalTables; r++) {
-      int count = c * verticalTables + r;
-      final m = morgages[count % morgages.length];
-      final tc = _tableColors[(c * swiftColors + r) % lengthColors];
+    for (int c = 0; c < horizontalTables; c++) {
+      bool resetRowCount = true;
+      for (int r = 0; r < verticalTables; r++) {
+        int count = c * verticalTables + r;
+        final m = morgages[count % morgages.length];
+        final tc = _tableColors[(c * swiftColors + r) % lengthColors];
 
-      mortgageTableModel.makeTable(
-          morgage: m['morgage']!,
-          interest: m['interest']!,
-          column: c * 10,
-          row: 1,
-          bc1: tc['bc1']!,
-          bc2: tc['bc2']!,
-          lineColor: tc['line']!,
-          lineWidth: 0.5,
-          resetRowCount: resetRowCount);
+        add(
+            morgage: m['morgage']!,
+            interest: m['interest']!,
+            column: c * 10,
+            row: 1,
+            bc1: tc['bc1']!,
+            bc2: tc['bc2']!,
+            lineColor: tc['line']!,
+            lineWidth: 0.5,
+            resetRowCount: resetRowCount);
 
-      resetRowCount = false;
+        resetRowCount = false;
+      }
     }
   }
 
-  return mortgageTableModel;
-}
-
-class MortgageTableModel {
-  MortgageTableModel({required this.tableRows, required this.tableColumns});
-
-  final data = FlexTableDataModel();
+  final FtModel<Cell> flexTableModel;
   var df = DateFormat('dd-MM-yyyy');
   var nf = NumberFormat('###', 'nl_NL');
   final years = 30;
   int rowEndTable = 0;
   int columnEndTable = 0;
   int lastRow = 0;
-  int tableRows;
-  int tableColumns;
+  int verticalTables;
+  int horizontalTables;
 
   int initialYear = 2020;
 
-  makeTable(
+  add(
       {required double morgage,
       required double interest,
       int column = 0,
@@ -71,7 +68,7 @@ class MortgageTableModel {
     int rowStart = row;
     double monthlyInterest;
 
-    final h = data.horizontalLineList;
+    final h = flexTableModel.horizontalLines;
     final line = Line(width: lineWidth, color: lineColor);
 
     final horizontalNoGap = LineNodeRange(create: (add) {
@@ -115,7 +112,7 @@ class MortgageTableModel {
       },
     );
 
-    data.addCell(
+    flexTableModel.addCell(
         row: row,
         column: columnStart + 2,
         columns: 2,
@@ -125,43 +122,43 @@ class MortgageTableModel {
 
     row++;
 
-    data.addCell(
+    flexTableModel.addCell(
         row: row,
         column: column++,
         cell: Cell(value: 'Datum', attr: {CellAttr.background: rowColor}));
 
-    data.addCell(
+    flexTableModel.addCell(
       row: row,
       column: column++,
       cell: Cell(value: 'Lening', attr: {CellAttr.background: rowColor}),
     );
 
-    data.addCell(
+    flexTableModel.addCell(
         row: row,
         column: column++,
         cell: Cell(value: 'Rente', attr: {CellAttr.background: rowColor}));
 
-    data.addCell(
+    flexTableModel.addCell(
         row: row,
         column: column++,
         cell: Cell(value: 'Aflossen', attr: {CellAttr.background: rowColor}));
-    data.addCell(
+    flexTableModel.addCell(
         row: row,
         column: column++,
         cell: Cell(value: 'Totaal', attr: {CellAttr.background: rowColor}));
-    data.addCell(
+    flexTableModel.addCell(
         row: row,
         column: column++,
         cell: Cell(value: 'Rente', attr: {CellAttr.background: rowColor}));
-    data.addCell(
+    flexTableModel.addCell(
         row: row,
         column: column++,
         cell: Cell(value: 'Teruggave', attr: {CellAttr.background: rowColor}));
-    data.addCell(
+    flexTableModel.addCell(
         row: row,
         column: column++,
         cell: Cell(value: 'Netto', attr: {CellAttr.background: rowColor}));
-    data.addCell(
+    flexTableModel.addCell(
         row: row,
         column: column++,
         cell: Cell(value: 'N. e/m', attr: {CellAttr.background: rowColor}));
@@ -184,25 +181,25 @@ class MortgageTableModel {
         repayYear += repay;
 
         column = columnStart;
-        data.addCell(
+        flexTableModel.addCell(
             row: row,
             column: column++,
             cell: Cell(
                 value: df.format(DateTime(currentYear, month + 1)),
                 attr: {CellAttr.background: rowColor}));
-        data.addCell(
+        flexTableModel.addCell(
             row: row,
             column: column++,
             cell: Cell(
                 value: nf.format(morgage),
                 attr: {CellAttr.background: rowColor}));
-        data.addCell(
+        flexTableModel.addCell(
             row: row,
             column: column++,
             cell: Cell(
                 value: nf.format(monthlyInterest),
                 attr: {CellAttr.background: rowColor}));
-        data.addCell(
+        flexTableModel.addCell(
             row: row,
             column: column++,
             cell: Cell(
@@ -223,35 +220,35 @@ class MortgageTableModel {
 
           final total = interestYear + repayYear;
           final back = interestYear * 0.42;
-          data.addCell(
+          flexTableModel.addCell(
               row: row - 11,
               column: column++,
               rows: 12,
               cell: Cell(
                   value: nf.format(interestYear + repay),
                   attr: {CellAttr.background: yearColorBlock}));
-          data.addCell(
+          flexTableModel.addCell(
               row: row - 11,
               column: column++,
               rows: 12,
               cell: Cell(
                   value: nf.format(interestYear),
                   attr: {CellAttr.background: yearColorBlockNext}));
-          data.addCell(
+          flexTableModel.addCell(
               row: row - 11,
               column: column++,
               rows: 12,
               cell: Cell(
                   value: nf.format(back),
                   attr: {CellAttr.background: yearColorBlock}));
-          data.addCell(
+          flexTableModel.addCell(
               row: row - 11,
               column: column++,
               rows: 12,
               cell: Cell(
                   value: nf.format(total - back),
                   attr: {CellAttr.background: yearColorBlockNext}));
-          data.addCell(
+          flexTableModel.addCell(
               row: row - 11,
               column: column++,
               rows: 12,
@@ -265,7 +262,11 @@ class MortgageTableModel {
       }
     }
 
-    data.verticalLineList.addLineRanges((add) {
+    //Bottom line
+    h.addLineRange(
+        LineRange(startIndex: row + 1, lineNodeRange: horizontalNoGap));
+
+    flexTableModel.verticalLines.addLineRanges((add) {
       add(LineRange(
           startIndex: columnStart,
           endIndex: columnStart + 9,
@@ -282,7 +283,7 @@ class MortgageTableModel {
           startIndex: rowStart,
           after: line,
         ),
-        LineNode(startIndex: row + 1, endIndex: row + 1, before: line),
+        LineNode(startIndex: rowStart + 1, before: noLine, after: noLine),
       ];
 
       // Per maand Vertical lines
@@ -301,24 +302,24 @@ class MortgageTableModel {
     if (columnEndTable < column) columnEndTable = column;
   }
 
-  tableModel({
+  FtModel<Cell> makeTable({
     TargetPlatform? platform,
     scrollUnlockX = false,
     scrollUnlockY = false,
     autoFreezeListX = false,
     autoFreezeListY = false,
   }) {
-    var (tableScale, minTableScale, maxTableScale) = switch (platform) {
+    var tableScale = switch (platform) {
       (TargetPlatform.macOS ||
             TargetPlatform.linux ||
             TargetPlatform.windows) =>
-        (1.5, 1.0, 4.0),
-      (_) => (1.0, 0.5, 3.0)
+        1.5,
+      (_) => 1.0
     };
 
     final autoFreezeAreasY = autoFreezeListY
         ? List<AutoFreezeArea>.generate(
-            tableRows,
+            verticalTables,
             (index) => AutoFreezeArea(
                 startIndex: 364 * index,
                 freezeIndex: 3 + 364 * index,
@@ -328,7 +329,7 @@ class MortgageTableModel {
 
     final autoFreezeAreasX = autoFreezeListX
         ? List<AutoFreezeArea>.generate(
-            tableColumns,
+            horizontalTables,
             (index) => AutoFreezeArea(
                 startIndex: 10 * index,
                 freezeIndex: 1 + 10 * index,
@@ -338,33 +339,20 @@ class MortgageTableModel {
 
     List<RangeProperties> specificWidth = [];
 
-    for (int i = 0; i < tableColumns; i++) {
+    for (int i = 0; i < horizontalTables; i++) {
       final begin = i * 10;
       specificWidth
           .add(RangeProperties(min: 0 + begin, max: 0 + begin, length: 90));
       specificWidth
           .add(RangeProperties(min: 2 + begin, max: 2 + begin, length: 60));
     }
-    return FlexTableModel(
-        stateSplitX: SplitState.noSplit,
-        stateSplitY: SplitState.noSplit,
-        // xSplit: 100.0, ySplit: 160.0,
-        // freezeColumns: 3, freezeRows: 23,
-        columnHeader: false,
-        rowHeader: false,
-        scrollUnlockX: scrollUnlockX,
-        scrollUnlockY: scrollUnlockY,
-        specificWidth: specificWidth,
-        defaultWidthCell: 70.0,
-        defaultHeightCell: 25.0,
-        maximumColumns: columnEndTable,
-        maximumRows: rowEndTable,
-        dataTable: data,
-        autoFreezeAreasX: autoFreezeAreasX,
-        autoFreezeAreasY: autoFreezeAreasY,
-        scale: tableScale,
-        minTableScale: minTableScale,
-        maxTableScale: maxTableScale);
+    return flexTableModel
+      ..specificWidth = specificWidth
+      ..tableColumns = columnEndTable
+      ..tableRows = rowEndTable
+      ..autoFreezeAreasX = autoFreezeAreasX
+      ..autoFreezeAreasY = autoFreezeAreasY
+      ..tableScale = tableScale;
   }
 }
 
@@ -373,23 +361,21 @@ class MortgageTableBuilder extends DefaultTableBuilder {
       {super.headerBackgroundColor = const Color.fromARGB(255, 244, 246, 248)});
 
   @override
-  Widget? cellBuilder(FlexTableModel flexTableModel,
-      TableCellIndex tableCellIndex, BuildContext context) {
+  Widget? cellBuilder(
+    BuildContext context,
+    FtViewModel<FtModel<Cell>, Cell> viewModel,
+    Cell cell,
+    LayoutPanelIndex layoutPanelIndex,
+    CellIndex tableCellIndex,
+  ) {
     //RepaintBoundary for canvas layer
-
-    final cell = flexTableModel.dataTable
-        .cell(row: tableCellIndex.row, column: tableCellIndex.column);
-
-    if (cell == null) {
-      return null;
-    }
 
     return Container(
         color: cell.attr[CellAttr.background] ?? Colors.white,
         child: Center(
             child: Text(
           '${cell.value}',
-          textScaleFactor: flexTableModel.tableScale,
+          textScaleFactor: viewModel.tableScale,
         )));
   }
 }

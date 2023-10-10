@@ -6,15 +6,15 @@ import 'package:flutter/widgets.dart';
 import '../../flextable.dart';
 
 void defaultDrawPaintSplit(
-    {required FlexTableViewModel flexTableViewModel,
-    required PaintingContext context,
+    {required PaintingContext context,
     required Offset offset,
     required Size size,
+    required FtViewModel viewModel,
     required List<Color> freezeColors,
     required List<Color> splitColors,
     bool drawLineInside = false}) {
-  final w = flexTableViewModel.widthLayoutList;
-  final h = flexTableViewModel.heightLayoutList;
+  final w = viewModel.widthLayoutList;
+  final h = viewModel.heightLayoutList;
 
   if (!w[2].inUse && !h[2].inUse) return;
 
@@ -45,10 +45,8 @@ void defaultDrawPaintSplit(
     h[2].panelPosition,
     drawLineInside ? h[2].panelEndPosition : size.height
   ];
-  final xSplitState =
-      w[2].inUse ? flexTableViewModel.stateSplitX : SplitState.noSplit;
-  final ySplitState =
-      h[2].inUse ? flexTableViewModel.stateSplitY : SplitState.noSplit;
+  final xSplitState = w[2].inUse ? viewModel.stateSplitX : SplitState.noSplit;
+  final ySplitState = h[2].inUse ? viewModel.stateSplitY : SplitState.noSplit;
 
   equalSplit = xSplitState == ySplitState;
 
@@ -74,8 +72,8 @@ void defaultDrawPaintSplit(
     }
   }
 
-  drawHorizontalSplit(FlexTableViewModel flexTableViewModel, Canvas canvas,
-      SplitState splitState) {
+  drawHorizontalSplit(
+      FtViewModel viewModel, Canvas canvas, SplitState splitState) {
     switch (splitState) {
       case SplitState.autoFreezeSplit:
         {
@@ -125,8 +123,8 @@ void defaultDrawPaintSplit(
     }
   }
 
-  drawVerticalSplit(FlexTableViewModel flexTableViewModel, Canvas canvas,
-      SplitState splitState) {
+  drawVerticalSplit(
+      FtViewModel viewModel, Canvas canvas, SplitState splitState) {
     switch (splitState) {
       case SplitState.autoFreezeSplit:
         {
@@ -160,11 +158,11 @@ void defaultDrawPaintSplit(
   ///
 
   if (xSplitState == SplitState.split) {
-    drawHorizontalSplit(flexTableViewModel, canvas, ySplitState);
-    drawVerticalSplit(flexTableViewModel, canvas, xSplitState);
+    drawHorizontalSplit(viewModel, canvas, ySplitState);
+    drawVerticalSplit(viewModel, canvas, xSplitState);
   } else {
-    drawVerticalSplit(flexTableViewModel, canvas, xSplitState);
-    drawHorizontalSplit(flexTableViewModel, canvas, ySplitState);
+    drawVerticalSplit(viewModel, canvas, xSplitState);
+    drawHorizontalSplit(viewModel, canvas, ySplitState);
   }
 
   assert(() {

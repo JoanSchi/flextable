@@ -19,7 +19,11 @@ typedef GestureTableDragEndCallback = void Function(
 typedef GestureDragDirection = TableScrollDirection Function(
     DragDownDetails details);
 
-abstract class TableDrag {
+abstract class TableChange {
+  void dispose();
+}
+
+abstract class TableDrag extends TableChange {
   /// The pointer has moved.
   void update(TableDragUpdateDetails details);
 
@@ -34,8 +38,6 @@ abstract class TableDrag {
   /// For example, the user might have been interrupted by a system-modal dialog
   /// in the middle of the drag.
   void cancel();
-
-  void dispose();
 
   dynamic get lastDetails;
 }

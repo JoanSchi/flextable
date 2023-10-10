@@ -6,8 +6,36 @@ import 'package:flextable/flextable.dart';
 import 'package:flutter/material.dart';
 
 class DataModelEngery {
-  DataModelEngery() {
+  static DefaultFtModel makeTable({double tableScale = 1.0}) {
     int dataRows = _data.length;
+    int endTableColumn = _data[0].length + 2; // 2 rowHeader columns
+    int endTableRow = dataRows + _columnHeader.length;
+
+    final ftModel = DefaultFtModel(
+        defaultHeightCell: 30,
+        defaultWidthCell: 120,
+        tableScale: tableScale,
+        autoFreezeX: false,
+        autoFreezeAreasX: [
+          AutoFreezeArea(
+              startIndex: 0, freezeIndex: 2, endIndex: endTableColumn)
+        ],
+        autoFreezeY: false,
+        autoFreezeAreasY: [
+          AutoFreezeArea(startIndex: 0, freezeIndex: 3, endIndex: endTableRow)
+        ],
+        specificWidth: [
+          RangeProperties(min: 0, length: 40.0),
+          RangeProperties(min: 1, length: 210.0),
+          RangeProperties(min: 2, length: 150.0),
+          RangeProperties(min: 8, length: 150.0),
+          RangeProperties(min: endTableColumn, length: 2.0)
+        ],
+        specificHeight: [
+          RangeProperties(min: 2, length: 55.0),
+        ],
+        tableColumns: endTableColumn,
+        tableRows: endTableRow);
 
     int row = 0;
     int column = 0;
@@ -15,7 +43,7 @@ class DataModelEngery {
     for (List<_Item> rowItems in _columnHeader) {
       int columnTemp = column + 2;
       for (_Item item in rowItems) {
-        dataTable.addCell(
+        ftModel.addCell(
             row: row,
             column: columnTemp,
             cell: Cell(
@@ -30,7 +58,7 @@ class DataModelEngery {
     int rowTemp = row;
 
     for (var item in _rowHeader1) {
-      dataTable.addCell(
+      ftModel.addCell(
           row: rowTemp,
           column: column,
           cell: Cell(value: item.value, attr: {
@@ -45,7 +73,7 @@ class DataModelEngery {
     rowTemp = row;
 
     for (String value in _rowHeader2) {
-      dataTable.addCell(
+      ftModel.addCell(
         row: rowTemp,
         column: column,
         cell: Cell(
@@ -77,20 +105,17 @@ class DataModelEngery {
               ratio: value / 100.0);
         }
 
-        dataTable.addCell(
+        ftModel.addCell(
             row: r + row,
             column: c + column,
             cell: Cell(value: value, attr: attr));
       }
     }
 
-    endTableColumn = column + _data[0].length;
-    endTableRow = dataRows + _columnHeader.length;
-
     double lineWidth = 1.0;
     Color lineColor = Colors.blueGrey[200]!;
 
-    dataTable.horizontalLineList.addLineRanges((create) {
+    ftModel.horizontalLines.addLineRanges((create) {
       final linesHeader = [
         LineNode(
             startIndex: 2,
@@ -122,49 +147,8 @@ class DataModelEngery {
             ])));
       }
     });
-  }
 
-  final dataTable = FlexTableDataModel();
-  int endTableColumn = 0;
-  int endTableRow = 0;
-
-  FlexTableModel makeTable({TargetPlatform? platform}) {
-    var (tableScale, minTableScale, maxTableScale) = switch (platform) {
-      (TargetPlatform.macOS ||
-            TargetPlatform.linux ||
-            TargetPlatform.windows) =>
-        (1.5, 1.0, 4.0),
-      (_) => (1.0, 0.5, 3.0)
-    };
-
-    return FlexTableModel(
-        dataTable: dataTable,
-        defaultHeightCell: 30,
-        defaultWidthCell: 120,
-        scale: tableScale,
-        minTableScale: minTableScale,
-        maxTableScale: maxTableScale,
-        autoFreezeX: false,
-        autoFreezeAreasX: [
-          AutoFreezeArea(
-              startIndex: 0, freezeIndex: 2, endIndex: endTableColumn)
-        ],
-        autoFreezeY: false,
-        autoFreezeAreasY: [
-          AutoFreezeArea(startIndex: 0, freezeIndex: 3, endIndex: endTableRow)
-        ],
-        specificWidth: [
-          RangeProperties(min: 0, length: 40.0),
-          RangeProperties(min: 1, length: 210.0),
-          RangeProperties(min: 2, length: 150.0),
-          RangeProperties(min: 8, length: 150.0),
-          RangeProperties(min: endTableColumn, length: 2.0)
-        ],
-        specificHeight: [
-          RangeProperties(min: 2, length: 55.0),
-        ],
-        maximumColumns: endTableColumn,
-        maximumRows: endTableRow);
+    return ftModel;
   }
 }
 

@@ -4,19 +4,16 @@
 
 import 'adjust_table_split.dart';
 
-class SplitOptions {
-  const SplitOptions(
-      {this.useSplitPosition = true,
-      this.xSplitSelectArea = const SelectArea(
-          width: 50.0, height: 100.0, horizontalAlignment: HitAlignment.end),
-      this.ySplitSelectArea = const SelectArea(
-          width: 100.0, height: 50.0, horizontalAlignment: HitAlignment.end),
-      this.marginSplit = 20.0});
+class AdjustSplitProperties {
+  const AdjustSplitProperties({
+    this.xSplitSelectArea = const SelectArea(
+        width: 50.0, height: 100.0, horizontalAlignment: HitAlignment.end),
+    this.ySplitSelectArea = const SelectArea(
+        width: 100.0, height: 50.0, horizontalAlignment: HitAlignment.end),
+  });
 
-  final bool useSplitPosition;
   final SelectArea xSplitSelectArea;
   final SelectArea ySplitSelectArea;
-  final double marginSplit;
 }
 
 class SelectArea {

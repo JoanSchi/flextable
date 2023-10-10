@@ -6,11 +6,28 @@ import 'package:flextable/flextable.dart';
 import 'package:flutter/material.dart';
 
 class DataModelFruit {
-  DataModelFruit() {
+  DefaultFtModel makeTable(
+      {double tableScale = 1.0, scrollUnlockX = false, scrollUnlockY = false}) {
     int row = 2;
     int column = 0;
 
-    dataTable.addCell(
+    final ftModel = DefaultFtModel(
+        defaultWidthCell: 80.0,
+        defaultHeightCell: 50.0,
+        tableScale: tableScale,
+        tableRows: 0,
+        tableColumns: 0,
+        scrollUnlockX: scrollUnlockX,
+        scrollUnlockY: scrollUnlockY,
+        specificWidth: [
+          RangeProperties(min: 0, max: 0, length: 120.0)
+        ],
+        specificHeight: [
+          RangeProperties(min: 0, length: 60.0),
+          RangeProperties(min: 1, max: 2, length: 40.0)
+        ]);
+
+    ftModel.addCell(
         row: 0,
         column: 0,
         columns: 5,
@@ -24,7 +41,7 @@ class DataModelFruit {
                   fontWeight: FontWeight.bold),
             }));
 
-    dataTable.addCell(
+    ftModel.addCell(
         row: 1,
         column: 1,
         columns: 4,
@@ -41,14 +58,15 @@ class DataModelFruit {
         Map attr = {
           CellAttr.background:
               Colors.lime[row == 2 ? 500 : (row % 2 == 0 ? 50 : 100)],
-          if (tempColumn == 0) 'alignment': Alignment.centerLeft,
+          if (tempColumn == 0) CellAttr.alignment: Alignment.centerLeft,
           if (row == 2)
             CellAttr.textStyle: const TextStyle(
                 color: Colors.white,
                 fontSize: 16.0,
                 fontWeight: FontWeight.bold),
+          if (tempColumn == 0) CellAttr.textAlign: TextAlign.left
         };
-        dataTable.addCell(
+        ftModel.addCell(
             row: row, column: tempColumn, cell: Cell(value: value, attr: attr));
 
         tempColumn++;
@@ -56,11 +74,12 @@ class DataModelFruit {
       row++;
     }
 
-    endTableColumns = 5;
+    int endTableRows = 0;
+    int endTableColumns = 5;
 
     if (endTableRows < row) endTableRows = row;
 
-    dataTable.verticalLineList.addLineRange(LineRange(
+    ftModel.verticalLines.addLineRange(LineRange(
         startIndex: 1,
         lineNodeRange: LineNodeRange(list: [
           LineNode(
@@ -77,7 +96,7 @@ class DataModelFruit {
               before: Line(color: Colors.lime[500]!, width: 0.5))
         ])));
 
-    dataTable.horizontalLineList.addLineRange(LineRange(
+    ftModel.horizontalLines.addLineRange(LineRange(
         startIndex: 2,
         lineNodeRange: LineNodeRange(list: [
           LineNode(
@@ -85,49 +104,14 @@ class DataModelFruit {
           LineNode(
               startIndex: 5, before: Line(color: Colors.lime[100]!, width: 1.0))
         ])));
-  }
 
-  final dataTable = FlexTableDataModel();
-  int endTableRows = 0;
-  int endTableColumns = 0;
-
-  FlexTableModel makeTable(
-      {TargetPlatform? platform,
-      scrollUnlockX = false,
-      scrollUnlockY = false}) {
-    var (tableScale, minTableScale, maxTableScale) = switch (platform) {
-      (TargetPlatform.macOS ||
-            TargetPlatform.linux ||
-            TargetPlatform.windows) =>
-        (1.5, 1.0, 4.0),
-      (_) => (1.0, 0.5, 3.0)
-    };
-
-    return FlexTableModel(
-        dataTable: dataTable,
-        defaultWidthCell: 80.0,
-        defaultHeightCell: 50.0,
-        scale: tableScale,
-        minTableScale: minTableScale,
-        maxTableScale: maxTableScale,
-        maximumRows: endTableRows,
-        maximumColumns: endTableColumns,
-        scrollUnlockX: scrollUnlockX,
-        scrollUnlockY: scrollUnlockY,
-        autoFreezeAreasX: [
-          AutoFreezeArea(
-              startIndex: 0, freezeIndex: 1, endIndex: endTableColumns)
-        ],
-        autoFreezeAreasY: [
-          AutoFreezeArea(startIndex: 2, freezeIndex: 3, endIndex: endTableRows)
-        ],
-        specificWidth: [
-          RangeProperties(min: 0, max: 0, length: 120.0)
-        ],
-        specificHeight: [
-          RangeProperties(min: 0, length: 60.0),
-          RangeProperties(min: 1, max: 2, length: 40.0)
-        ]);
+    return ftModel
+      ..autoFreezeAreasX = [
+        AutoFreezeArea(startIndex: 0, freezeIndex: 1, endIndex: endTableColumns)
+      ]
+      ..autoFreezeAreasY = [
+        AutoFreezeArea(startIndex: 2, freezeIndex: 3, endIndex: endTableRows)
+      ];
   }
 }
 

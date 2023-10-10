@@ -5,13 +5,13 @@
 import 'dart:async';
 import 'dart:ui';
 import '../../flextable.dart';
-import '../listeners/default_change_notifier.dart';
+import '../listeners/inner_change_notifiers.dart';
 import '../model/view_model.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import '../gesture_scroll/table_drag_details.dart';
 import '../gesture_scroll/table_gesture.dart';
-import '../model/flextable_scroll_metrics.dart';
+import '../model/scroll_metrics.dart';
 import 'dart:math' as math;
 
 const double _kMinThumbExtent = 18.0;
@@ -41,11 +41,13 @@ class TableScrollbar extends StatefulWidget {
     this.radius,
     this.roundedCorners = true,
     this.canDrag = true,
-    required this.flexTableViewModel,
+    required this.viewModel,
+    required this.scrollChangeNotifier,
     this.platformIndependent = false,
   }) : super(key: key);
 
-  final FlexTableViewModel flexTableViewModel;
+  final FtViewModel viewModel;
+  final InnerScrollChangeNotifier scrollChangeNotifier;
   final bool isAlwaysShown;
   final double? thumbSize;
   final double? paddingInside;
@@ -84,16 +86,16 @@ class _TableScrollbarState extends State<TableScrollbar>
   double _paddingTrackInside = 0.0;
   double _paddingTrackOutside = 0.0;
   DeviceGestureSettings? _mediaQueryGestureSettings;
-  late FlexTableViewModel _flexTableViewModel;
-  late ScrollChangeNotifier _scrollChangeNotifier;
+  late FtViewModel _viewModel;
+  late InnerScrollChangeNotifier _scrollChangeNotifier;
   bool scrolling = false;
 
   @override
   void initState() {
-    _flexTableViewModel = widget.flexTableViewModel;
-    scrolling = _flexTableViewModel.scrolling;
+    _viewModel = widget.viewModel;
+    scrolling = _viewModel.scrolling;
 
-    _scrollChangeNotifier = _flexTableViewModel.scrollChangeNotifier
+    _scrollChangeNotifier = widget.scrollChangeNotifier
       ..addListener(changeScroll);
 
     scrollBarSelection = ScrollBarSelection();
@@ -122,17 +124,17 @@ class _TableScrollbarState extends State<TableScrollbar>
 
   @override
   void didUpdateWidget(TableScrollbar oldWidget) {
-    if (_flexTableViewModel != widget.flexTableViewModel) {
-      _flexTableViewModel = widget.flexTableViewModel;
+    if (_viewModel != widget.viewModel) {
+      _viewModel = widget.viewModel;
     }
 
-    if (_scrollChangeNotifier != _flexTableViewModel.scrollChangeNotifier) {
+    if (_scrollChangeNotifier != widget.scrollChangeNotifier) {
       _scrollChangeNotifier.removeListener(changeScroll);
-      _scrollChangeNotifier = _flexTableViewModel.scrollChangeNotifier
+      _scrollChangeNotifier = widget.scrollChangeNotifier
         ..addListener(changeScroll);
     }
 
-    _scrollbarPainter.setFlexTableViewModel(widget.flexTableViewModel);
+    _scrollbarPainter.viewModel = _viewModel;
 
     updateValues();
     updateScrollBarPainter();
@@ -144,9 +146,9 @@ class _TableScrollbarState extends State<TableScrollbar>
 
     if (widget.platformIndependent) {
       _isAlwaysShown = widget.isAlwaysShown;
-      _thumbSize = _flexTableViewModel.thumbSize;
-      // _paddingInside = _flexTableViewModel.paddingInside;
-      _paddingOutside = _flexTableViewModel.paddingOutside;
+      _thumbSize = _viewModel.thumbSize;
+
+      _paddingOutside = _viewModel.paddingOutside;
 
       final scrollBarTrack = widget.scrollBarTrack;
 
@@ -172,9 +174,8 @@ class _TableScrollbarState extends State<TableScrollbar>
           {
             _fadeoutAnimationController.value = 0.0;
             _isAlwaysShown = false;
-            _thumbSize = _flexTableViewModel.thumbSize;
-            // _paddingInside = _flexTableViewModel.paddingInside;
-            _paddingOutside = _flexTableViewModel.paddingOutside;
+            _thumbSize = _viewModel.thumbSize;
+            _paddingOutside = _viewModel.paddingOutside;
 
             _paddingTrackOutside = widget.paddingTrackOutside ??
                 _paddingOutside +
@@ -196,9 +197,8 @@ class _TableScrollbarState extends State<TableScrollbar>
         case TargetPlatform.windows:
           {
             _isAlwaysShown = true;
-            _thumbSize = _flexTableViewModel.thumbSize;
-            // _paddingInside = _flexTableViewModel.paddingInside;
-            _paddingOutside = _flexTableViewModel.paddingOutside;
+            _thumbSize = _viewModel.thumbSize;
+            _paddingOutside = _viewModel.paddingOutside;
 
             _paddingTrackOutside =
                 widget.paddingTrackOutside ?? _kPaddingSeparateTrackOutside;
@@ -226,7 +226,7 @@ class _TableScrollbarState extends State<TableScrollbar>
       ..thickness = _thumbSize
       ..padding = _paddingOutside
       ..radius = radius
-      .._flexTableViewModel = _flexTableViewModel
+      .._viewModel = _viewModel
       ..paddingTrackOutside = _paddingTrackOutside
       ..paddingTrackInside = _paddingTrackInside;
   }
@@ -240,7 +240,7 @@ class _TableScrollbarState extends State<TableScrollbar>
 
     // _verticalSideBarController?.dispose();
     // _horizontalSideBarController?.dispose();
-    _flexTableViewModel.removeListener(updateScrollBarPainter);
+    _viewModel.removeListener(updateScrollBarPainter);
     _scrollChangeNotifier.removeListener(changeScroll);
     super.dispose();
   }
@@ -264,11 +264,11 @@ class _TableScrollbarState extends State<TableScrollbar>
       padding: _paddingOutside,
       radius: radius,
       fadeoutOpacityAnimation: _fadeoutOpacityAnimation,
-      flexTableViewModel: _flexTableViewModel,
+      viewModel: _viewModel,
       scrollBarSelection: scrollBarSelection,
       paddingTrackOutside: _paddingTrackOutside,
       paddingTrackInside: _paddingTrackInside,
-      hitThickness: _flexTableViewModel.ftm.hitScrollBarThickness,
+      hitThickness: _viewModel.properties.hitScrollBarThickness,
     );
   }
 
@@ -320,7 +320,7 @@ class _TableScrollbarState extends State<TableScrollbar>
       ..evaluateDirection(details)
       ..active = true;
 
-    _drag = widget.flexTableViewModel
+    _drag = widget.viewModel
         .dragScrollBar(details, _disposeDrag, it.scrollIndexX, it.scrollIndexY);
 
     _fadeoutTimer?.cancel();
@@ -437,7 +437,7 @@ class _TableScrollbarState extends State<TableScrollbar>
 class ScrollbarPainter extends ChangeNotifier implements CustomPainter {
   /// Creates a scrollbar with customizations given by construction arguments.
   ScrollbarPainter({
-    required FlexTableViewModel flexTableViewModel,
+    required FtViewModel viewModel,
     required Color color,
     required Color trackColor,
     required this.thickness,
@@ -451,15 +451,15 @@ class ScrollbarPainter extends ChangeNotifier implements CustomPainter {
     this.mimimalThumbHitLength = _kMinThumbHitExtent,
     required this.hitThickness,
     double? minOverscrollLength,
-  })  : _flexTableViewModel = flexTableViewModel,
+  })  : _viewModel = viewModel,
         _color = color,
         _trackColor = trackColor,
         minOverscrollLength = minOverscrollLength ?? minThumbLength {
     fadeoutOpacityAnimation.addListener(notifyListeners);
-    _flexTableViewModel.addListener(notifyListeners);
+    _viewModel.addListener(notifyListeners);
 
     it = IterateScrollable(
-        metrics: _flexTableViewModel,
+        metrics: _viewModel,
         minThumbLength: minThumbLength,
         mimimalThumbHitLength: mimimalThumbHitLength,
         paddingTrackOutside: paddingTrackOutside,
@@ -501,11 +501,11 @@ class ScrollbarPainter extends ChangeNotifier implements CustomPainter {
   late IterateScrollable it;
   ScrollBarSelection scrollBarSelection;
 
-  void setFlexTableViewModel(FlexTableViewModel flexTableViewModel) {
-    if (_flexTableViewModel != flexTableViewModel) {
-      _flexTableViewModel.removeListener(notifyListeners);
-      _flexTableViewModel = flexTableViewModel..addListener(notifyListeners);
-      it.metrics = flexTableViewModel;
+  set viewModel(FtViewModel value) {
+    if (_viewModel != value) {
+      _viewModel.removeListener(notifyListeners);
+      _viewModel = value..addListener(notifyListeners);
+      it.metrics = value;
     }
   }
 
@@ -553,14 +553,7 @@ class ScrollbarPainter extends ChangeNotifier implements CustomPainter {
   /// If unspecified or set to null, it will defaults to the value of [minThumbLength].
   final double minOverscrollLength;
 
-  set flexTableViewModel(FlexTableViewModel value) {
-    if (_flexTableViewModel != value) {
-      _flexTableViewModel = value;
-      it.metrics = value;
-    }
-  }
-
-  FlexTableViewModel _flexTableViewModel;
+  FtViewModel _viewModel;
   Rect? _thumbRect;
 
   /// Update with new [ScrollMetrics]. The scrollbar will show and redraw itself
@@ -596,13 +589,12 @@ class ScrollbarPainter extends ChangeNotifier implements CustomPainter {
         thumbSize = Size(thickness, thumbExtent);
         x = (direction == DrawScrollBar.right)
             ? size.width -
-                (thickness + padding) *
-                    _flexTableViewModel.ratioVerticalScrollBarTrack
+                (thickness + padding) * _viewModel.ratioVerticalScrollBarTrack
             : padding -
                 (padding + thickness) +
                 (padding + thickness) *
-                    _flexTableViewModel.ratioVerticalScrollBarTrack *
-                    _flexTableViewModel.ratioSizeAnimatedSplitChangeX;
+                    _viewModel.ratioVerticalScrollBarTrack *
+                    _viewModel.ratioSizeAnimatedSplitChangeX;
         y = thumbOffset;
         break;
       default:
@@ -610,13 +602,12 @@ class ScrollbarPainter extends ChangeNotifier implements CustomPainter {
         x = thumbOffset;
         y = (direction == DrawScrollBar.bottom)
             ? size.height -
-                (thickness + padding) *
-                    _flexTableViewModel.ratioHorizontalScrollBarTrack
+                (thickness + padding) * _viewModel.ratioHorizontalScrollBarTrack
             : padding -
                 (padding + thickness) +
                 (padding + thickness) *
-                    _flexTableViewModel.ratioHorizontalScrollBarTrack *
-                    _flexTableViewModel.ratioSizeAnimatedSplitChangeY;
+                    _viewModel.ratioHorizontalScrollBarTrack *
+                    _viewModel.ratioSizeAnimatedSplitChangeY;
     }
 
     _thumbRect = Offset(x, y) & thumbSize;
@@ -637,8 +628,8 @@ class ScrollbarPainter extends ChangeNotifier implements CustomPainter {
       case DrawScrollBar.right:
       case DrawScrollBar.left:
         width = (direction == DrawScrollBar.right)
-            ? _flexTableViewModel.sizeScrollBarRight
-            : _flexTableViewModel.sizeScrollBarLeft;
+            ? _viewModel.sizeScrollBarRight
+            : _viewModel.sizeScrollBarLeft;
         height = length;
         x = (direction == DrawScrollBar.right) ? size.width - width : 0.0;
         y = position;
@@ -647,8 +638,8 @@ class ScrollbarPainter extends ChangeNotifier implements CustomPainter {
       default:
         width = length;
         height = (direction == DrawScrollBar.bottom)
-            ? _flexTableViewModel.sizeScrollBarBottom
-            : _flexTableViewModel.sizeScrollBarTop;
+            ? _viewModel.sizeScrollBarBottom
+            : _viewModel.sizeScrollBarTop;
         x = position;
         y = (direction == DrawScrollBar.bottom) ? size.height - height : 0.0;
     }
@@ -675,10 +666,10 @@ class ScrollbarPainter extends ChangeNotifier implements CustomPainter {
 
     while (it.next) {
       final panelIsVerticalScrolling =
-          _flexTableViewModel.stateSplitY != SplitState.split ||
+          _viewModel.stateSplitY != SplitState.split ||
               scrollBarSelection.scrollIndexY == it.scrollIndexY;
       final panelIsHorizontalScrolling =
-          _flexTableViewModel.stateSplitX != SplitState.split ||
+          _viewModel.stateSplitX != SplitState.split ||
               scrollBarSelection.scrollIndexX == it.scrollIndexX;
 
       // Vertical scrollbar

@@ -2,19 +2,16 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-import 'package:flextable/src/model/view_model.dart';
+import 'package:flextable/flextable.dart';
 import '../builders/cells.dart';
-import 'panel_viewport.dart';
 import '../model/properties/flextable_grid_info.dart';
-import '../data_model/flextable_data_model.dart';
-import 'table_multi_panel_viewport.dart';
 
-class TableInterator {
+class TableInterator<T extends AbstractFtModel<C>, C extends AbstractCell> {
   TableInterator({
-    required FlexTableViewModel flexTableViewModel,
-  }) : _flexTableViewModel = flexTableViewModel;
+    required FtViewModel<T, C> viewModel,
+  }) : _viewModel = viewModel;
 
-  FlexTableViewModel _flexTableViewModel;
+  FtViewModel<T, C> _viewModel;
   late List<GridInfo> rowInfoList;
   late List<GridInfo> columnInfoList;
   int rowIndex = 0;
@@ -22,30 +19,28 @@ class TableInterator {
   int count = 0;
   int length = 0;
   int lengthColumnInfoList = 0;
-  // GridInfo firstRowGridInfo,
-  //     lastRowGridInfo,
-  //     firstColumnGridInfo,
-  //     lastColumnGridInfo;
   int firstRowIndex = 0,
       lastRowIndex = 0,
       firstColumnIndex = 0,
       lastColumnIndex = 0;
-  Cell? cell;
+  C? cell;
   late GridInfo rowInfo, columnInfo;
+  double left = 0.0;
+  double top = 0.0;
+  double height = 0.0;
+  double width = 0.0;
 
-  set flexTableViewModel(value) {
-    _flexTableViewModel = value;
+  set viewModel(FtViewModel<T, C> value) {
+    _viewModel = value;
   }
 
-  // double get scaleAndZoom => _flexTableViewModel.tableScale;
+  AbstractFtModel<C> get model => _viewModel.model;
 
-  AbstractFlexTableDataModel get dataTable => _flexTableViewModel.dataTable;
-
-  reset(TablePanelLayoutIndex tpli) {
-    rowInfoList = _flexTableViewModel.getRowInfoList(
-        tpli.scrollIndexX, tpli.scrollIndexY);
-    columnInfoList = _flexTableViewModel.getColumnInfoList(
-        tpli.scrollIndexX, tpli.scrollIndexY);
+  reset(LayoutPanelIndex tpli) {
+    rowInfoList =
+        _viewModel.getRowInfoList(tpli.scrollIndexX, tpli.scrollIndexY);
+    columnInfoList =
+        _viewModel.getColumnInfoList(tpli.scrollIndexX, tpli.scrollIndexY);
 
     count = 0;
     lengthColumnInfoList = columnInfoList.length;
@@ -78,29 +73,24 @@ class TableInterator {
     rowIndex = rowInfo.index;
     columnIndex = columnInfo.index;
 
-    final dataTable = _flexTableViewModel.dataTable;
-
-    cell = dataTable.cell(row: rowIndex, column: columnIndex);
+    cell = model.cell(row: rowIndex, column: columnIndex);
 
     if (cell != null) {
-      cell!
-        ..left = columnInfo.position
-        ..top = rowInfo.position;
+      left = columnInfo.position;
+      top = rowInfo.position;
 
       if (cell!.merged == null) {
-        cell!
-          ..width = columnInfo.length
-          ..height = rowInfo.length;
+        width = columnInfo.length;
+        height = rowInfo.length;
       } else {
         final m = cell!.merged!;
-        cell!
-          ..width = m.columnsMerged()
-              ? findPositionColumn(m.lastColumn).endPosition -
-                  columnInfo.position
-              : columnInfo.length
-          ..height = m.rowsMerged()
-              ? findPositionRow(m.lastRow).endPosition - rowInfo.position
-              : rowInfo.length;
+
+        width = m.columnsMerged()
+            ? findPositionColumn(m.lastColumn).endPosition - columnInfo.position
+            : columnInfo.length;
+        height = m.rowsMerged()
+            ? findPositionRow(m.lastRow).endPosition - rowInfo.position
+            : rowInfo.length;
       }
     } else if (rowIndex == firstRowIndex || columnIndex == firstColumnIndex) {
       rowMergeLayout() || columnMergeLayout();
@@ -112,21 +102,21 @@ class TableInterator {
   bool get isEmpty => length == 0;
 
   bool rowMergeLayout() {
-    Merged? m = dataTable.findMergedRows(rowIndex, columnIndex);
+    Merged? m = model.findMergedRows(rowIndex, columnIndex);
 
     if (m != null) {
       rowIndex = m.startRow;
       columnIndex = m.startColumn;
 
-      cell = dataTable.cell(row: rowIndex, column: columnIndex);
+      cell = model.cell(row: rowIndex, column: columnIndex);
 
-      final top = findPositionRow(rowIndex);
-      final bottom = findPositionRow(m.lastRow);
-      cell!
-        ..left = columnInfo.position
-        ..top = top.position
-        ..width = columnInfo.length
-        ..height = bottom.endPosition - top.position;
+      final topGridInfo = findPositionRow(rowIndex);
+      final bottomGridInfo = findPositionRow(m.lastRow);
+
+      left = columnInfo.position;
+      top = topGridInfo.position;
+      width = columnInfo.length;
+      height = bottomGridInfo.endPosition - topGridInfo.position;
       return true;
     } else {
       return false;
@@ -134,33 +124,32 @@ class TableInterator {
   }
 
   bool columnMergeLayout() {
-    Merged? m = dataTable.findMergedColumns(rowIndex, columnIndex);
+    Merged? m = model.findMergedColumns(rowIndex, columnIndex);
 
     if (m != null) {
       rowIndex = m.startRow;
       columnIndex = m.startColumn;
 
-      cell = dataTable.cell(row: rowIndex, column: columnIndex);
+      cell = model.cell(row: rowIndex, column: columnIndex);
 
-      final left = findPositionColumn(columnIndex);
-      final right = findPositionColumn(m.lastColumn);
-      cell!
-        ..left = left.position
-        ..top = rowInfo.position
-        ..width = right.endPosition - left.position
-        ..height = rowInfo.length;
+      final leftGridInfo = findPositionColumn(columnIndex);
+      final rightGridInfo = findPositionColumn(m.lastColumn);
+
+      left = leftGridInfo.position;
+      top = rowInfo.position;
+      width = rightGridInfo.endPosition - leftGridInfo.position;
+      height = rowInfo.length;
       return true;
     } else {
       return false;
     }
   }
 
-  TableCellIndex get tableCellIndex =>
-      TableCellIndex(row: rowIndex, column: columnIndex);
+  CellIndex get tableCellIndex => CellIndex(row: rowIndex, column: columnIndex);
 
   GridInfo findPositionRow(int toIndex) {
     if (toIndex < firstRowIndex || toIndex > lastRowIndex) {
-      return _flexTableViewModel.findGridInfoRow(toIndex);
+      return model.findGridInfoRow(toIndex);
     } else {
       return rowInfoList[toIndex - firstRowIndex];
     }
@@ -168,7 +157,7 @@ class TableInterator {
 
   GridInfo findPositionColumn(int toIndex) {
     if (toIndex < firstColumnIndex || toIndex > lastColumnIndex) {
-      return _flexTableViewModel.findGridInfoColumn(toIndex);
+      return model.findGridInfoColumn(toIndex);
     } else {
       return columnInfoList[toIndex - firstColumnIndex];
     }

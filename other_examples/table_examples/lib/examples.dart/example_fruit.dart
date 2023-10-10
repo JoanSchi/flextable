@@ -22,9 +22,9 @@ class ExampleFruit extends StatefulWidget {
 
 class _ExampleFruitState extends State<ExampleFruit> with SettingsBottomSheet {
   final _globalKey = const GlobalObjectKey<ScaffoldState>('fruit');
-  late FlexTableController _flexTableController;
-  ScaleChangeNotifier? scaleChangeNotifier;
-  late FlexTableModel flexTableModel;
+  late DefaultFtController _ftController;
+  late ScaleChangeNotifier scaleChangeNotifier;
+  late DefaultFtModel ftModel;
   bool scaleSlider = false;
 
   @override
@@ -37,31 +37,36 @@ class _ExampleFruitState extends State<ExampleFruit> with SettingsBottomSheet {
       (_) => false
     };
 
-    flexTableModel =
-        DataModelFruit().makeTable(platform: defaultTargetPlatform);
+    final tableScale = switch (defaultTargetPlatform) {
+      (TargetPlatform.macOS ||
+            TargetPlatform.linux ||
+            TargetPlatform.windows) =>
+        1.5,
+      (_) => 1.0
+    };
 
-    if (scaleSlider) {
-      scaleChangeNotifier = ScaleChangeNotifier(flexTableModel: flexTableModel);
-    }
+    ftModel = DataModelFruit().makeTable(tableScale: tableScale);
 
-    _flexTableController = FlexTableController();
+    scaleChangeNotifier = ScaleChangeNotifier(tableScale: tableScale);
+
+    _ftController = FtController();
     super.initState();
   }
 
   @override
   void dispose() {
-    _flexTableController.dispose();
-    scaleChangeNotifier?.dispose();
+    _ftController.dispose();
+    scaleChangeNotifier.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    Widget table = FlexTable(
-      flexTableController: _flexTableController,
-      scaleChangeNotifier: scaleChangeNotifier,
+    Widget table = DefaultFlexTable(
+      controller: _ftController,
+      tableChangeNotifiers: [scaleChangeNotifier],
       backgroundColor: Colors.grey[50],
-      flexTableModel: flexTableModel,
+      model: ftModel,
       tableBuilder: DefaultTableBuilder(
           headerBackgroundColor: const Color.fromARGB(255, 240, 240, 231),
           headerLineColor: const Color.fromARGB(255, 48, 67, 3),
@@ -76,9 +81,9 @@ class _ExampleFruitState extends State<ExampleFruit> with SettingsBottomSheet {
             row: 2,
             measureHeight: true,
             squeezeRatio: 1.0,
-            child: TableBottomBar(
-                scaleChangeNotifier: scaleChangeNotifier!,
-                flexTableController: _flexTableController,
+            child: TableScaleSlider(
+                scaleChangeNotifier: scaleChangeNotifier,
+                controller: _ftController,
                 maxWidthSlider: 200.0))
       ]);
     }
@@ -99,7 +104,7 @@ class _ExampleFruitState extends State<ExampleFruit> with SettingsBottomSheet {
           ),
           IconButton(
             icon: const Icon(Icons.settings),
-            onPressed: () => toggleSheet(_globalKey, _flexTableController),
+            onPressed: () => toggleSheet(_globalKey, _ftController),
           ),
         ],
         centerTitle: true,

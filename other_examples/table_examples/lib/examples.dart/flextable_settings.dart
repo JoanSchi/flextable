@@ -19,7 +19,7 @@ mixin SettingsBottomSheet {
     persistentBottomSheetController =
         globalKey.currentState?.showBottomSheet((BuildContext context) {
       return FlexTableSettings(
-        flexTableController: flexTableController,
+        ftController: flexTableController,
       );
     })
           ?..closed.then((value) {
@@ -29,11 +29,11 @@ mixin SettingsBottomSheet {
 }
 
 class FlexTableSettings extends StatefulWidget {
-  final FlexTableController flexTableController;
+  final FtController ftController;
 
   const FlexTableSettings({
     super.key,
-    required this.flexTableController,
+    required this.ftController,
   });
 
   @override
@@ -41,8 +41,8 @@ class FlexTableSettings extends StatefulWidget {
 }
 
 class _FlexTableSettingsState extends State<FlexTableSettings>
-    implements FlexTableChangeNotifier {
-  FlexTableViewModel? viewModel;
+    implements TableChangeNotifier {
+  FtViewModel? viewModel;
   bool pop = false;
 
   SplitState splitX = SplitState.noSplit;
@@ -63,8 +63,8 @@ class _FlexTableSettingsState extends State<FlexTableSettings>
     super.initState();
   }
 
-  FlexTableViewModel? getViewModel() => widget.flexTableController.hasClients
-      ? widget.flexTableController.lastViewModel()
+  FtViewModel? getViewModel() => widget.ftController.hasClients
+      ? widget.ftController.lastViewModel()
       : null;
 
   @override
@@ -74,7 +74,7 @@ class _FlexTableSettingsState extends State<FlexTableSettings>
       if (viewModel == null) {
         schedulePop();
       } else {
-        viewModel!.flexTableChangeNotifiers.add(this);
+        viewModel!.tableChangeNotifiers.add(this);
       }
     } else if (viewModel != getViewModel()) {
       schedulePop();
@@ -115,14 +115,14 @@ class _FlexTableSettingsState extends State<FlexTableSettings>
     scrollUnlockY = vm.scrollUnlockY;
     autoFreezeX = vm.autoFreezeX;
     autoFreezeY = vm.autoFreezeY;
-    hasAutoFreezeX = vm.ftm.autoFreezeAreasX.isNotEmpty;
-    hasAutoFreezeY = vm.ftm.autoFreezeAreasY.isNotEmpty;
+    hasAutoFreezeX = vm.model.autoFreezeAreasX.isNotEmpty;
+    hasAutoFreezeY = vm.model.autoFreezeAreasY.isNotEmpty;
     tableFitHeight = vm.tableFitHeight;
     tableFitWidth = vm.tableFitWidth;
   }
 
   @override
-  void changeFlexTable(FlexTableViewModel flexTableModel) {
+  void change(FtViewModel flexTableModel) {
     if (flexTableModel != viewModel) {
       schedulePop();
       return;
@@ -137,8 +137,8 @@ class _FlexTableSettingsState extends State<FlexTableSettings>
         scrollUnlockY != vm.scrollUnlockY ||
         autoFreezeX != vm.autoFreezeX ||
         autoFreezeY != vm.autoFreezeY ||
-        hasAutoFreezeX != vm.ftm.autoFreezeAreasX.isNotEmpty ||
-        hasAutoFreezeY != vm.ftm.autoFreezeAreasY.isNotEmpty ||
+        hasAutoFreezeX != vm.model.autoFreezeAreasX.isNotEmpty ||
+        hasAutoFreezeY != vm.model.autoFreezeAreasY.isNotEmpty ||
         tableFitHeight != vm.tableFitHeight ||
         tableFitWidth != vm.tableFitWidth) {
       setState(() {
@@ -173,7 +173,7 @@ class _FlexTableSettingsState extends State<FlexTableSettings>
 
   @override
   dispose() {
-    viewModel!.flexTableChangeNotifiers.remove(this);
+    viewModel!.tableChangeNotifiers.remove(this);
     super.dispose();
   }
 
@@ -284,19 +284,19 @@ class _FlexTableSettingsState extends State<FlexTableSettings>
   }
 
   changeHorizontalScrollLock(bool value) {
-    widget.flexTableController.lastViewModel()
+    widget.ftController.lastViewModel()
       ..scrollUnlockX = value
       ..markNeedsLayout();
   }
 
   changeRowHeader(bool value) {
-    widget.flexTableController.lastViewModel()
+    widget.ftController.lastViewModel()
       ..rowHeader = value
       ..markNeedsLayout();
   }
 
   changeColumnHeader(bool value) {
-    widget.flexTableController.lastViewModel()
+    widget.ftController.lastViewModel()
       ..columnHeader = value
       ..markNeedsLayout();
   }

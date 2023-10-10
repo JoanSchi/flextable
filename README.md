@@ -13,174 +13,85 @@ and the Flutter guide for
 
 # FlexTable
 
-FlexTable is a customizable table with headers, splitView, freezeView, autoFreeze, zoom and scrollbars. The table consist of a model, a viewmodel and builders. Fig. 1 shows some options. The table can scrolls in two directions at the same time. If the first scroll is however horizontal or vertical, the cross direction is locked until the ballistic scroll ends  to prevent a unwanted drift if the user scrolls enthousiatic for serveral pages.
+FlexTable is a customizable table with headers, splitView, freezeView, autoFreeze, zoom and scrollbars. The table consist of a model, a viewmodel and builders. Fig. 1 shows some options. Flextable supports two-way scrolling. If the scroll direction deviates less than 22.5 degrees over a length of 30 in the vertical or horizontal direction the scroll stabiliser kicks in to prevent drifting over several pages with enthusiastic scrolling. The stabiliser corrects the drift in the cross scroll direction, so you see probability a small wobbling. The scrollbars can be used if they appear after the drag starts. (mobile)'
 
 It is also possible to place the FlexTable in a customScrollView by wrapping the FlexTable in a adaptive sliver, wrapped in a sliver the table can only scroll in one direction at the same time.
 
-[Web App Example](http://js-lab.nl/flextable)
+[Web App Example](https://js-lab.nl/flextable)
 
 <img src="doc/flextable_options.png" width="800" >
 
 Fig. 1: Option: **A.** scroll direction, **B.** Drag to initiate splitView, **C.** Freeze/unfreeze, **D.** Change freeze position
 
-
+## Usage
+To use this plugin, add flextable as a dependency in your pubspec.yaml file.
 
 
 ## Getting started
+To make a simple flextable, make a model (DefaultFtModel) at some lines and place the model in the  DefaultFlexTable widget.
 
-TODO: List prerequisites and provide or point to information on how to
-start using the package.
 
-## Usage
+### Model
+The DefaultFtModel (FtModel\<Cell\>) contains the data, lines, cell dimensions, split options, autofreeze etc. The Cell contains the value and some basic CellAttr: { textStyle, alignment, background, percentagBackground, rotate }.
 
 ```dart
-import 'package:flextable/flextable.dart';
-import 'package:flutter/material.dart';
+  final model = DefaultFtModel(
+      defaultWidthCell: 120.0,
+      defaultHeightCell: 50.0,
+    );
 
-void main() {
-  runApp(
-    MaterialApp(
-      theme: ThemeData(
-          useMaterial3: true,
-          colorScheme: ColorScheme.fromSeed(
-              seedColor: const Color.fromARGB(255, 229, 235, 206))),
-      home: const ShortExample(),
-    ),
-  );
-}
 
-class ShortExample extends StatefulWidget {
-  const ShortExample({super.key});
+    model.addCell(row: 0, column: 0, cell: Cell(value: 'Hello!', attr: {
+        
+          CellAttr.textStyle: const TextStyle(
+              fontSize: 20, color: Colors.blue)
+     }, ));
 
-  @override
-  State<ShortExample> createState() => _ShortExampleState();
-}
+    // Add lines (see Table Lines paragraph)
+    model.horizontalLineList.addLineRange(...)
+```
 
-class _ShortExampleState extends State<ShortExample> {
-  late FlexTableDataModel dataTable;
-  FlexTableController flexTableController = FlexTableController();
 
-  @override
-  void initState() {
-    super.initState();
+### FlexTable
+The DefaultFlexTable (FlexTable\<FtModel\<Cell\>,Cell\>), needs the DefaultFtModel and DefaultTableBuilder. By default zoom, freeze and split (drag from: rigth,top corner) is enabled. It is possible to at FtController to FlexTable to obtain the FtViewModel to change for example scale, split, unlock etc ([flextable settings](https://github.com/JoanSchi/flextable/blob/main/other_examples/table_examples/lib/examples.dart/flextable_settings.dart),
+[TableScaleSlider](https://github.com/JoanSchi/flextable/blob/main/other_examples/table_examples/lib/examples.dart/example_fruit.dart)).
+
+
+```Dart
+@override
+  Widget build(BuildContext context) {
+    return DefaultFlexTable(model: model,tableBuilder: DefaultTableBuilder(),);
   }
+```
+
+### FlexTable in CustomScrollView
+FlexTable can be placed in a CustomScrollView with FlexTableToSliverBox. How does work: From FlexTableToSliverBox (RenderSliverSingleBoxAdapter) the scroll of the table can be determined with constraints.scrollOffset + overlap and the window size is determined by paintedChildSize. Two directional scrolling is not possible in CustomScrollView at the moment.
+
+```Dart
+ final ftController = DefaultFtController();
 
   @override
   Widget build(BuildContext context) {
-    const columns = 50;
-    const rows = 5000;
-    dataTable = FlexTableDataModel();
-    const line = Line(width: 0.5, color: Color.fromARGB(255, 70, 78, 38));
-
-    for (int r = 0; r < rows; r++) {
-      for (int c = 0; c < columns; c++) {
-        int rows = 1;
-        if ((c + 1) % 2 == 0) {
-          if (r % 3 == 0) {
-            rows = 3;
-          } else {
-            continue;
-          }
-        }
-        Map attr = {
-          CellAttr.background: (r % 99 < 1
-              ? const Color.fromARGB(255, 249, 250, 245)
-              : ((r % 2) % 2 == 0
-                  ? Colors.white10
-                  : const Color.fromARGB(255, 229, 235, 206))),
-          CellAttr.textStyle: const TextStyle(
-              fontSize: 20, color: Color.fromARGB(255, 70, 78, 38)),
-        };
-
-        dataTable.addCell(
-            row: r,
-            column: c,
-            cell: Cell(value: '${numberToCharacter(c)}$r', attr: attr),
-            rows: rows);
-      }
-    }
-
-    dataTable.horizontalLineList.addLineRanges((create) {
-      for (int r = 0; r < rows; r += 3) {
-        /// Horizontal lines
-        ///
-        ///
-        create(LineRange(
-            startIndex: r,
-            lineNodeRange: LineNodeRange(list: [
-              LineNode(
-                startIndex: 0,
-                after: line,
-              ),
-              LineNode(
-                startIndex: 0,
-                before: line,
-              )
-            ])));
-
-        /// Horizontal lines for merged columns
-        ///
-        ///
-        create(LineRange(
-            startIndex: r + 1,
-            endIndex: r + 2,
-            lineNodeRange: LineNodeRange()
-              ..addLineNodes((create) {
-                for (int c = 0; c < columns; c += 2) {
-                  create(LineNode(
-                    startIndex: c,
-                    after: line,
-                  ));
-                  create(LineNode(
-                    startIndex: c + 1,
-                    before: line,
-                  ));
-                }
-              })));
-      }
-    });
-
-    dataTable.verticalLineList.addLineRange(LineRange(
-        startIndex: 0,
-        endIndex: columns,
-        lineNodeRange: LineNodeRange(list: [
-          LineNode(
-            startIndex: 0,
-            after: line,
-          ),
-          LineNode(
-            startIndex: rows,
-            before: line,
-          ),
-        ])));
-
-    final flexTableModel = FlexTableModel(
-        columnHeader: true,
-        rowHeader: true,
-        dataTable: dataTable,
-        defaultWidthCell: 120.0,
-        defaultHeightCell: 50.0,
-        autoFreezeAreasY: [
-          for (int r = 0; r < rows - 100; r += 99)
-            AutoFreezeArea(startIndex: r, freezeIndex: r + 3, endIndex: r + 90)
-        ],
-        maximumColumns: columns,
-        maximumRows: rows);
-
-    FlexTable flexTable = FlexTable(
-        backgroundColor: Colors.white,
-        flexTableController: flexTableController,
-        flexTableModel: flexTableModel);
-
-    return Scaffold(
-        appBar: AppBar(
-          centerTitle: true,
-          title: const Text('Short FlexTable example'),
-        ),
-        body: flexTable);
+    return CustomScrollView(slivers: <Widget>[
+      // Other slivers...,
+      FlexTableToSliverBox(
+          ftController: ftController,
+          child: DefaultFlexTable(
+            model: model,
+            tableBuilder: DefaultTableBuilder(),
+            ftController: ftController,
+          ))
+    ]);
   }
-}
 ```
+
+### Costumize FlexTable
+The Default is at the moment quite basic, nevertheless the following classes can be extended to change cell properties, cell build, table measurements, how the cell properties is received, etc:  
+- FtModel\<C extends AbstractCell\> extends AbstractFtModel\<C\>
+- AbstractTableBuilder\<T extends AbstractFtModel\<C\>,C extends AbstractCell\>
+- FlexTable\<T extends AbstractFtModel\<C\>, C extends AbstractCell\>
+- FtController\<T extends AbstractFtModel\<C\>, C extends AbstractCell\>
+- AbstractCell
 
 ### Table Lines
 The vertical and horizontal lines are added seperatedly to the table in ranges to minimize objects for large tables. The TableLinesOneDirection object contains a LineLinkedList with LineRanges which contains a LineLinkedList with LineNodeRanges for one direction.
@@ -192,8 +103,9 @@ A LineNodeRange or LineNode object can be reused for loops, because they are cop
 It is possible to change the width and color of the existing lines over a large range by using Line.change(width:.., color..). The new properties will merge with the existing lines.
 
 
-```
+```dart
 TableLinesOneDirection horizontalLines = TableLinesOneDirection();
+// or with initialized FtModel -> ftModel.horizontalLines
 
 const blueLine = Line(
     width: 0.5,
@@ -360,8 +272,158 @@ LineRanges in TableLinesOneDirection:
   - LineNode 2-2: before: Line(o:LineOptions.no, w:null, c:null), after: Line(o:LineOptions.line, w:2.0, c:Color(0xff8ed43f))
   - LineNode 4-4: before: Line(o:LineOptions.line, w:2.0, c:Color(0xff8ed43f)), after: Line(o:LineOptions.no, w:null, c:null)
 
-## Additional information
 
-TODO: Tell users more about the package: where to find more information, how to
-contribute to the package, how to file issues, what response they can expect
-from the package authors, and more.
+### Example
+
+```Dart
+import 'package:flextable/flextable.dart';
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(
+    MaterialApp(
+      theme: ThemeData(
+          useMaterial3: true,
+          colorScheme: ColorScheme.fromSeed(
+              seedColor: const Color.fromARGB(255, 229, 235, 206))),
+      home: const ShortExample(),
+    ),
+  );
+}
+
+class ShortExample extends StatefulWidget {
+  const ShortExample({super.key});
+
+  @override
+  State<ShortExample> createState() => _ShortExampleState();
+}
+
+class _ShortExampleState extends State<ShortExample> {
+  @override
+  Widget build(BuildContext context) {
+    const columns = 50;
+    const rows = 5000;
+
+    final model = DefaultFtModel(
+      columnHeader: true,
+      rowHeader: true,
+      defaultWidthCell: 120.0,
+      defaultHeightCell: 50.0,
+      tableColumns: columns,
+      tableRows: rows,
+    );
+
+    const line = Line(width: 0.5, color: Color.fromARGB(255, 70, 78, 38));
+
+    for (int r = 0; r < rows; r++) {
+      for (int c = 0; c < columns; c++) {
+        int rows = 1;
+        if ((c + 1) % 2 == 0) {
+          if (r % 3 == 0) {
+            rows = 3;
+          } else {
+            continue;
+          }
+        }
+        Map attr = {
+          CellAttr.background: (r % 99 < 1
+              ? const Color.fromARGB(255, 249, 250, 245)
+              : ((r % 2) % 2 == 0
+                  ? Colors.white10
+                  : const Color.fromARGB(255, 229, 235, 206))),
+          CellAttr.textStyle: const TextStyle(
+              fontSize: 20, color: Color.fromARGB(255, 70, 78, 38)),
+        };
+
+        model.addCell(
+            row: r,
+            column: c,
+            cell: Cell(value: '${numberToCharacter(c)}$r', attr: attr),
+            rows: rows);
+      }
+    }
+
+    model.horizontalLines.addLineRanges((create) {
+      for (int r = 0; r < rows; r += 3) {
+        /// Horizontal lines
+        ///
+        ///
+        create(LineRange(
+            startIndex: r,
+            lineNodeRange: LineNodeRange(list: [
+              LineNode(
+                startIndex: 0,
+                after: line,
+              ),
+              LineNode(
+                startIndex: 0,
+                before: line,
+              )
+            ])));
+
+        /// Horizontal lines for merged columns
+        ///
+        ///
+        create(LineRange(
+            startIndex: r + 1,
+            endIndex: r + 2,
+            lineNodeRange: LineNodeRange()
+              ..addLineNodes((create) {
+                for (int c = 0; c < columns; c += 2) {
+                  create(LineNode(
+                    startIndex: c,
+                    after: line,
+                  ));
+                  create(LineNode(
+                    startIndex: c + 1,
+                    before: line,
+                  ));
+                }
+              })));
+      }
+    });
+
+    model.verticalLines.addLineRange(LineRange(
+        startIndex: 0,
+        endIndex: columns,
+        lineNodeRange: LineNodeRange(list: [
+          LineNode(
+            startIndex: 0,
+            after: line,
+          ),
+          LineNode(
+            startIndex: rows,
+            before: line,
+          ),
+        ])));
+
+    model
+      ..autoFreezeAreasY = [
+        for (int r = 0; r < rows - 100; r += 99)
+          AutoFreezeArea(startIndex: r, freezeIndex: r + 3, endIndex: r + 90)
+      ]
+      ..tableColumns = columns
+      ..tableRows = rows;
+
+    return Scaffold(
+        appBar: AppBar(
+          centerTitle: true,
+          title: const Text('Short FlexTable example'),
+        ),
+        body: DefaultFlexTable(
+          backgroundColor: Colors.white,
+          model: model,
+          tableBuilder: DefaultTableBuilder(),
+        ));
+  }
+}
+
+```
+
+### ToDo
+- Cell press listener.
+- Keep cell alive.
+- Scroll to.
+- More cell options and add get Widget for special cases.
+
+

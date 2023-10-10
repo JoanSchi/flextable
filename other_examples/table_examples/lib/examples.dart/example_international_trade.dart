@@ -23,9 +23,9 @@ class ExampleInternationalTrade extends StatefulWidget {
 class _ExampleInternationalTradeState extends State<ExampleInternationalTrade>
     with SettingsBottomSheet {
   final _globalKey = const GlobalObjectKey<ScaffoldState>('trade');
-  late FlexTableController _flexTableController;
-  ScaleChangeNotifier? scaleChangeNotifier;
-  late FlexTableModel flexTableModel;
+  final _ftController = DefaultFtController();
+  late ScaleChangeNotifier scaleChangeNotifier;
+  late DefaultFtModel ftModel;
   bool scaleSlider = false;
 
   @override
@@ -38,8 +38,16 @@ class _ExampleInternationalTradeState extends State<ExampleInternationalTrade>
       (_) => false
     };
 
-    flexTableModel = DataModelInternationalTrade().makeTable(
-      platform: defaultTargetPlatform,
+    final tableScale = switch (defaultTargetPlatform) {
+      (TargetPlatform.macOS ||
+            TargetPlatform.linux ||
+            TargetPlatform.windows) =>
+        1.5,
+      (_) => 1.0
+    };
+
+    ftModel = DataModelInternationalTrade().makeTable(
+      tableScale: tableScale,
       scrollUnlockX: false,
       scrollUnlockY: true,
       // autofreezeAreaX: [
@@ -50,28 +58,24 @@ class _ExampleInternationalTradeState extends State<ExampleInternationalTrade>
       ],
     );
 
-    if (scaleSlider) {
-      scaleChangeNotifier = ScaleChangeNotifier(flexTableModel: flexTableModel);
-    }
+    scaleChangeNotifier = ScaleChangeNotifier(tableScale: tableScale);
 
-    _flexTableController = FlexTableController();
     super.initState();
   }
 
   @override
   void dispose() {
-    _flexTableController.dispose();
-    scaleChangeNotifier?.dispose();
+    _ftController.dispose();
+    scaleChangeNotifier.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    Widget table = FlexTable(
-      flexTableController: _flexTableController,
-      scaleChangeNotifier: scaleChangeNotifier,
-      backgroundColor: Colors.grey[50],
-      flexTableModel: flexTableModel,
+    Widget table = DefaultFlexTable(
+      controller: _ftController,
+      tableChangeNotifiers: [scaleChangeNotifier],
+      model: ftModel,
       tableBuilder: DefaultTableBuilder(),
     );
 
@@ -82,9 +86,9 @@ class _ExampleInternationalTradeState extends State<ExampleInternationalTrade>
             row: 2,
             measureHeight: true,
             squeezeRatio: 1.0,
-            child: TableBottomBar(
-                scaleChangeNotifier: scaleChangeNotifier!,
-                flexTableController: _flexTableController,
+            child: TableScaleSlider(
+                scaleChangeNotifier: scaleChangeNotifier,
+                controller: _ftController,
                 maxWidthSlider: 200.0))
       ]);
     }
@@ -105,7 +109,7 @@ class _ExampleInternationalTradeState extends State<ExampleInternationalTrade>
           ),
           IconButton(
             icon: const Icon(Icons.settings),
-            onPressed: () => toggleSheet(_globalKey, _flexTableController),
+            onPressed: () => toggleSheet(_globalKey, _ftController),
           ),
         ],
         centerTitle: true,

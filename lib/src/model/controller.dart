@@ -3,19 +3,23 @@
 // license that can be found in the LICENSE file.
 
 import 'package:flextable/flextable.dart';
+import 'package:flextable/src/properties.dart';
 import 'package:flutter/widgets.dart';
 import '../gesture_scroll/table_scroll_physics.dart';
-import '../listeners/default_change_notifier.dart';
+import '../listeners/inner_change_notifiers.dart';
 
-class FlexTableController extends ChangeNotifier {
-  FlexTableController();
+typedef DefaultFtController = FtController<FtModel<Cell>, Cell>;
 
-  Iterable<FlexTableViewModel> get viewModels => _viewModels;
-  final List<FlexTableViewModel> _viewModels = <FlexTableViewModel>[];
+class FtController<T extends AbstractFtModel<C>, C extends AbstractCell>
+    extends ChangeNotifier {
+  FtController();
+
+  Iterable<FtViewModel<T, C>> get viewModels => _viewModels;
+  final List<FtViewModel<T, C>> _viewModels = <FtViewModel<T, C>>[];
 
   bool get hasClients => _viewModels.isNotEmpty;
 
-  FlexTableViewModel get viewModel {
+  FtViewModel<T, C> get viewModel {
     assert(_viewModels.isNotEmpty,
         'ScrollController not attached to any scroll views.');
     assert(_viewModels.length == 1,
@@ -23,7 +27,7 @@ class FlexTableController extends ChangeNotifier {
     return _viewModels.single;
   }
 
-  FlexTableViewModel lastViewModel({stretch = 3}) {
+  FtViewModel<T, C> lastViewModel({stretch = 3}) {
     assert(_viewModels.isNotEmpty,
         'ScrollController not attached to any scroll views.');
     assert(_viewModels.length <= stretch,
@@ -35,13 +39,13 @@ class FlexTableController extends ChangeNotifier {
     return _viewModels.last;
   }
 
-  void attach(FlexTableViewModel viewModel) {
+  void attach(FtViewModel<T, C> viewModel) {
     assert(!_viewModels.contains(viewModel));
     _viewModels.add(viewModel);
     viewModel.addListener(notifyListeners);
   }
 
-  void detach(FlexTableViewModel viewModel) {
+  void detach(FtViewModel<T, C> viewModel) {
     assert(_viewModels.contains(viewModel));
     viewModel.removeListener(notifyListeners);
     _viewModels.remove(viewModel);
@@ -49,30 +53,32 @@ class FlexTableController extends ChangeNotifier {
 
   @override
   void dispose() {
-    for (FlexTableViewModel viewModel in _viewModels) {
+    for (FtViewModel viewModel in _viewModels) {
       viewModel.removeListener(notifyListeners);
     }
     super.dispose();
   }
 
-  FlexTableViewModel createScrollPosition(
+  FtViewModel<T, C> createViewModel(
     TableScrollPhysics physics,
     ScrollContext context,
-    FlexTableViewModel? oldViewModel,
-    FlexTableModel flexTableModel,
-    TableBuilder tableBuilder,
-    ScrollChangeNotifier scrollChangeNotifier,
-    ScaleChangeNotifier scaleChangeNotifier,
-    List<FlexTableChangeNotifier> flexTableChangeNotifiers,
+    FtViewModel<T, C>? oldViewModel,
+    T model,
+    AbstractTableBuilder<T, C> tableBuilder,
+    InnerScrollChangeNotifier scrollChangeNotifier,
+    InnerScaleChangeNotifier scaleChangeNotifier,
+    List<TableChangeNotifier> tableChangeNotifiers,
+    FtProperties properties,
   ) {
-    return FlexTableViewModel(
+    return FtViewModel<T, C>(
         physics: physics,
         context: context,
         oldPosition: oldViewModel,
-        ftm: flexTableModel,
+        model: model,
         tableBuilder: tableBuilder,
         scrollChangeNotifier: scrollChangeNotifier,
         scaleChangeNotifier: scaleChangeNotifier,
-        flexTableChangeNotifiers: flexTableChangeNotifiers);
+        tableChangeNotifiers: tableChangeNotifiers,
+        properties: properties);
   }
 }

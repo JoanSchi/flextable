@@ -22,48 +22,46 @@ class ExampleStressTest extends StatefulWidget {
 class _ExampleStressTestState extends State<ExampleStressTest>
     with SettingsBottomSheet {
   final _globalKey = const GlobalObjectKey<ScaffoldState>('stress');
-  late FlexTableController _flexTableController;
-  ScaleChangeNotifier? scaleChangeNotifier;
-  late FlexTableModel flexTableModel;
+  final _flexTableController = DefaultFtController();
+  late ScaleChangeNotifier scaleChangeNotifier;
+  late DefaultFtModel ftModel;
   bool scaleSlider = false;
 
   @override
   void initState() {
-    scaleSlider = switch (defaultTargetPlatform) {
+    var (tableScale, scaleSlider) = switch (defaultTargetPlatform) {
       (TargetPlatform.macOS ||
             TargetPlatform.linux ||
             TargetPlatform.windows) =>
-        true,
-      (_) => false
+        (1.5, true),
+      (_) => (1.0, false)
     };
+    this.scaleSlider = scaleSlider;
 
-    flexTableModel = DataModelBasic.positions().makeTable(
+    ftModel = DataModelBasic.makeTable(
       scrollUnlockX: true,
       scrollUnlockY: true,
     );
 
-    if (scaleSlider) {
-      scaleChangeNotifier = ScaleChangeNotifier(flexTableModel: flexTableModel);
-    }
+    scaleChangeNotifier = ScaleChangeNotifier(tableScale: tableScale);
 
-    _flexTableController = FlexTableController();
     super.initState();
   }
 
   @override
   void dispose() {
     _flexTableController.dispose();
-    scaleChangeNotifier?.dispose();
+    scaleChangeNotifier.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    Widget table = FlexTable(
-      scaleChangeNotifier: scaleChangeNotifier,
-      flexTableController: _flexTableController,
+    Widget table = DefaultFlexTable(
+      tableChangeNotifiers: [scaleChangeNotifier],
+      controller: _flexTableController,
       tableBuilder: BasicTableBuilder(),
-      flexTableModel: flexTableModel,
+      model: ftModel,
     );
 
     if (scaleSlider) {
@@ -73,9 +71,9 @@ class _ExampleStressTestState extends State<ExampleStressTest>
             row: 2,
             measureHeight: true,
             squeezeRatio: 1.0,
-            child: TableBottomBar(
-                scaleChangeNotifier: scaleChangeNotifier!,
-                flexTableController: _flexTableController,
+            child: TableScaleSlider(
+                scaleChangeNotifier: scaleChangeNotifier,
+                controller: _flexTableController,
                 maxWidthSlider: 200.0))
       ]);
     }

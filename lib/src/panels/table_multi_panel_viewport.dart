@@ -3,37 +3,35 @@
 // license that can be found in the LICENSE file.
 
 import 'dart:collection';
+import 'package:flextable/flextable.dart';
+
 import '../panels/panel_viewport.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
-import '../builders/table_builder.dart';
 import '../model/properties/flextable_grid_layout.dart';
-import '../model/view_model.dart';
 import 'header_viewport.dart';
 
 typedef TablePanelViewportBuilder = Widget Function(
     BuildContext context, int index);
 
-typedef DrawPaintSplit = Function(FlexTableViewModel flexTableViewModel,
-    PaintingContext context, Offset offset, Size size);
-
-class TableMultiPanel extends StatelessWidget {
+class TableMultiPanel<T extends AbstractFtModel<C>, C extends AbstractCell>
+    extends StatelessWidget {
   const TableMultiPanel(
       {super.key,
-      required this.flexTableViewModel,
+      required this.viewModel,
       required this.tableBuilder,
       required this.tableScale});
 
-  final FlexTableViewModel flexTableViewModel;
-  final TableBuilder tableBuilder;
+  final FtViewModel<T, C> viewModel;
+  final AbstractTableBuilder<T, C> tableBuilder;
   final double tableScale;
 
   @override
   Widget build(BuildContext context) {
     return TableMultiPanelViewport(
-      flexTableViewModel: flexTableViewModel,
+      viewModel: viewModel,
       tableScale: tableScale,
-      drawPaintSplit: tableBuilder.drawPaintSplit,
+      tableBuilder: tableBuilder,
       builder: (BuildContext context, int panelIndex) {
         Widget? panel;
 
@@ -41,8 +39,8 @@ class TableMultiPanel extends StatelessWidget {
             panelIndex == 6 ||
             panelIndex == 9 ||
             panelIndex == 10) {
-          panel = TablePanel(
-            flexTableViewModel: flexTableViewModel,
+          panel = TablePanel<T, C>(
+            viewModel: viewModel,
             panelIndex: panelIndex,
             tableBuilder: tableBuilder,
             tableScale: tableScale,
@@ -53,20 +51,20 @@ class TableMultiPanel extends StatelessWidget {
             panelIndex == 15) {
           panel = null;
         } else {
-          final layoutIndex = flexTableViewModel.layoutIndex(panelIndex);
+          final layoutIndex = viewModel.layoutPanelIndex(panelIndex);
           final layoutIndexX = layoutIndex.xIndex;
 
           panel = TableHeader(
-              flexTableViewModel: flexTableViewModel,
+              viewModel: viewModel,
               panelIndex: panelIndex,
               tableBuilder: tableBuilder,
               tableScale: tableScale,
               headerScale: (layoutIndexX == 0 || layoutIndexX == 3)
-                  ? flexTableViewModel.ftm.scaleRowHeader
-                  : flexTableViewModel.ftm.scaleColumnHeader);
+                  ? viewModel.scaleRowHeader
+                  : viewModel.scaleColumnHeader);
         }
 
-        return tableBuilder.backgroundPanel(panelIndex, context, panel);
+        return tableBuilder.backgroundPanel(context, panelIndex, panel);
       },
     );
   }
@@ -75,7 +73,7 @@ class TableMultiPanel extends StatelessWidget {
 class _SplitIterator implements Iterator<int> {
   _SplitIterator(this.delegate);
 
-  FlexTableViewModel delegate;
+  FtViewModel delegate;
 
   int _row = 0;
   int _column = 0;
@@ -110,46 +108,48 @@ class _SplitIterator implements Iterator<int> {
   int get current => _current;
 }
 
-class TableMultiPanelViewport extends RenderObjectWidget {
+class TableMultiPanelViewport<T extends AbstractFtModel<C>,
+    C extends AbstractCell> extends RenderObjectWidget {
   const TableMultiPanelViewport(
       {super.key,
-      required this.flexTableViewModel,
+      required this.viewModel,
       required this.builder,
-      required this.drawPaintSplit,
+      required this.tableBuilder,
       required this.tableScale});
 
-  final FlexTableViewModel flexTableViewModel;
+  final FtViewModel<T, C> viewModel;
   final TablePanelViewportBuilder builder;
-  final DrawPaintSplit drawPaintSplit;
+  final AbstractTableBuilder tableBuilder;
   final double tableScale;
 
   @override
-  TableMultiPanelRenderViewport createRenderObject(BuildContext context) {
+  TableMultiPanelRenderViewport<T, C> createRenderObject(BuildContext context) {
     final TableMultiPanelRenderChildManager element =
         context as TableMultiPanelRenderChildManager;
     return TableMultiPanelRenderViewport(
-      flexTableViewModel: flexTableViewModel,
+      viewModel: viewModel,
       childManager: element,
       tableScale: tableScale,
-      drawPaintSplit: drawPaintSplit,
+      tableBuilder: tableBuilder,
     );
   }
 
   @override
   void updateRenderObject(
-      BuildContext context, TableMultiPanelRenderViewport renderObject) {
+      BuildContext context, TableMultiPanelRenderViewport<T, C> renderObject) {
     renderObject
-      ..flexTableViewModel = flexTableViewModel
+      ..viewModel = viewModel
       ..tableScale = tableScale
-      ..drawPaintSplit = drawPaintSplit;
+      ..tableBuilder = tableBuilder;
   }
 
   @override
-  TableMultiPanelRenderObjectElement createElement() =>
+  TableMultiPanelRenderObjectElement<T, C> createElement() =>
       TableMultiPanelRenderObjectElement(this);
 }
 
-class TableMultiPanelRenderObjectElement extends RenderObjectElement
+class TableMultiPanelRenderObjectElement<T extends AbstractFtModel<C>,
+        C extends AbstractCell> extends RenderObjectElement
     implements TableMultiPanelRenderChildManager {
   TableMultiPanelRenderObjectElement(super.widget);
 
@@ -177,8 +177,8 @@ class TableMultiPanelRenderObjectElement extends RenderObjectElement
   final Set<Element> _forgottenChildren = HashSet<Element>();
 
   @override
-  TableMultiPanelRenderViewport get renderObject =>
-      super.renderObject as TableMultiPanelRenderViewport;
+  TableMultiPanelRenderViewport<T, C> get renderObject =>
+      super.renderObject as TableMultiPanelRenderViewport<T, C>;
 
   @override
   void insertRenderObjectChild(RenderObject child, int slot) {
@@ -282,8 +282,8 @@ class TableMultiPanelRenderObjectElement extends RenderObjectElement
     //
     //
     //  final TableMultiPanelViewport oldWidget = widget;
-    // final FlexTableViewModel newDelegate = newWidget.flexTableViewModel;
-    // final FlexTableViewModel oldDelegate = oldWidget.flexTableViewModel;
+    // final ViewModel newDelegate = newWidget.viewModel;
+    // finalViewModel oldDelegate = oldWidget.viewModel;
 
     // if ((newDelegate != oldDelegate &&
     //         (newDelegate.runtimeType != oldDelegate.runtimeType ||
@@ -432,31 +432,32 @@ class TableMultiPanelRenderObjectElement extends RenderObjectElement
   }
 }
 
-class TableMultiPanelRenderViewport extends RenderBox
+class TableMultiPanelRenderViewport<T extends AbstractFtModel<C>,
+        C extends AbstractCell> extends RenderBox
     with
         ContainerRenderObjectMixin<RenderBox, TablePanelParentData>,
         RenderBoxContainerDefaultsMixin<RenderBox, TablePanelParentData> {
   TableMultiPanelRenderViewport({
-    required FlexTableViewModel flexTableViewModel,
+    required FtViewModel<T, C> viewModel,
     required this.childManager,
     required double tableScale,
-    required DrawPaintSplit drawPaintSplit,
-  })  : _flexTableViewModel = flexTableViewModel,
+    required AbstractTableBuilder tableBuilder,
+  })  : _viewModel = viewModel,
         _tableScale = tableScale,
-        _drawPaintSplit = drawPaintSplit;
+        _tableBuilder = tableBuilder;
 
   TableMultiPanelRenderChildManager childManager;
-  FlexTableViewModel _flexTableViewModel;
+  FtViewModel<T, C> _viewModel;
   double _tableScale;
-  DrawPaintSplit _drawPaintSplit;
+  AbstractTableBuilder _tableBuilder;
 
-  FlexTableViewModel get flexTableViewModel => _flexTableViewModel;
+  FtViewModel<T, C> get viewModel => _viewModel;
 
-  set flexTableViewModel(FlexTableViewModel value) {
-    if (value == _flexTableViewModel) return;
-    if (attached) _flexTableViewModel.removeListener(markNeedsLayout);
-    _flexTableViewModel = value;
-    if (attached) _flexTableViewModel.addListener(markNeedsLayout);
+  set viewModel(FtViewModel<T, C> value) {
+    if (value == _viewModel) return;
+    if (attached) _viewModel.removeListener(markNeedsLayout);
+    _viewModel = value;
+    if (attached) _viewModel.addListener(markNeedsLayout);
 
     markNeedsLayout();
   }
@@ -469,11 +470,11 @@ class TableMultiPanelRenderViewport extends RenderBox
     markNeedsLayout();
   }
 
-  DrawPaintSplit get drawPaintSplit => _drawPaintSplit;
+  AbstractTableBuilder get tableBuilder => _tableBuilder;
 
-  set drawPaintSplit(DrawPaintSplit value) {
-    if (value == _drawPaintSplit) return;
-    _drawPaintSplit = value;
+  set tableBuilder(AbstractTableBuilder value) {
+    if (value == _tableBuilder) return;
+    _tableBuilder = value;
     markNeedsLayout();
   }
 
@@ -498,7 +499,7 @@ class TableMultiPanelRenderViewport extends RenderBox
     childManager.didStartLayout();
     childManager.setDidUnderflow(false);
 
-    flexTableViewModel.calculate(
+    viewModel.calculate(
         width: constraints.maxWidth, height: constraints.maxHeight);
 
     if (firstChild != null) {
@@ -515,16 +516,14 @@ class TableMultiPanelRenderViewport extends RenderBox
           (firstChild!.parentData as TablePanelParentData).tablePanelIndex;
     }
 
-    final splitIterator = _SplitIterator(flexTableViewModel);
+    final splitIterator = _SplitIterator(viewModel);
 
     while (splitIterator.moveNext()) {
       final tablePanelIndex = splitIterator.current;
-      final layoutIndex = _flexTableViewModel.layoutIndex(tablePanelIndex);
+      final layoutIndex = _viewModel.layoutPanelIndex(tablePanelIndex);
 
-      GridLayout layoutX =
-          flexTableViewModel.widthLayoutList[layoutIndex.xIndex];
-      GridLayout layoutY =
-          flexTableViewModel.heightLayoutList[layoutIndex.yIndex];
+      GridLayout layoutX = viewModel.widthLayoutList[layoutIndex.xIndex];
+      GridLayout layoutY = viewModel.heightLayoutList[layoutIndex.yIndex];
 
       if (firstChild == null) {
         child = insertAndLayoutFirstChild(after: null, index: tablePanelIndex);
@@ -764,12 +763,12 @@ class TableMultiPanelRenderViewport extends RenderBox
 
   @override
   double computeMaxIntrinsicWidth(double height) {
-    return flexTableViewModel.computeMaxIntrinsicWidth(height);
+    return viewModel.computeMaxIntrinsicWidth(height);
   }
 
   @override
   double computeMaxIntrinsicHeight(double width) {
-    return flexTableViewModel.computeMaxIntrinsicHeight(width);
+    return viewModel.computeMaxIntrinsicHeight(width);
   }
 
   void collectGarbage() {
@@ -781,11 +780,11 @@ class TableMultiPanelRenderViewport extends RenderBox
       while (child != null) {
         final parentData = child.parentData as TablePanelParentData;
         final layoutIndex =
-            _flexTableViewModel.layoutIndex(parentData.tablePanelIndex);
+            _viewModel.layoutPanelIndex(parentData.tablePanelIndex);
         final nextChild = childAfter(child);
 
-        if (!(flexTableViewModel.rowVisible(layoutIndex.yIndex) &&
-            flexTableViewModel.columnVisible(layoutIndex.xIndex))) {
+        if (!(viewModel.rowVisible(layoutIndex.yIndex) &&
+            viewModel.columnVisible(layoutIndex.xIndex))) {
           childManager.removeChild(child);
         }
 
@@ -832,20 +831,18 @@ class TableMultiPanelRenderViewport extends RenderBox
   void paint(PaintingContext context, Offset offset) {
     defaultPaint(context, offset);
 
-    if (flexTableViewModel.ftm.anySplitX || flexTableViewModel.ftm.anySplitY) {
-      drawPaintSplit(_flexTableViewModel, context, offset, size);
-    }
+    tableBuilder.finalPaintMainPanel(_viewModel, context, offset, size);
   }
 
   @override
   void attach(PipelineOwner owner) {
     super.attach(owner);
-    _flexTableViewModel.addListener(markNeedsLayout);
+    _viewModel.addListener(markNeedsLayout);
   }
 
   @override
   void detach() {
-    _flexTableViewModel.removeListener(markNeedsLayout);
+    _viewModel.removeListener(markNeedsLayout);
     super.detach();
   }
 }
@@ -858,23 +855,23 @@ class TablePanelParentData extends ContainerBoxParentData<RenderBox> {
   double bottomMargin = 0.0;
 }
 
-class TablePanelLayoutIndex implements Comparable<TablePanelLayoutIndex> {
+class LayoutPanelIndex implements Comparable<LayoutPanelIndex> {
   int xIndex;
   int yIndex;
 
-  TablePanelLayoutIndex({required this.xIndex, required this.yIndex});
+  LayoutPanelIndex({required this.xIndex, required this.yIndex});
 
-  bool operator >(TablePanelLayoutIndex index) {
+  bool operator >(LayoutPanelIndex index) {
     return yIndex > index.yIndex ||
         (yIndex == index.yIndex && xIndex > index.xIndex);
   }
 
-  bool operator <=(TablePanelLayoutIndex index) {
+  bool operator <=(LayoutPanelIndex index) {
     return yIndex < index.yIndex ||
         (yIndex == index.yIndex && xIndex <= index.xIndex);
   }
 
-  bool operator <(TablePanelLayoutIndex index) {
+  bool operator <(LayoutPanelIndex index) {
     return yIndex < index.yIndex ||
         (yIndex == index.yIndex && xIndex < index.xIndex);
   }
@@ -890,7 +887,7 @@ class TablePanelLayoutIndex implements Comparable<TablePanelLayoutIndex> {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is TablePanelLayoutIndex &&
+      other is LayoutPanelIndex &&
           runtimeType == other.runtimeType &&
           xIndex == other.xIndex &&
           yIndex == other.yIndex;
@@ -904,7 +901,7 @@ class TablePanelLayoutIndex implements Comparable<TablePanelLayoutIndex> {
   }
 
   @override
-  int compareTo(TablePanelLayoutIndex other) {
+  int compareTo(LayoutPanelIndex other) {
     return (yIndex < other.yIndex ||
             (yIndex == other.yIndex && xIndex < other.xIndex))
         ? -1

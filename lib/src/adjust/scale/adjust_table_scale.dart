@@ -13,8 +13,8 @@ import '../../gesture_scroll/table_drag_details.dart';
 import '../../gesture_scroll/table_gesture.dart';
 import '../../gesture_scroll/table_scale_gesture.dart';
 
-class TableZoomProperties {
-  TableZoomProperties({
+class TableMouseScaleProperties {
+  TableMouseScaleProperties({
     this.lineWidth = 1.0,
     this.lineColor = Colors.black38,
     this.pointerSize = 48.0,
@@ -33,17 +33,17 @@ class TableZoomProperties {
   double fraction;
 }
 
-class TableZoomTouch extends StatefulWidget {
-  const TableZoomTouch({super.key, required this.flexTableViewModel});
+class TableScaleTouch extends StatefulWidget {
+  const TableScaleTouch({super.key, required this.viewModel});
 
-  final FlexTableViewModel flexTableViewModel;
+  final FtViewModel viewModel;
 
   @override
-  State<StatefulWidget> createState() => TableZoomTouchState();
+  State<StatefulWidget> createState() => TableScaleTouchState();
 }
 
-class TableZoomTouchState extends State<TableZoomTouch> {
-  double zoom = 1.0;
+class TableScaleTouchState extends State<TableScaleTouch> {
+  double tableScale = 1.0;
   DeviceGestureSettings? _mediaQueryGestureSettings;
 
   @override
@@ -52,7 +52,7 @@ class TableZoomTouchState extends State<TableZoomTouch> {
   }
 
   @override
-  void didUpdateWidget(TableZoomTouch oldWidget) {
+  void didUpdateWidget(TableScaleTouch oldWidget) {
     _mediaQueryGestureSettings = MediaQuery.maybeGestureSettingsOf(context);
     super.didUpdateWidget(oldWidget);
   }
@@ -84,46 +84,46 @@ class TableZoomTouchState extends State<TableZoomTouch> {
   }
 
   void _onScaleStart(ScaleStartDetails scaleStartDetails) {
-    zoom = widget.flexTableViewModel.tableScale;
+    tableScale = widget.viewModel.tableScale;
   }
 
   void _onScaleUpdate(ScaleUpdateDetails scaleUpdateDetails) {
-    widget.flexTableViewModel.setScaleTable(scaleUpdateDetails.scale * zoom);
+    widget.viewModel.tableScale = scaleUpdateDetails.scale * tableScale;
   }
 
   void _onScaleEnd(ScaleEndDetails details) {
-    widget.flexTableViewModel.correctOffScroll(0, 0);
+    widget.viewModel.correctOffScroll(0, 0);
     // _tableModel.notifyScrollBarListeners();
   }
 }
 
-class TableZoomMouse extends StatefulWidget {
-  const TableZoomMouse(
+class TableScaleMouse extends StatefulWidget {
+  const TableScaleMouse(
       {super.key,
-      required this.flexTableViewModel,
-      required this.zoomProperties,
+      required this.viewModel,
+      required this.properties,
       required this.combiKeyNotification});
 
-  final FlexTableViewModel flexTableViewModel;
-  final TableZoomProperties zoomProperties;
+  final FtViewModel viewModel;
+  final TableMouseScaleProperties properties;
   final CombiKeyNotification combiKeyNotification;
 
   @override
-  State<StatefulWidget> createState() => TableZoomMouseState();
+  State<StatefulWidget> createState() => TableScaleMouseState();
 }
 
-class TableZoomMouseState extends State<TableZoomMouse> {
-  double zoom = 1.0;
-  late TableZoomMouseNotifier _tableZoomMouseNotifier;
-  late TableZoomProperties _zoomProperties;
+class TableScaleMouseState extends State<TableScaleMouse> {
+  late TableScaleMouseNotifier _tableScaleMouseNotifier;
+  late TableMouseScaleProperties _properties;
   late CombiKeyNotification _combiKeyNotification;
 
   @override
   void initState() {
-    final ftm = widget.flexTableViewModel.ftm;
-    _tableZoomMouseNotifier = TableZoomMouseNotifier(
-        minTableScale: ftm.minTableScale, maxTableScale: ftm.maxTableScale);
-    _zoomProperties = widget.zoomProperties;
+    final ftProperties = widget.viewModel.properties;
+    _tableScaleMouseNotifier = TableScaleMouseNotifier(
+        minTableScale: ftProperties.minTableScale,
+        maxTableScale: ftProperties.maxTableScale);
+    _properties = widget.properties;
     _combiKeyNotification = widget.combiKeyNotification..addListener(keyUpdate);
     super.initState();
   }
@@ -134,11 +134,11 @@ class TableZoomMouseState extends State<TableZoomMouse> {
   }
 
   @override
-  void didUpdateWidget(TableZoomMouse oldWidget) {
+  void didUpdateWidget(TableScaleMouse oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    if (widget.zoomProperties != _zoomProperties) {
-      _zoomProperties = widget.zoomProperties;
+    if (widget.properties != _properties) {
+      _properties = widget.properties;
     }
     if (widget.combiKeyNotification != _combiKeyNotification) {
       _combiKeyNotification.removeListener(keyUpdate);
@@ -148,11 +148,12 @@ class TableZoomMouseState extends State<TableZoomMouse> {
   }
 
   keyUpdate() {
-    _tableZoomMouseNotifier.active = _combiKeyNotification.control;
+    _tableScaleMouseNotifier.active = _combiKeyNotification.control;
   }
 
   @override
   void dispose() {
+    _combiKeyNotification.removeListener(keyUpdate);
     super.dispose();
   }
 
@@ -162,61 +163,62 @@ class TableZoomMouseState extends State<TableZoomMouse> {
       onHover: onHover,
       child: RawGestureDetector(
           gestures: <Type, GestureRecognizerFactory>{
-            TableZoomGestureRecognizer: GestureRecognizerFactoryWithHandlers<
-                TableZoomGestureRecognizer>(
-              () => TableZoomGestureRecognizer(),
-              (TableZoomGestureRecognizer instance) {
+            TableScaleMouseGestureRecognizer:
+                GestureRecognizerFactoryWithHandlers<
+                    TableScaleMouseGestureRecognizer>(
+              () => TableScaleMouseGestureRecognizer(),
+              (TableScaleMouseGestureRecognizer instance) {
                 instance
                   ..onStart = onStart
                   ..onUpdate = onUpdate
                   ..onEnd = onEnd
-                  ..tableZoomMouseNotifier = _tableZoomMouseNotifier
+                  ..tableScaleMouseNotifier = _tableScaleMouseNotifier
                   ..dragDirection = TableScrollDirection.both;
               },
             ),
           },
           behavior: HitTestBehavior.translucent,
           child: MouseScalePaint(
-            zoomProperties: _zoomProperties,
-            tableZoomMouseNotifier: _tableZoomMouseNotifier,
+            properties: _properties,
+            tableScaleMouseNotifier: _tableScaleMouseNotifier,
             child: Container(),
           )),
     );
   }
 
   onStart(DragStartDetails details) {
-    _tableZoomMouseNotifier
+    _tableScaleMouseNotifier
       ..isScaling = true
-      ..scale = widget.flexTableViewModel.tableScale;
+      ..scale = widget.viewModel.tableScale;
   }
 
   onHover(PointerHoverEvent event) {
-    _tableZoomMouseNotifier
-      ..scale = widget.flexTableViewModel.tableScale
+    _tableScaleMouseNotifier
+      ..scale = widget.viewModel.tableScale
       ..position = event.localPosition;
-    _tableZoomMouseNotifier.active = RawKeyboard.instance.keysPressed
+    _tableScaleMouseNotifier.active = RawKeyboard.instance.keysPressed
         .contains(LogicalKeyboardKey.controlLeft);
   }
 
   onUpdate(TableDragUpdateDetails details) {
-    _tableZoomMouseNotifier.position = details.localPosition;
-    widget.flexTableViewModel.setScaleTable(_tableZoomMouseNotifier.scale);
+    _tableScaleMouseNotifier.position = details.localPosition;
+    widget.viewModel.tableScale = _tableScaleMouseNotifier.scale;
   }
 
   onEnd(TableDragEndDetails details) {
-    _tableZoomMouseNotifier.isScaling = false;
+    _tableScaleMouseNotifier.isScaling = false;
 
-    _tableZoomMouseNotifier.active = RawKeyboard.instance.keysPressed
+    _tableScaleMouseNotifier.active = RawKeyboard.instance.keysPressed
         .contains(LogicalKeyboardKey.controlLeft);
 
-    widget.flexTableViewModel.correctOffScroll(0, 0);
+    widget.viewModel.correctOffScroll(0, 0);
     // _tableModel.notifyScrollBarListeners();
   }
 }
 
-class TableZoomGestureRecognizer extends MyDragGestureRecognizer {
-  TableZoomMouseNotifier? tableZoomMouseNotifier;
-  TableZoomGestureRecognizer({
+class TableScaleMouseGestureRecognizer extends MyDragGestureRecognizer {
+  TableScaleMouseNotifier? tableScaleMouseNotifier;
+  TableScaleMouseGestureRecognizer({
     Object? debugOwner,
     Set<PointerDeviceKind>? supportedDevices,
   }) : super(
@@ -244,11 +246,11 @@ class TableZoomGestureRecognizer extends MyDragGestureRecognizer {
   @override
   bool hasSufficientGlobalDistanceToAccept(
           PointerDeviceKind pointerDeviceKind) =>
-      tableZoomMouseNotifier?.active ?? false;
+      tableScaleMouseNotifier?.active ?? false;
 }
 
-class TableZoomMouseNotifier extends ChangeNotifier {
-  TableZoomMouseNotifier(
+class TableScaleMouseNotifier extends ChangeNotifier {
+  TableScaleMouseNotifier(
       {required this.minTableScale, required this.maxTableScale});
 
   bool _active = false;
@@ -329,33 +331,34 @@ class TableZoomMouseNotifier extends ChangeNotifier {
 class MouseScalePaint extends StatefulWidget {
   const MouseScalePaint(
       {Key? key,
-      required this.tableZoomMouseNotifier,
+      required this.tableScaleMouseNotifier,
       required this.child,
-      required this.zoomProperties})
+      required this.properties})
       : super(key: key);
 
-  final TableZoomMouseNotifier tableZoomMouseNotifier;
+  final TableScaleMouseNotifier tableScaleMouseNotifier;
   final Widget child;
-  final TableZoomProperties zoomProperties;
+  final TableMouseScaleProperties properties;
 
   @override
   State<MouseScalePaint> createState() => _MouseScalePaintState();
 }
 
 class _MouseScalePaintState extends State<MouseScalePaint> {
-  late TableZoomMouseNotifier tableZoomMouseNotifier;
+  late TableScaleMouseNotifier tableScaleMouseNotifier;
 
   @override
   void initState() {
-    tableZoomMouseNotifier = widget.tableZoomMouseNotifier..addListener(notify);
+    tableScaleMouseNotifier = widget.tableScaleMouseNotifier
+      ..addListener(notify);
     super.initState();
   }
 
   @override
   void didUpdateWidget(MouseScalePaint oldWidget) {
-    if (tableZoomMouseNotifier != widget.tableZoomMouseNotifier) {
-      tableZoomMouseNotifier.removeListener(notify);
-      tableZoomMouseNotifier = widget.tableZoomMouseNotifier
+    if (tableScaleMouseNotifier != widget.tableScaleMouseNotifier) {
+      tableScaleMouseNotifier.removeListener(notify);
+      tableScaleMouseNotifier = widget.tableScaleMouseNotifier
         ..addListener(notify);
     }
     super.didUpdateWidget(oldWidget);
@@ -363,7 +366,7 @@ class _MouseScalePaintState extends State<MouseScalePaint> {
 
   @override
   dispose() {
-    tableZoomMouseNotifier.removeListener(notify);
+    tableScaleMouseNotifier.removeListener(notify);
     super.dispose();
   }
 
@@ -374,23 +377,23 @@ class _MouseScalePaintState extends State<MouseScalePaint> {
   @override
   Widget build(BuildContext context) {
     return CustomPaint(
-        painter: MouseZoomPainter(
-            position: tableZoomMouseNotifier.position,
-            startPostion: tableZoomMouseNotifier.startPosition,
-            draw: tableZoomMouseNotifier.draw,
-            zoomProperties: widget.zoomProperties,
-            minDistance: tableZoomMouseNotifier.minDistance,
-            maxDistance: tableZoomMouseNotifier.maxDistance),
+        painter: MouseScalePainter(
+            position: tableScaleMouseNotifier.position,
+            startPostion: tableScaleMouseNotifier.startPosition,
+            draw: tableScaleMouseNotifier.draw,
+            properties: widget.properties,
+            minDistance: tableScaleMouseNotifier.minDistance,
+            maxDistance: tableScaleMouseNotifier.maxDistance),
         child: widget.child);
   }
 }
 
-class MouseZoomPainter extends CustomPainter {
-  MouseZoomPainter({
+class MouseScalePainter extends CustomPainter {
+  MouseScalePainter({
     required this.position,
     required this.startPostion,
     required this.draw,
-    required this.zoomProperties,
+    required this.properties,
     required this.minDistance,
     required this.maxDistance,
   });
@@ -400,7 +403,7 @@ class MouseZoomPainter extends CustomPainter {
   final bool draw;
   final double minDistance;
   final double maxDistance;
-  TableZoomProperties zoomProperties;
+  final TableMouseScaleProperties properties;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -413,11 +416,11 @@ class MouseZoomPainter extends CustomPainter {
     line(double radial, double d) {
       canvas.drawArc(
           startPostion - Offset(d, d) & Size(d * 2.0, d * 2.0),
-          r - zoomProperties.fraction / 2.0 * math.pi + radial,
-          zoomProperties.fraction * math.pi,
+          r - properties.fraction / 2.0 * math.pi + radial,
+          properties.fraction * math.pi,
           false,
           paint
-            ..color = zoomProperties.lineColor
+            ..color = properties.lineColor
             ..style = PaintingStyle.stroke);
     }
 
@@ -428,16 +431,16 @@ class MouseZoomPainter extends CustomPainter {
 
     canvas.drawCircle(
         startPostion,
-        zoomProperties.centerSize / 2.0,
+        properties.centerSize / 2.0,
         paint
-          ..color = zoomProperties.lineColor
+          ..color = properties.lineColor
           ..style = PaintingStyle.fill);
 
     canvas.drawCircle(
         position,
-        zoomProperties.pointerSize / 2.0,
+        properties.pointerSize / 2.0,
         paint
-          ..color = zoomProperties.pointerColor
+          ..color = properties.pointerColor
           ..style = PaintingStyle.fill);
   }
 

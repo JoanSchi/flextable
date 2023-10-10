@@ -515,16 +515,17 @@ abstract class LineLinkedList<E extends LineLinkedListEntry<E>> {
     }
 
     if (begin!.startIndex < index) {
-      while (!identical(begin!._next, _first) && begin.endIndex < index) {
+      while (
+          !identical(begin!._next, first) && begin._next!.endIndex <= index) {
         begin = begin._next;
       }
     } else if (begin.startIndex > index) {
-      while (!identical(begin, _first) && begin!._previous!.endIndex >= index) {
+      while (!identical(begin!._previous, last) && begin.startIndex > index) {
         begin = begin._previous;
       }
     }
 
-    return begin!;
+    return begin;
   }
 
   /* Default linked list functions
