@@ -1,4 +1,4 @@
-## 0.0.11
+## 0.0.2
 
 * README.md: Fix link image, added link to other examples, removed example (already shown in tab example)
 
