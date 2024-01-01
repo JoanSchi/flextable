@@ -149,7 +149,7 @@ class TableViewScrollableState<T extends AbstractFtModel<C>,
     implements ScrollContext {
   FtViewModel<T, C> get viewModel => _viewModel!;
   FtViewModel<T, C>? _viewModel;
-  InnerScaleChangeNotifier? _scaleChangeNotifier;
+  InnerScaleChangeNotifier? _innerScaleChangeNotifier;
   ChangeNotifier? _rebuildNotifier;
 
   @override
@@ -174,9 +174,9 @@ class TableViewScrollableState<T extends AbstractFtModel<C>,
       scheduleMicrotask(oldViewModel.dispose);
     }
 
-    if (_scaleChangeNotifier != widget.innerScaleChangeNotifier) {
-      _scaleChangeNotifier?.removeListener(rebuildTable);
-      _scaleChangeNotifier = widget.innerScaleChangeNotifier
+    if (_innerScaleChangeNotifier != widget.innerScaleChangeNotifier) {
+      _innerScaleChangeNotifier?.removeListener(rebuildTable);
+      _innerScaleChangeNotifier = widget.innerScaleChangeNotifier
         ..addListener(rebuildTable);
     }
 
@@ -192,7 +192,7 @@ class TableViewScrollableState<T extends AbstractFtModel<C>,
         widget.model,
         widget.tableBuilder,
         widget.innerScrollChangeNotifier,
-        _scaleChangeNotifier!,
+        _innerScaleChangeNotifier!,
         widget.tableChangeNotifiers,
         widget.properties);
 
@@ -250,7 +250,7 @@ class TableViewScrollableState<T extends AbstractFtModel<C>,
 
   @override
   void dispose() {
-    _scaleChangeNotifier?.removeListener(rebuildTable);
+    _innerScaleChangeNotifier?.removeListener(rebuildTable);
     _rebuildNotifier?.removeListener(rebuildTable);
     widget.controller.detach(viewModel);
     viewModel.dispose();

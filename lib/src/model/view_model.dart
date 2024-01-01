@@ -3,6 +3,7 @@
 // license that can be found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:collection';
 import 'package:flextable/src/model/model.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
@@ -14,10 +15,10 @@ import '../gesture_scroll/table_drag_details.dart';
 import '../gesture_scroll/table_scroll_activity.dart';
 import '../gesture_scroll/table_scroll_physics.dart';
 import '../listeners/inner_change_notifiers.dart';
+import '../panels/panel_viewport.dart';
 import '../properties.dart';
 import 'scroll_metrics.dart';
 import 'properties/flextable_freeze_change.dart';
-import 'properties/flextable_grid_info.dart';
 import 'properties/flextable_grid_layout.dart';
 import 'properties/flextable_header_properties.dart';
 import 'properties/flextable_selection_index.dart';
@@ -140,6 +141,7 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
 
   bool _mounted = true;
   bool get mounted => _mounted;
+
   // Scroll
   //
   //
@@ -156,6 +158,29 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
   bool scrollNotificationEnabled = false;
   ScrollPosition? sliverScrollPosition;
   bool scrolling = false;
+
+  /// Edit
+  ///
+  /// cellsToRemove is cleared at the end of the performlayout function of TableMultiPanelViewport
+  CellIndexExtra _editCell = const CellIndexExtra();
+
+  HashSet<FtIndex> cellsToRemove = HashSet<FtIndex>();
+
+  set editCell(CellIndexExtra value) {
+    if (_editCell == value) {
+      return;
+    }
+
+    if (_editCell.isIndex) {
+      cellsToRemove.add(_editCell);
+    }
+    if (value.isIndex) {
+      cellsToRemove.add(value);
+    }
+    _editCell = value;
+  }
+
+  CellIndexExtra get editCell => _editCell;
 
   // ViewModel
   //
@@ -277,20 +302,34 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
 
   void correctBy(Offset value) {}
 
-  void jumpTo(Offset value) {}
+  void jumpTo(int scrollIndexX, int scrollIndexY, Offset value) {
+    goIdle(scrollIndexX, scrollIndexY);
+    Offset pixels = getScroll(scrollIndexX, scrollIndexY, true);
+    if (pixels != value) {
+      final oldPixels = pixels;
+      pixels = setPixels(scrollIndexX, scrollIndexY, value);
+      didStartScroll();
+      didUpdateScrollPositionBy(pixels - oldPixels);
+      didEndScroll();
+    }
+    goBallistic(scrollIndexX, scrollIndexY, 0.0, 0.0);
+  }
 
   /// underscroll.
   Future<void> moveTo(
+    int scrollIndexX,
+    int scrollIndexY,
     Offset to, {
     Duration? duration,
     Curve? curve,
     bool? clamp,
   }) {
     if (duration == null || duration == Duration.zero) {
-      jumpTo(to);
+      jumpTo(scrollIndexX, scrollIndexY, to);
       return Future<void>.value();
     } else {
-      return animateTo(to, duration: duration, curve: curve ?? Curves.ease);
+      return animateTo(scrollIndexX, scrollIndexY, to,
+          duration: duration, curve: curve ?? Curves.ease);
     }
   }
 
@@ -431,7 +470,7 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
     double xOverscroll = 0.0;
     double yOverscroll = 0.0;
 
-    assert(activity!.isScrolling);
+    // assert(activity!.isScrolling);
     assert(SchedulerBinding.instance.schedulerPhase.index <=
         SchedulerPhase.transientCallbacks.index);
 
@@ -540,7 +579,7 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
         didUpdateScrollPositionBy(Offset(pixelsX - oldPixels, 0.0));
       }
       if (overscroll != 0.0) {
-        //didOverscrollByX(overscroll);
+        didOverscrollByX(overscroll);
         return overscroll;
       }
     } else {
@@ -729,8 +768,33 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
 
   bool get allowImplicitScrolling => physics.allowImplicitScrolling;
 
-  Future<void> animateTo(Offset to, {Duration? duration, Curve? curve}) {
-    throw UnimplementedError();
+  Future<void> animateTo(int scrollIndexX, int scrollIndexY, Offset to,
+      {Duration? duration, Curve? curve}) {
+    final from = getScroll(scrollIndexX, scrollIndexY, true);
+
+    final delta = (from - to);
+    final max = math.max(delta.dx.abs(), delta.dy.abs());
+    if (max < physics.toleranceFor(devicePixelRatio).distance) {
+      // Skip the animation, go straight to the position as we are already close.
+      jumpTo(scrollIndexX, scrollIndexY, to);
+      return Future<void>.value();
+    }
+
+    final activity = AnimateToActivity(
+      scrollIndexX,
+      scrollIndexY,
+      this,
+      false,
+      vsync: context.vsync,
+      from: from,
+      to: to,
+      duration: duration ?? const Duration(milliseconds: 200),
+      curve: curve ?? Curves.ease,
+    );
+
+    beginActivity(activity);
+
+    return activity.done;
   }
 
   bool applyContentDimensions(double minScrollExtentX, double maxScrollExtentX,
@@ -1647,7 +1711,7 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
         return getX(model.topLeftCellPaneColumn) * tableScale;
       }
     } else {
-      return 0;
+      return 0.0;
     }
   }
 
@@ -1670,7 +1734,7 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
         return getY(model.topLeftCellPaneRow) * tableScale;
       }
     } else {
-      return 0;
+      return 0.0;
     }
   }
 
@@ -1719,9 +1783,11 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
     setScrollScaledY(scrollIndexX, scrollIndexY, offset.dy);
   }
 
-  Offset getScroll(int scrollIndexX, int scrollIndexY) {
-    return Offset(getScrollX(scrollIndexX, scrollIndexY),
-        getScrollY(scrollIndexX, scrollIndexY));
+  @override
+  Offset getScroll(int scrollIndexX, int scrollIndexY, bool scrollActivity) {
+    return Offset(
+        getScrollX(scrollIndexX, scrollIndexY, scrollActivity: scrollActivity),
+        getScrollY(scrollIndexX, scrollIndexY, scrollActivity: scrollActivity));
   }
 
   double getScrollScaledX(int scrollIndexX, int scrollIndexY,
@@ -2695,6 +2761,9 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
   markNeedsLayout() {
     notifyListeners();
     _notifyChange();
+    scheduleMicrotask(() {
+      //cellsToRefresh.clear();
+    });
   }
 
   _notifyChange() {
@@ -2987,6 +3056,17 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
   }
 
   @override
+  Offset clampedOffset(
+          int scrollIndexX, int scrollIndexY, Offset pixels) =>
+      Offset(
+          clampDouble(pixels.dx * tableScale, getMinScrollScaledX(scrollIndexX),
+                  getMaxScrollScaledX(scrollIndexX)) /
+              tableScale,
+          clampDouble(pixels.dy * tableScale, getMinScrollScaledY(scrollIndexY),
+                  getMaxScrollScaledY(scrollIndexY)) /
+              tableScale);
+
+  @override
   bool containsPositionX(int scrollIndexX, double position) =>
       widthLayoutList[scrollIndexX + 1].panelContains(position);
 
@@ -3251,4 +3331,63 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
       scrollY0pX0 = scrollY0pX1 = mainScrollY;
     }
   }
+
+  /// TextEdit
+  ///
+  ///
+  ///
+  ///
+
+  CellIndexExtra? findCell(Offset offset) {
+    int panelIndexX = -1;
+    double correctX = 0.0;
+    int panelIndexY = -1;
+    double correctY = 0.0;
+
+    for (GridLayout gl in widthLayoutList) {
+      if (gl.panelContains(offset.dx)) {
+        panelIndexX = gl.index;
+        correctX = offset.dx - gl.panelPosition;
+        break;
+      }
+    }
+    if (panelIndexX == -1) {
+      return null;
+    }
+
+    for (GridLayout gl in heightLayoutList) {
+      if (gl.panelContains(offset.dy)) {
+        panelIndexY = gl.index;
+        correctY = offset.dy - gl.panelPosition;
+        break;
+      }
+    }
+    if (panelIndexY == -1) {
+      return null;
+    }
+
+    final SelectionIndex selectionIndexX = model.findIndexX(
+        correctX / tableScale +
+            getScrollX(panelIndexX <= 1 ? 0 : 1, panelIndexY <= 1 ? 0 : 1),
+        0);
+
+    final SelectionIndex selectionIndexY = model.findIndexY(
+        correctY / tableScale +
+            getScrollY(panelIndexX <= 1 ? 0 : 1, panelIndexY <= 1 ? 0 : 1),
+        0);
+
+    Offset t = getScroll(0, 0, true);
+
+    // animateTo(0, 0, t + const Offset(50, 50));
+
+    return CellIndexExtra(
+        panelIndexX: panelIndexX,
+        panelIndexY: panelIndexY,
+        column: selectionIndexX.indexStart,
+        row: selectionIndexY.indexStart);
+  }
+
+  ///
+  ///
+  ///
 }

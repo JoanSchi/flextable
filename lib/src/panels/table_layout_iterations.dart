@@ -29,6 +29,8 @@ class TableInterator<T extends AbstractFtModel<C>, C extends AbstractCell> {
   double top = 0.0;
   double height = 0.0;
   double width = 0.0;
+  int editRowIndex = -1;
+  int editColumnIndex = -1;
 
   set viewModel(FtViewModel<T, C> value) {
     _viewModel = value;
@@ -51,6 +53,14 @@ class TableInterator<T extends AbstractFtModel<C>, C extends AbstractCell> {
       lastRowIndex = rowInfoList.last.index;
       firstColumnIndex = columnInfoList.first.index;
       lastColumnIndex = columnInfoList.last.index;
+    }
+    final ec = _viewModel.editCell;
+    if (ec.panelIndexX == tpli.xIndex && ec.panelIndexY == tpli.yIndex) {
+      editRowIndex = ec.row;
+      editColumnIndex = ec.column;
+    } else {
+      editRowIndex = -1;
+      editColumnIndex = -1;
     }
   }
 
@@ -145,7 +155,10 @@ class TableInterator<T extends AbstractFtModel<C>, C extends AbstractCell> {
     }
   }
 
-  CellIndex get tableCellIndex => CellIndex(row: rowIndex, column: columnIndex);
+  CellIndex get tableCellIndex => CellIndex(
+      row: rowIndex,
+      column: columnIndex,
+      edit: editRowIndex == rowIndex && editColumnIndex == columnIndex);
 
   GridInfo findPositionRow(int toIndex) {
     if (toIndex < firstRowIndex || toIndex > lastRowIndex) {

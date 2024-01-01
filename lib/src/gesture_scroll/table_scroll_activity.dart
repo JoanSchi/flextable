@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+import 'dart:async';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import '../model/scroll_metrics.dart';
@@ -48,9 +50,13 @@ abstract class TableScrollActivityDelegate {
   /// information.
   Offset setPixels(int scrollIndexX, int scrollIndexY, Offset pixels);
 
+  Offset getScroll(int scrollIndexX, int scrollIndexY, bool scrollActivity);
+
   double setPixelsX(int scrollIndexX, int scrollIndexY, double pixels);
 
   double setPixelsY(int scrollIndexX, int scrollIndexY, double pixels);
+
+  Offset clampedOffset(int scrollIndexX, int scrollIndexY, Offset offset);
 
   /// Updates the scroll position by the given amount.
   ///
@@ -121,6 +127,7 @@ abstract class TableScrollActivity {
   /// Initializes [delegate] for subclasses.
   final int scrollIndexX;
   final int scrollIndexY;
+  bool isDisposed = false;
 
   TableScrollActivity(this.scrollIndexX, this.scrollIndexY,
       TableScrollActivityDelegate delegate, this.enableScrollNotification)
@@ -204,7 +211,9 @@ abstract class TableScrollActivity {
 
   /// Called when the scroll view stops performing this activity.
   @mustCallSuper
-  void dispose() {}
+  void dispose() {
+    isDisposed = true;
+  }
 
   @override
   String toString() => describeIdentity(this);
@@ -835,4 +844,72 @@ class AdjustScroll {
   dispose() {
     _controller.dispose();
   }
+}
+
+class AnimateToActivity extends TableScrollActivity {
+  TickerProvider vsync;
+  late AnimationController _controller;
+  late Animation<Offset> _animation;
+  Offset from;
+  Offset to;
+  Offset? previous;
+  bool stop = false;
+
+  AnimateToActivity(super.scrollIndexX, super.scrollIndexY, super.delegate,
+      super.enableScrollNotification,
+      {required this.vsync,
+      required this.from,
+      required this.to,
+      required Duration duration,
+      required Curve curve}) {
+    _controller = AnimationController(vsync: vsync, duration: duration)
+      ..addListener(() {
+        Offset value = delegate.clampedOffset(
+            scrollIndexX, scrollIndexY, _animation.value);
+
+        if (value != previous) {
+          delegate.setPixels(scrollIndexX, scrollIndexY, value);
+        } else {
+          _controller.stop();
+        }
+      })
+      ..forward().then((value) => end());
+    _completer = Completer<void>();
+    _animation = _controller
+        .drive<double>(CurveTween(curve: curve))
+        .drive<Offset>(Tween<Offset>(begin: from, end: to));
+  }
+
+  late final Completer<void> _completer;
+
+  update(TableDragUpdateDetails details) {
+    if (stop) return;
+  }
+
+  end() {
+    if (!isDisposed) {
+      delegate.goBallistic(scrollIndexX, scrollIndexY, 0, 0);
+    }
+  }
+
+  Future<void> get done => _completer.future;
+
+  @override
+  dispose() {
+    super.dispose();
+    _completer.complete();
+    _controller.dispose();
+  }
+
+  @override
+  bool get isScrolling => _controller.isAnimating;
+
+  @override
+  bool get shouldIgnorePointer => false;
+
+  @override
+  double get xVelocity => _controller.velocity * (to.dx - from.dx).abs();
+
+  @override
+  double get yVelocity => _controller.velocity * (to.dy - from.dy).abs();
 }

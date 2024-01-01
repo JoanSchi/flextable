@@ -60,3 +60,20 @@ class InnerScrollChangeNotifier extends ChangeNotifier {
   bool _mounted = true;
   bool get mounted => _mounted;
 }
+
+class InnerStateChangeNotifier extends ChangeNotifier {
+  InnerStateChangeNotifier();
+
+  void notify() {
+    notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _mounted = false;
+    super.dispose();
+  }
+
+  bool _mounted = true;
+  bool get mounted => _mounted;
+}

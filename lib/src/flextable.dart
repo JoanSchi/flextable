@@ -4,6 +4,7 @@
 
 import 'package:flextable/flextable.dart';
 import 'package:flutter/material.dart';
+import 'adjust/select_cell/select_cell.dart';
 import 'adjust/split/adjust_table_split.dart';
 import 'adjust/freeze/adjust_table_freeze.dart';
 import 'adjust/freeze/adjust_table_move_freeze.dart';
@@ -151,6 +152,7 @@ class FlexTableState<T extends AbstractFtModel<C>, C extends AbstractCell>
               tableBuilder: widget.tableBuilder,
               tableScale: viewModel.tableScale,
             ),
+            SelectCell(viewModel: viewModel),
             if (fo != null)
               TableMoveFreeze(
                 viewModel: viewModel,

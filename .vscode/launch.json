@@ -37,6 +37,13 @@
             "program": "lib/main.dart"
         },
         {
+            "name": "text_edit_example",
+            "type": "dart",
+            "request": "launch",
+            "cwd": "text_edit_example",
+            "program": "lib/main.dart"
+        },
+        {
             "name": "short_example (profile mode)",
             "type": "dart",
             "request": "launch",

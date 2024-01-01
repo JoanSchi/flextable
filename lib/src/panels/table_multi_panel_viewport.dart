@@ -564,6 +564,9 @@ class TableMultiPanelRenderViewport<T extends AbstractFtModel<C>,
     // scrollPosition.applyTableDimensions(layoutX: tableModel.widthLayoutList, layoutY: tableModel.heightLayoutList);
 
     childManager.didFinishLayout();
+
+    // Clean the for the viewPanels the refresh.
+    viewModel.cellsToRemove.clear();
   }
 
   // RenderBox findOrInsert({required RenderBox child, required int index, required bool forward}) {

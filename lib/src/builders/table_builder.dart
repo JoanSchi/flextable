@@ -3,9 +3,6 @@
 // license that can be found in the LICENSE file.
 
 import 'package:flextable/flextable.dart';
-import 'package:flextable/src/builders/line_node_paint.dart';
-import '../model/properties/flextable_grid_info.dart';
-import '../model/properties/flextable_header_properties.dart';
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 
@@ -38,7 +35,7 @@ class DefaultTableBuilder extends AbstractTableBuilder<FtModel<Cell>, Cell> {
       '${cell.value}',
       textAlign: cell.attr[CellAttr.textAlign],
       style: cell.attr[CellAttr.textStyle],
-      textScaleFactor: viewModel.tableScale,
+      textScaler: TextScaler.linear(viewModel.tableScale),
     );
 
     if (cell.attr.containsKey(CellAttr.rotate)) {
@@ -98,13 +95,13 @@ class DefaultTableBuilder extends AbstractTableBuilder<FtModel<Cell>, Cell> {
       return Center(
           child: Text(
         '${tableHeaderIndex.index + 1}',
-        textScaleFactor: scale,
+        textScaler: TextScaler.linear(scale),
         style: headerTextStyle,
       ));
     } else {
       return Center(
           child: Text(numberToCharacter(tableHeaderIndex.index),
-              textScaleFactor: scale, style: headerTextStyle));
+              textScaler: TextScaler.linear(scale), style: headerTextStyle));
     }
   }
 

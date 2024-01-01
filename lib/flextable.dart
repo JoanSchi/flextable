@@ -24,6 +24,7 @@ export 'src/model/mergable_lines.dart'
         noLine;
 export 'src/builders/abstract_table_builder.dart'
     show LineHeader, AbstractTableBuilder;
+export 'src/builders/line_node_paint.dart' show calculateLinePosition;
 
 export 'src/builders/table_builder.dart' show DefaultTableBuilder;
 export 'src/panels/table_multi_panel_viewport.dart' show LayoutPanelIndex;
@@ -46,6 +47,10 @@ export 'src/model/properties/flextable_autofreeze_area.dart'
     show AutoFreezeArea;
 export 'src/model/properties/flextable_range_properties.dart'
     show RangeProperties;
+export 'src/model/properties/flextable_header_properties.dart'
+    show HeaderProperties;
+
+export 'src/model/properties/flextable_grid_info.dart' show GridInfo;
 
 //Uitilities
 export 'src/utilities/number_to_character.dart' show numberToCharacter;
@@ -54,3 +59,5 @@ export 'src/utilities/number_to_character.dart' show numberToCharacter;
 export 'src/extra/grid_border_layout.dart'
     show GridBorderLayout, GridBorderLayoutPosition;
 export 'src/extra/table_scale_slider.dart' show TableScaleSlider;
+
+export 'src/extra/selection_keep_alive.dart' show SelectionKeepAlive;

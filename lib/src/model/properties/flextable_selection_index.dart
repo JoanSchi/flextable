@@ -32,6 +32,6 @@ class SelectionIndex {
 
   @override
   String toString() {
-    return 'start_screen $indexStart $indexLast';
+    return 'SelectionIndex $indexStart $indexLast';
   }
 }

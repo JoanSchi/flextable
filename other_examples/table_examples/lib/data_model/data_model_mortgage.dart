@@ -375,7 +375,7 @@ class MortgageTableBuilder extends DefaultTableBuilder {
         child: Center(
             child: Text(
           '${cell.value}',
-          textScaleFactor: viewModel.tableScale,
+          textScaler: TextScaler.linear(viewModel.tableScale),
         )));
   }
 }
