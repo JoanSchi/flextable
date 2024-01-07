@@ -104,15 +104,28 @@ class FtModel<C extends AbstractCell> extends AbstractFtModel<C> {
       required int column,
       int rows = 1,
       int columns = 1,
-      required C cell}) {
+      required C? cell,
+      C? previousCell}) {
     RowRibbon<C> tableRow =
         ribbon<RowRibbon<C>>(row, _rowRibbon, () => RowRibbon<C>());
 
     _placeCell(tableRow, column, cell);
 
-    if (rows > 1 || columns > 1) {
-      _addMerged(
-          cell: cell, row: row, column: column, rows: rows, columns: columns);
+    if (cell != null && rows > 1 || columns > 1) {
+      final merged = Merged(
+          startRow: row,
+          startColumn: column,
+          lastRow: row + rows - 1,
+          lastColumn: column + columns - 1);
+
+      cell!.merged = merged;
+
+      if (rows > 1) {
+        columnRibbon(column).addMerged(merged);
+      }
+      if (columns > 1) {
+        rowRibbon(row).addMerged(merged);
+      }
     }
 
     if (autoTableRange && tableRows < row + rows) {
@@ -124,7 +137,7 @@ class FtModel<C extends AbstractCell> extends AbstractFtModel<C> {
     }
   }
 
-  _placeCell(RowRibbon<C> rowRibbon, int column, C cell) {
+  _placeCell(RowRibbon<C> rowRibbon, int column, C? cell) {
     List<C?> columnList = rowRibbon.columnList;
 
     if (column >= columnList.length) {
@@ -161,61 +174,55 @@ class FtModel<C extends AbstractCell> extends AbstractFtModel<C> {
   @override
   Merged? findMergedRows(int row, int column) {
     return (column < _columnRibbon.length)
-        ? _columnRibbon[column]?.findMerged(
-            find: row,
-            firstIndex: (Merged m) => m.startRow,
-            lastIndex: (Merged m) => m.lastRow)
+        ? _columnRibbon[column]?.findMerged(index: row, startingOutside: false)
         : null;
   }
 
   @override
   Merged? findMergedColumns(int row, int column) {
     return (row < _rowRibbon.length)
-        ? _rowRibbon[row]?.findMerged(
-            find: column,
-            firstIndex: (Merged m) => m.startColumn,
-            lastIndex: (Merged m) => m.lastColumn)
+        ? _rowRibbon[row]?.findMerged(index: column, startingOutside: false)
         : null;
   }
 
-  _addMerged(
-      {required C cell,
-      required int row,
-      required int column,
-      required int rows,
-      required int columns}) {
-    cell.merged = Merged(
-        startRow: row,
-        startColumn: column,
-        lastRow: row + rows - 1,
-        lastColumn: column + columns - 1);
+  // _addMerged(
+  //     {required C cell,
+  //     required int row,
+  //     required int column,
+  //     required int rows,
+  //     required int columns}) {
+  //   cell.merged = Merged(
+  //       startRow: row,
+  //       startColumn: column,
+  //       lastRow: row + rows - 1,
+  //       lastColumn: column + columns - 1);
 
-    if (columns == 1) {
-      _addMergeOneDirection(
-          gridRibbon: columnRibbon(column), merged: cell.merged!);
-    } else if (rows == 1) {
-      _addMergeOneDirection(gridRibbon: rowRibbon(row), merged: cell.merged!);
-    }
-  }
+  //   if (columns == 1) {
+  //     _addMergeOneDirection(
+  //         gridRibbon: columnRibbon(column), merged: cell.merged!);
+  //   } else if (rows == 1) {
+  //     _addMergeOneDirection(gridRibbon: rowRibbon(row), merged: cell.merged!);
+  //   }
+  // }
 
-  _addMergeOneDirection(
-      {required GridRibbon gridRibbon, required Merged merged}) {
-    final startIndex = (merged.startRow == merged.lastRow)
-        ? merged.startColumn
-        : merged.startRow;
-    final indexInList = (merged.startRow == merged.lastRow)
-        ? (i) => gridRibbon.mergedList[i].startColumn
-        : (i) => gridRibbon.mergedList[i].startRow;
-    final length = gridRibbon.mergedList.length;
+  // addMergeOneDirection(
+  //     {required GridRibbon gridRibbon, required Merged merged}) {
+  //   final startIndex = (merged.startRow == merged.lastRow)
+  //       ? merged.startColumn
+  //       : merged.startRow;
+  //   final indexInList = (merged.startRow == merged.lastRow)
+  //       ? (i) => gridRibbon.mergedList[i].startColumn
+  //       : (i) => gridRibbon.mergedList[i].startRow;
+  //   final length = gridRibbon.mergedList.length;
 
-    int i = 0;
+  //   int i = 0;
 
-    while (i < length && startIndex > indexInList(i)) {
-      i++;
-    }
+  //   while (i < length && startIndex > indexInList(i)) {
+  //     i++;
+  //   }
 
-    gridRibbon.mergedList.insert(i, merged);
-  }
+  //   gridRibbon.mergedList.insert(i, merged);
+  // }
 
   FtModel copyWith(
       {double? scrollX0pY0,
@@ -292,6 +299,32 @@ class FtModel<C extends AbstractCell> extends AbstractFtModel<C> {
       rowRibbon: rowRibbon ?? _rowRibbon,
       columnRibbon: columnRibbon ?? _columnRibbon,
     );
+  }
+
+  @override
+  void updateCell(C? previousCell, C? cell, CellIndex cellIndex) {
+    RowRibbon<C> tableRow =
+        ribbon<RowRibbon<C>>(cellIndex.row, _rowRibbon, () => RowRibbon<C>());
+
+    if (tableRow.columnList.elementAtOrNull(cellIndex.column)?.merged
+        case Merged merged) {
+      if (merged.columns > 1) {}
+    }
+
+    if (previousCell?.merged case Merged m) {
+      if (m.rows > 1) {
+        columnRibbon(cellIndex.column).removeMerged(merged: m);
+      }
+      if (m.columns > 1) {
+        rowRibbon(cellIndex.row).removeMerged(merged: m);
+      }
+    }
+    addCell(
+        row: cellIndex.row,
+        column: cellIndex.column,
+        rows: cellIndex.rows,
+        columns: cellIndex.columns,
+        cell: cell);
   }
 }
 
@@ -759,13 +792,13 @@ abstract class AbstractFtModel<C extends AbstractCell> {
   ///
   ///
 
-  SelectionIndex findIndexX(
+  SelectionIndex findSelectionIndexX(
     x,
     plusOne,
   ) =>
       _findIndex(x, specificWidth, plusOne, tableColumns, defaultWidthCell);
 
-  SelectionIndex findIndexY(
+  SelectionIndex findSelectionIndexY(
     y,
     plusOne,
   ) =>
@@ -1173,4 +1206,89 @@ abstract class AbstractFtModel<C extends AbstractCell> {
 
     return find(0, defaultLength, true)!;
   }
+
+  ///
+  ///
+  ///
+  ///
+
+  CellIndex findCellIndex(double x, double y) {
+    int columnIndex =
+        _findCellIndex(x, specificWidth, tableColumns, defaultWidthCell);
+    int rowIndex =
+        _findCellIndex(y, specificHeight, tableRows, defaultHeightCell);
+
+    var (row, rows) =
+        switch ((rowIndex, findMergedRows(rowIndex, columnIndex))) {
+      (int _, Merged merged) => (merged.startRow, merged.rows),
+      (int rowIndex, _) => (rowIndex, 1)
+    };
+
+    var (column, columns) =
+        switch ((columnIndex, findMergedColumns(rowIndex, columnIndex))) {
+      (int _, Merged merged) => (merged.startColumn, merged.columns),
+      (int columnIndex, _) => (columnIndex, 1)
+    };
+
+    return CellIndex(column: column, row: row, rows: rows, columns: columns);
+  }
+
+  int _findCellIndex(
+    double distance,
+    List<RangeProperties> specificLength,
+    int maximumCells,
+    double defaultLength,
+  ) {
+    int findIndexWitinRadial(int currentIndex, double distance,
+        double lengthEvaluated, double length) {
+      final remaining = (distance - lengthEvaluated) % length;
+
+      if (remaining < length) {
+        return currentIndex + (distance - lengthEvaluated) ~/ length;
+      } else {
+        return -1;
+      }
+    }
+
+    if (specificLength.isEmpty) {
+      return findIndexWitinRadial(0, distance, 0.0, defaultLength);
+    } else {
+      double lengthEvaluated = 0;
+      int currentIndex = 0;
+
+      for (RangeProperties cp in specificLength) {
+        if (currentIndex < cp.min) {
+          double lengthDefaultArea = (cp.min - currentIndex) * defaultLength;
+
+          if (distance <= lengthEvaluated + lengthDefaultArea) {
+            return findIndexWitinRadial(
+                currentIndex, distance, lengthEvaluated, defaultLength);
+          } else {
+            lengthEvaluated += lengthDefaultArea;
+            currentIndex = cp.min;
+          }
+        }
+
+        if (!(cp.hidden || cp.collapsed)) {
+          double customLength = cp.length ?? defaultLength;
+          double lengthCostumArea = (cp.max - cp.min + 1) * customLength;
+
+          if (distance <= lengthEvaluated + lengthCostumArea) {
+            return findIndexWitinRadial(
+                currentIndex, distance, lengthEvaluated, customLength);
+          } else {
+            lengthEvaluated += lengthCostumArea;
+            currentIndex += cp.max - cp.min + 1;
+          }
+        } else {
+          currentIndex = cp.max + 1;
+        }
+      }
+
+      return findIndexWitinRadial(
+          currentIndex, distance, lengthEvaluated, defaultLength);
+    }
+  }
+
+  void updateCell(C? previousCell, C? cell, CellIndex cellIndex);
 }

@@ -147,12 +147,12 @@ class FlexTableState<T extends AbstractFtModel<C>, C extends AbstractCell>
           final so = widget.properties.adjustSplit;
 
           return MultiHitStack(children: [
+            SelectCell(viewModel: viewModel),
             TableMultiPanel<T, C>(
               viewModel: viewModel,
               tableBuilder: widget.tableBuilder,
               tableScale: viewModel.tableScale,
             ),
-            SelectCell(viewModel: viewModel),
             if (fo != null)
               TableMoveFreeze(
                 viewModel: viewModel,

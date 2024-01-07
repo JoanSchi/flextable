@@ -4,12 +4,20 @@
 
 import 'package:flutter/material.dart';
 import '../../flextable.dart';
-import '../model/properties/flextable_grid_info.dart';
-import '../model/properties/flextable_header_properties.dart';
 
 abstract class AbstractTableBuilder<T extends AbstractFtModel<C>,
     C extends AbstractCell> {
   AbstractTableBuilder();
+
+  Widget testCellBuilder(
+    BuildContext context,
+  ) {
+    return GestureDetector(
+        onTap: () {
+          print('test build');
+        },
+        child: Container(color: Colors.pink));
+  }
 
   Widget? cellBuilder(
     BuildContext context,

@@ -56,6 +56,7 @@ abstract class TableScrollActivityDelegate {
 
   double setPixelsY(int scrollIndexX, int scrollIndexY, double pixels);
 
+  //Offset should be scalled
   Offset clampedOffset(int scrollIndexX, int scrollIndexY, Offset offset);
 
   /// Updates the scroll position by the given amount.
@@ -864,8 +865,9 @@ class AnimateToActivity extends TableScrollActivity {
       required Curve curve}) {
     _controller = AnimationController(vsync: vsync, duration: duration)
       ..addListener(() {
-        Offset value = delegate.clampedOffset(
-            scrollIndexX, scrollIndexY, _animation.value);
+        Offset value = _animation.value;
+
+        delegate.clampedOffset(scrollIndexX, scrollIndexY, _animation.value);
 
         if (value != previous) {
           delegate.setPixels(scrollIndexX, scrollIndexY, value);
@@ -887,6 +889,7 @@ class AnimateToActivity extends TableScrollActivity {
   }
 
   end() {
+    debugPrint('end and isDisposed $isDisposed from $from to $to');
     if (!isDisposed) {
       delegate.goBallistic(scrollIndexX, scrollIndexY, 0, 0);
     }
@@ -902,7 +905,8 @@ class AnimateToActivity extends TableScrollActivity {
   }
 
   @override
-  bool get isScrolling => _controller.isAnimating;
+  bool get isScrolling =>
+      true; //last schedule can still check for scroll //_controller.isAnimating;
 
   @override
   bool get shouldIgnorePointer => false;

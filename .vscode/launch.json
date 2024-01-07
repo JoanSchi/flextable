@@ -36,6 +36,15 @@
             "cwd": "example",
             "program": "lib/main.dart"
         },
+       
+        {
+            "name": "short_example (profile mode)",
+            "type": "dart",
+            "request": "launch",
+            "cwd": "example",
+            "program": "lib/main.dart",
+            "flutterMode": "profile"
+        },
         {
             "name": "text_edit_example",
             "type": "dart",
@@ -44,10 +53,10 @@
             "program": "lib/main.dart"
         },
         {
-            "name": "short_example (profile mode)",
+            "name": "text_edit_example (profile mode)",
             "type": "dart",
             "request": "launch",
-            "cwd": "example",
+            "cwd": "text_edit_example",
             "program": "lib/main.dart",
             "flutterMode": "profile"
         },

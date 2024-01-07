@@ -1,7 +1,7 @@
 import 'package:flextable/flextable.dart';
 import 'package:flutter/material.dart';
 
-import 'ttt.dart';
+import 'text_edit_table_builder.dart';
 
 void main() {
   runApp(
@@ -42,13 +42,7 @@ class _TextEditExampleState extends State<TextEditExample> {
     for (int r = 0; r < rows; r++) {
       for (int c = 0; c < columns; c++) {
         int rows = 1;
-        if ((c + 1) % 2 == 0) {
-          if (r % 3 == 0) {
-            rows = 3;
-          } else {
-            continue;
-          }
-        }
+
         Map attr = {
           CellAttr.background: (r % 99 < 1
               ? const Color.fromARGB(255, 249, 250, 245)
@@ -88,22 +82,22 @@ class _TextEditExampleState extends State<TextEditExample> {
         /// Horizontal lines for merged columns
         ///
         ///
-        create(LineRange(
-            startIndex: r + 1,
-            endIndex: r + 2,
-            lineNodeRange: LineNodeRange()
-              ..addLineNodes((create) {
-                for (int c = 0; c < columns; c += 2) {
-                  create(LineNode(
-                    startIndex: c,
-                    after: line,
-                  ));
-                  create(LineNode(
-                    startIndex: c + 1,
-                    before: line,
-                  ));
-                }
-              })));
+        // create(LineRange(
+        //     startIndex: r + 1,
+        //     endIndex: r + 2,
+        //     lineNodeRange: LineNodeRange()
+        //       ..addLineNodes((create) {
+        //         for (int c = 0; c < columns; c += 2) {
+        //           create(LineNode(
+        //             startIndex: c,
+        //             after: line,
+        //           ));
+        //           create(LineNode(
+        //             startIndex: c + 1,
+        //             before: line,
+        //           ));
+        //         }
+        //       })));
       }
     });
 
@@ -122,6 +116,9 @@ class _TextEditExampleState extends State<TextEditExample> {
         ])));
 
     model
+      ..autoFreezeAreasX = [
+        AutoFreezeArea(startIndex: 1, freezeIndex: 2, endIndex: 8)
+      ]
       ..autoFreezeAreasY = [
         for (int r = 0; r < rows - 100; r += 99)
           AutoFreezeArea(startIndex: r, freezeIndex: r + 3, endIndex: r + 90)

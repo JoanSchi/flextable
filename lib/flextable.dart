@@ -31,7 +31,7 @@ export 'src/panels/table_multi_panel_viewport.dart' show LayoutPanelIndex;
 export 'src/builders/cell_widgets.dart'
     show CellAttr, TableTextRotate, PercentageBackground, PercentagePainter;
 export 'src/builders/split_lines_paint.dart' show defaultDrawPaintSplit;
-export 'src/panels/panel_viewport.dart' show CellIndex;
+export 'src/panels/panel_viewport.dart' show CellIndex, PanelCellIndex;
 export 'src/panels/header_viewport.dart' show TableHeaderIndex;
 export 'src/model/controller.dart' show FtController, DefaultFtController;
 export 'src/listeners/flextable_change_notifier.dart'

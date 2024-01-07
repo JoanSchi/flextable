@@ -61,7 +61,7 @@ class DefaultTableBuilder extends AbstractTableBuilder<FtModel<Cell>, Cell> {
       child = child;
     }
 
-    return cell.addRepaintBoundaries ? RepaintBoundary(child: child) : child;
+    return cell.repaintBoundaries ? RepaintBoundary(child: child) : child;
   }
 
   @override

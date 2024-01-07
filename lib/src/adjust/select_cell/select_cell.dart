@@ -22,11 +22,12 @@ class _SelectCellState extends State<SelectCell> {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTapDown: (TapDownDetails details) {
         localPosition = details.localPosition;
       },
       onTap: () {
-        CellIndexExtra? index = widget.viewModel.findCell(localPosition);
+        PanelCellIndex? index = widget.viewModel.findCell(localPosition);
 
         if (index != null && index.isPanel) {
           widget.viewModel

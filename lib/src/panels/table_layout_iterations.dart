@@ -16,6 +16,8 @@ class TableInterator<T extends AbstractFtModel<C>, C extends AbstractCell> {
   late List<GridInfo> columnInfoList;
   int rowIndex = 0;
   int columnIndex = 0;
+  int rows = 0;
+  int columns = 0;
   int count = 0;
   int length = 0;
   int lengthColumnInfoList = 0;
@@ -55,7 +57,13 @@ class TableInterator<T extends AbstractFtModel<C>, C extends AbstractCell> {
       lastColumnIndex = columnInfoList.last.index;
     }
     final ec = _viewModel.editCell;
-    if (ec.panelIndexX == tpli.xIndex && ec.panelIndexY == tpli.yIndex) {
+    if ((_viewModel.model.anyFreezeSplitX ||
+            _viewModel.noSplitX ||
+            ec.panelIndexX == tpli.xIndex) &&
+        (_viewModel.model.anyFreezeSplitX ||
+            _viewModel.model.anyFreezeSplitY ||
+            _viewModel.noSplitY ||
+            ec.panelIndexY == tpli.yIndex)) {
       editRowIndex = ec.row;
       editColumnIndex = ec.column;
     } else {
@@ -82,6 +90,8 @@ class TableInterator<T extends AbstractFtModel<C>, C extends AbstractCell> {
 
     rowIndex = rowInfo.index;
     columnIndex = columnInfo.index;
+    rows = 1;
+    columns = 1;
 
     cell = model.cell(row: rowIndex, column: columnIndex);
 
@@ -94,11 +104,12 @@ class TableInterator<T extends AbstractFtModel<C>, C extends AbstractCell> {
         height = rowInfo.length;
       } else {
         final m = cell!.merged!;
-
-        width = m.columnsMerged()
+        columns = m.columns;
+        rows = m.rows;
+        width = columns > 1
             ? findPositionColumn(m.lastColumn).endPosition - columnInfo.position
             : columnInfo.length;
-        height = m.rowsMerged()
+        height = rows > 1
             ? findPositionRow(m.lastRow).endPosition - rowInfo.position
             : rowInfo.length;
       }
@@ -117,6 +128,8 @@ class TableInterator<T extends AbstractFtModel<C>, C extends AbstractCell> {
     if (m != null) {
       rowIndex = m.startRow;
       columnIndex = m.startColumn;
+      rows = m.rows;
+      columns = m.columns;
 
       cell = model.cell(row: rowIndex, column: columnIndex);
 
@@ -158,6 +171,8 @@ class TableInterator<T extends AbstractFtModel<C>, C extends AbstractCell> {
   CellIndex get tableCellIndex => CellIndex(
       row: rowIndex,
       column: columnIndex,
+      rows: rows,
+      columns: columns,
       edit: editRowIndex == rowIndex && editColumnIndex == columnIndex);
 
   GridInfo findPositionRow(int toIndex) {

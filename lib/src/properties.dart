@@ -21,6 +21,7 @@ class FtProperties {
     this.hitLineRadial = 12.0,
     this.alignment = Alignment.topCenter,
     this.panelPadding = const EdgeInsets.all(2.0),
+    this.editPadding = const EdgeInsets.all(10.0),
   });
 
   final double minTableScale;
@@ -36,4 +37,5 @@ class FtProperties {
   final double hitLineRadial;
   final Alignment alignment;
   final EdgeInsets panelPadding;
+  final EdgeInsets editPadding;
 }

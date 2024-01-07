@@ -6,6 +6,7 @@ import 'dart:async';
 import 'dart:collection';
 import 'package:flextable/src/model/model.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/physics.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
@@ -162,11 +163,11 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
   /// Edit
   ///
   /// cellsToRemove is cleared at the end of the performlayout function of TableMultiPanelViewport
-  CellIndexExtra _editCell = const CellIndexExtra();
+  PanelCellIndex _editCell = const PanelCellIndex();
 
   HashSet<FtIndex> cellsToRemove = HashSet<FtIndex>();
 
-  set editCell(CellIndexExtra value) {
+  set editCell(PanelCellIndex value) {
     if (_editCell == value) {
       return;
     }
@@ -180,7 +181,13 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
     _editCell = value;
   }
 
-  CellIndexExtra get editCell => _editCell;
+  PanelCellIndex get editCell => _editCell;
+
+  clearEditCell(CellIndex cellIndex) {
+    if (editCell == cellIndex) {
+      editCell = const PanelCellIndex();
+    }
+  }
 
   // ViewModel
   //
@@ -304,7 +311,7 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
 
   void jumpTo(int scrollIndexX, int scrollIndexY, Offset value) {
     goIdle(scrollIndexX, scrollIndexY);
-    Offset pixels = getScroll(scrollIndexX, scrollIndexY, true);
+    Offset pixels = getScrollScaled(scrollIndexX, scrollIndexY, true);
     if (pixels != value) {
       final oldPixels = pixels;
       pixels = setPixels(scrollIndexX, scrollIndexY, value);
@@ -328,7 +335,7 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
       jumpTo(scrollIndexX, scrollIndexY, to);
       return Future<void>.value();
     } else {
-      return animateTo(scrollIndexX, scrollIndexY, to,
+      return animateToScaled(scrollIndexX, scrollIndexY, to,
           duration: duration, curve: curve ?? Curves.ease);
     }
   }
@@ -768,15 +775,16 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
 
   bool get allowImplicitScrolling => physics.allowImplicitScrolling;
 
-  Future<void> animateTo(int scrollIndexX, int scrollIndexY, Offset to,
+  Future<void> animateToScaled(
+      int scrollIndexX, int scrollIndexY, Offset toScaled,
       {Duration? duration, Curve? curve}) {
-    final from = getScroll(scrollIndexX, scrollIndexY, true);
+    final from = getScrollScaled(scrollIndexX, scrollIndexY, true);
 
-    final delta = (from - to);
+    final delta = (from - toScaled);
     final max = math.max(delta.dx.abs(), delta.dy.abs());
     if (max < physics.toleranceFor(devicePixelRatio).distance) {
       // Skip the animation, go straight to the position as we are already close.
-      jumpTo(scrollIndexX, scrollIndexY, to);
+      jumpTo(scrollIndexX, scrollIndexY, toScaled);
       return Future<void>.value();
     }
 
@@ -787,7 +795,7 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
       false,
       vsync: context.vsync,
       from: from,
-      to: to,
+      to: toScaled,
       duration: duration ?? const Duration(milliseconds: 200),
       curve: curve ?? Curves.ease,
     );
@@ -1181,22 +1189,44 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
   bool get columnHeader => model.columnHeader;
 
   void setScrollScaledX(int horizontal, int vertical, double scrollScaledX) {
+    // if (model.autoFreezePossibleX) {
+    //   mainScrollX = scrollScaledX / tableScale;
+    //   calculateAutoFreezeX();
+    // } else if (vertical == 0 ||
+    //     !protectedScrollUnlockX ||
+    //     model.anyFreezeSplitY) {
+    //   if (horizontal == 0) {
+    //     mainScrollX = scrollX0pY0 = scrollScaledX / tableScale;
+    //   } else {
+    //     scrollX1pY0 = scrollScaledX / tableScale;
+    //   }
+    // } else {
+    //   if (horizontal == 0) {
+    //     scrollX0pY1 = scrollScaledX / tableScale;
+    //   } else {
+    //     scrollX1pY1 = scrollScaledX / tableScale;
+    //   }
+    // }
+    setScrollX(horizontal, vertical, scrollScaledX / tableScale);
+  }
+
+  void setScrollX(int horizontal, int vertical, double scrollScaledX) {
     if (model.autoFreezePossibleX) {
-      mainScrollX = scrollScaledX / tableScale;
+      mainScrollX = scrollScaledX;
       calculateAutoFreezeX();
     } else if (vertical == 0 ||
         !protectedScrollUnlockX ||
         model.anyFreezeSplitY) {
       if (horizontal == 0) {
-        mainScrollX = scrollX0pY0 = scrollScaledX / tableScale;
+        mainScrollX = scrollX0pY0 = scrollScaledX;
       } else {
-        scrollX1pY0 = scrollScaledX / tableScale;
+        scrollX1pY0 = scrollScaledX;
       }
     } else {
       if (horizontal == 0) {
-        scrollX0pY1 = scrollScaledX / tableScale;
+        scrollX0pY1 = scrollScaledX;
       } else {
-        scrollX1pY1 = scrollScaledX / tableScale;
+        scrollX1pY1 = scrollScaledX;
       }
     }
   }
@@ -1258,22 +1288,44 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
   }
 
   void setScrollScaledY(int horizontal, int vertical, double scrollScaledY) {
+    // if (model.autoFreezePossibleY) {
+    //   mainScrollY = scrollScaledY / tableScale;
+    //   calculateAutoFreezeY();
+    // } else if (horizontal == 0 ||
+    //     !protectedScrollUnlockY ||
+    //     model.anyFreezeSplitX) {
+    //   if (vertical == 0) {
+    //     mainScrollY = scrollY0pX0 = scrollScaledY / tableScale;
+    //   } else {
+    //     scrollY1pX0 = scrollScaledY / tableScale;
+    //   }
+    // } else {
+    //   if (vertical == 0) {
+    //     scrollY0pX1 = scrollScaledY / tableScale;
+    //   } else {
+    //     scrollY1pX1 = scrollScaledY / tableScale;
+    //   }
+    // }
+    setScrollY(horizontal, vertical, scrollScaledY / tableScale);
+  }
+
+  void setScrollY(int horizontal, int vertical, double scrollScaledY) {
     if (model.autoFreezePossibleY) {
-      mainScrollY = scrollScaledY / tableScale;
+      mainScrollY = scrollScaledY;
       calculateAutoFreezeY();
     } else if (horizontal == 0 ||
         !protectedScrollUnlockY ||
         model.anyFreezeSplitX) {
       if (vertical == 0) {
-        mainScrollY = scrollY0pX0 = scrollScaledY / tableScale;
+        mainScrollY = scrollY0pX0 = scrollScaledY;
       } else {
-        scrollY1pX0 = scrollScaledY / tableScale;
+        scrollY1pX0 = scrollScaledY;
       }
     } else {
       if (vertical == 0) {
-        scrollY0pX1 = scrollScaledY / tableScale;
+        scrollY0pX1 = scrollScaledY;
       } else {
-        scrollY1pX1 = scrollScaledY / tableScale;
+        scrollY1pX1 = scrollScaledY;
       }
     }
   }
@@ -1783,6 +1835,11 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
     setScrollScaledY(scrollIndexX, scrollIndexY, offset.dy);
   }
 
+  Offset getScrollScaled(
+      int scrollIndexX, int scrollIndexY, bool scrollActivity) {
+    return getScroll(scrollIndexX, scrollIndexY, scrollActivity) * tableScale;
+  }
+
   @override
   Offset getScroll(int scrollIndexX, int scrollIndexY, bool scrollActivity) {
     return Offset(
@@ -1888,13 +1945,13 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
   SelectionIndex findFirstColumn(int scrollIndexX, int scrollIndexY,
       {double width = 0.0}) {
     double x = getScrollX(scrollIndexX, scrollIndexY) + width;
-    return model.findIndexX(x, 0);
+    return model.findSelectionIndexX(x, 0);
   }
 
   SelectionIndex findLastColumn(int scrollIndexX, int scrollIndexY,
       {double width = 0.0}) {
     double x = getScrollX(scrollIndexX, scrollIndexY) + width;
-    return model.findIndexX(
+    return model.findSelectionIndexX(
       x,
       1,
     );
@@ -1903,7 +1960,7 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
   SelectionIndex findFirstRow(int scrollIndexX, int scrollIndexY,
       {double height = 0.0}) {
     double y = getScrollY(scrollIndexX, scrollIndexY);
-    return model.findIndexY(
+    return model.findSelectionIndexY(
       y,
       0,
     );
@@ -1912,7 +1969,7 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
   SelectionIndex findLastRow(int scrollIndexX, int scrollIndexY,
       {double height = 0.0}) {
     double y = getScrollY(scrollIndexX, scrollIndexY) + height;
-    return model.findIndexY(
+    return model.findSelectionIndexY(
       y,
       1,
     );
@@ -1983,6 +2040,8 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
 
     final widthChanged = _widthMainPanel != width;
     final heightChanged = _heightMainPanel != height;
+    final deltaWidth = _widthMainPanel - width;
+    final deltaHeight = _heightMainPanel - height;
 
     if (widthChanged) {
       _widthMainPanel = width;
@@ -2031,6 +2090,14 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
       calculateAutoFreezeY();
     }
 
+    if (deltaHeight > 0.0 || deltaWidth > 0.0) {
+      debugPrint('showEditCell trigged by Resize');
+      showEditCell();
+    } else if (widthChanged || heightChanged || scheduleCorrectOffScroll) {
+      scheduleCorrectOffScroll = false;
+      correctOffScroll(0, 0);
+    }
+
     if (widthChanged ||
         heightChanged ||
         stateSplitX != oldStateSplitX ||
@@ -2038,11 +2105,6 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
       scheduleMicrotask(() {
         _notifyChange();
       });
-    }
-
-    if (widthChanged || heightChanged || scheduleCorrectOffScroll) {
-      scheduleCorrectOffScroll = false;
-      correctOffScroll(0, 0);
     }
   }
 
@@ -3057,12 +3119,12 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
 
   @override
   Offset clampedOffset(
-          int scrollIndexX, int scrollIndexY, Offset pixels) =>
+          int scrollIndexX, int scrollIndexY, Offset offset) =>
       Offset(
-          clampDouble(pixels.dx * tableScale, getMinScrollScaledX(scrollIndexX),
+          clampDouble(offset.dx, getMinScrollScaledX(scrollIndexX),
                   getMaxScrollScaledX(scrollIndexX)) /
               tableScale,
-          clampDouble(pixels.dy * tableScale, getMinScrollScaledY(scrollIndexY),
+          clampDouble(offset.dy, getMinScrollScaledY(scrollIndexY),
                   getMaxScrollScaledY(scrollIndexY)) /
               tableScale);
 
@@ -3338,7 +3400,7 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
   ///
   ///
 
-  CellIndexExtra? findCell(Offset offset) {
+  PanelCellIndex? findCell(Offset offset) {
     int panelIndexX = -1;
     double correctX = 0.0;
     int panelIndexY = -1;
@@ -3366,28 +3428,196 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
       return null;
     }
 
-    final SelectionIndex selectionIndexX = model.findIndexX(
+    final cellIndex = model.findCellIndex(
         correctX / tableScale +
             getScrollX(panelIndexX <= 1 ? 0 : 1, panelIndexY <= 1 ? 0 : 1),
-        0);
-
-    final SelectionIndex selectionIndexY = model.findIndexY(
         correctY / tableScale +
-            getScrollY(panelIndexX <= 1 ? 0 : 1, panelIndexY <= 1 ? 0 : 1),
-        0);
+            getScrollY(panelIndexX <= 1 ? 0 : 1, panelIndexY <= 1 ? 0 : 1));
 
     Offset t = getScroll(0, 0, true);
 
     // animateTo(0, 0, t + const Offset(50, 50));
 
-    return CellIndexExtra(
+    return PanelCellIndex.from(
         panelIndexX: panelIndexX,
         panelIndexY: panelIndexY,
-        column: selectionIndexX.indexStart,
-        row: selectionIndexY.indexStart);
+        cellIndex: cellIndex);
   }
 
   ///
   ///
   ///
+
+  CellIndex nextCell(CellIndex current) {
+    int row = current.row;
+    int column = current.column + current.columns;
+
+    int columns = model.findMergedColumns(row, column)?.columns ?? 1;
+    int rows = model.findMergedRows(row, column)?.rows ?? 1;
+
+    return CellIndex(
+        row: row, column: column, columns: columns, rows: rows, edit: true);
+  }
+
+  ///
+  ///
+  ///
+  ///
+  ///
+  ///
+  ///
+  ///
+
+  bool showEditCellScheduled = false;
+
+  void showEditCell() {
+    void scheduleAnimatedScroll() {
+      if (_editCell.isIndex) {
+        int scrollIndexX = editCell.scrollIndexX;
+        int scrollIndexY = editCell.scrollIndexY;
+
+        double scrollX =
+            getScrollScaledX(scrollIndexX, scrollIndexY, scrollActivity: true);
+        double scrollY =
+            getScrollScaledY(scrollIndexX, scrollIndexY, scrollActivity: true);
+
+        /// Horizontal
+        ///
+        ///
+
+        double widthPanel = viewportDimensionX(scrollIndexX);
+
+        double x0 = getX(_editCell.column) * tableScale;
+        double x1 = getX(_editCell.column + _editCell.columns) * tableScale;
+
+        double widthCell = x1 - x0;
+        double leftPadding = math.min(
+            (widthPanel - widthCell) / 2.0, properties.editPadding.left);
+        double rightPadding = math.min(
+            (widthPanel - widthCell) / 2.0, properties.editPadding.right);
+        double xTo = scrollX;
+        bool skipX = false;
+
+        switch (stateSplitX) {
+          case SplitState.autoFreezeSplit:
+            {
+              if (autoFreezeAreaX.freeze) {
+                if (_editCell.column >= autoFreezeAreaX.startIndex &&
+                    _editCell.column < autoFreezeAreaX.freezeIndex) {
+                  skipX = true;
+                } else if (_editCell.column >= autoFreezeAreaX.freezeIndex &&
+                    _editCell.column < autoFreezeAreaX.endIndex) {
+                  leftPadding = (autoFreezeAreaX.freezePosition -
+                          autoFreezeAreaX.startPosition) *
+                      tableScale;
+                }
+              }
+              break;
+            }
+          default:
+            {}
+        }
+
+        /// Vertical
+        ///
+        ///
+
+        double heightPanel = viewportDimensionY(scrollIndexY);
+
+        double y0 = getY(_editCell.row) * tableScale;
+        double y1 = getY(_editCell.row + editCell.rows) * tableScale;
+
+        double heightCell = y1 - y0;
+
+        double topPadding = math.min(
+            (heightPanel - heightCell) / 2.0, properties.editPadding.top);
+        double bottomPadding = math.min(
+            (heightPanel - heightCell) / 2.0, properties.editPadding.bottom);
+
+        double yTo = scrollY;
+
+        bool adjustScroll = false;
+        bool skipY = false;
+
+        switch (stateSplitY) {
+          case SplitState.autoFreezeSplit:
+            {
+              if (autoFreezeAreaY.freeze) {
+                if (_editCell.row >= autoFreezeAreaY.startIndex &&
+                    _editCell.row < autoFreezeAreaY.freezeIndex) {
+                  skipY = true;
+                } else if (_editCell.row >= autoFreezeAreaY.freezeIndex &&
+                    _editCell.row <= autoFreezeAreaY.endIndex) {
+                  topPadding = (autoFreezeAreaY.freezePosition -
+                          autoFreezeAreaY.startPosition) *
+                      tableScale;
+                }
+              }
+              break;
+            }
+          default:
+            {}
+        }
+
+        debugPrint('leftPadding $leftPadding');
+
+        if (!skipX) {
+          if (x1 > scrollX + widthPanel) {
+            xTo = x1 - widthPanel + rightPadding;
+            debugPrint(
+                'x1:$x1 widthPanel:$widthPanel, horizontalPadding: $rightPadding');
+            debugPrint('scrollX $scrollX, xTo $xTo');
+            adjustScroll = true;
+          } else if (x0 - leftPadding < scrollX) {
+            debugPrint(
+                'x1:$x1 widthPanel:$widthPanel, horizontalPadding: $leftPadding');
+            xTo = x0 - leftPadding;
+            adjustScroll = true;
+          }
+        }
+
+        if (!skipY) {
+          if (y1 > scrollY + heightPanel) {
+            debugPrint(
+                'y1:$y1 heightPanel:$heightPanel, verticalPadding: $bottomPadding');
+            yTo = y1 - heightPanel + bottomPadding;
+            adjustScroll = true; // y1 + verticalPadding - yTo < 0.01;
+          } else if (y0 - topPadding < scrollY) {
+            adjustScroll = true;
+            yTo = y0 - topPadding;
+          }
+        }
+
+        if (adjustScroll) {
+          debugPrint('scrollx $scrollX $xTo');
+          final xNearEqual = nearEqual(
+              scrollX, xTo, physics.toleranceFor(devicePixelRatio).distance);
+          final yNearEqual = nearEqual(
+              scrollY, yTo, physics.toleranceFor(devicePixelRatio).distance);
+
+          if (xNearEqual && yNearEqual) {
+            setScrollScaledX(scrollIndexX, scrollIndexY, xTo);
+            setScrollScaledY(scrollIndexX, scrollIndexY, yTo);
+            markNeedsLayout();
+          } else {
+            animateToScaled(scrollIndexX, scrollIndexY, Offset(xTo, yTo));
+          }
+          return;
+        }
+      }
+    }
+
+    /// Schedule animated scroll
+    ///
+    ///
+    ///
+    ///
+
+    if (_editCell.isIndex && !showEditCellScheduled) {
+      scheduleMicrotask(() {
+        showEditCellScheduled = false;
+        scheduleAnimatedScroll();
+      });
+    }
+  }
 }

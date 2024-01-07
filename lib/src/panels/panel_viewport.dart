@@ -37,6 +37,8 @@ class TablePanel<T extends AbstractFtModel<C>, C extends AbstractCell>
 
   @override
   Widget build(BuildContext context) {
+    // return tableBuilder.testCellBuilder(context);
+
     return TablePanelViewport<T, C>(
       viewModel: viewModel,
       panelIndex: panelIndex,
@@ -101,6 +103,9 @@ class TablePanelChildRenderObjectElement<T extends AbstractFtModel<C>,
   final Map<CellIndex, Widget?> _childWidgets = HashMap<CellIndex, Widget?>();
   final SplayTreeMap<CellIndex, Element?> _childElements =
       SplayTreeMap<CellIndex, Element?>();
+  final SplayTreeMap<CellIndex, Element?> _keptAliveElements =
+      SplayTreeMap<CellIndex, Element?>();
+
   RenderBox? _currentBeforeChild;
   CellIndex? _currentlyUpdatingTableCellIndex;
 
@@ -143,37 +148,42 @@ class TablePanelChildRenderObjectElement<T extends AbstractFtModel<C>,
     _currentBeforeChild = null;
     assert(_currentlyUpdatingTableCellIndex == null);
     try {
-      final SplayTreeMap<CellIndex, Element?> newChildren =
-          SplayTreeMap<CellIndex, Element?>();
+      void processElementList(SplayTreeMap<CellIndex, Element?> childElements) {
+        final SplayTreeMap<CellIndex, Element?> newChildren =
+            SplayTreeMap<CellIndex, Element?>();
 
-      void processElement(CellIndex index) {
-        _currentlyUpdatingTableCellIndex = index;
+        for (CellIndex index in childElements.keys.toList()) {
+          newChildren.putIfAbsent(index, () => childElements[index]);
+        }
 
-        //this if will never happen, because the index is always equal!
-        if (_childElements[index] != null &&
-            _childElements[index] != newChildren[index]) {
-          // This index has an old child that isn't used anywhere and should be deactivated.
-          _childElements[index] =
-              updateChild(_childElements[index], null, index);
+        void processElement(CellIndex index) {
+          _currentlyUpdatingTableCellIndex = index;
+
+          //this if will never happen, because the index is always equal!
+          if (childElements[index] != null &&
+              childElements[index] != newChildren[index]) {
+            // This index has an old child that isn't used anywhere and should be deactivated.
+            childElements[index] =
+                updateChild(childElements[index], null, index);
+          }
+          final Element? newChild =
+              updateChild(newChildren[index], _buildFromIndex(index), index);
+          if (newChild != null) {
+            childElements[index] = newChild;
+            _currentBeforeChild = newChild.renderObject as RenderBox?;
+          } else {
+            childElements.remove(index);
+          }
         }
-        final Element? newChild =
-            updateChild(newChildren[index], _buildFromIndex(index), index);
-        if (newChild != null) {
-          _childElements[index] = newChild;
-          _currentBeforeChild = newChild.renderObject as RenderBox?;
-        } else {
-          _childElements.remove(index);
-        }
+
+        newChildren.keys.forEach(processElement);
       }
 
-      for (CellIndex index in _childElements.keys.toList()) {
-        newChildren.putIfAbsent(index, () => _childElements[index]);
-      }
+      processElementList(_childElements);
+      processElementList(_keptAliveElements);
 
       renderObject.debugChildIntegrityEnabled =
           false; // Moving children will temporary violate the integrity.
-
-      newChildren.keys.forEach(processElement);
 
 //      if (_didUnderflow) {
 //        final int lastKey = _childElements.lastKey() ?? -1;
@@ -215,6 +225,7 @@ class TablePanelChildRenderObjectElement<T extends AbstractFtModel<C>,
         _currentBeforeChild = null;
       } else {
         final lastKeyBefore = _childElements.lastKeyBefore(tableCellIndex);
+
         assert(lastKeyBefore != null);
         final element = _childElements[lastKeyBefore];
         assert(element != null);
@@ -306,17 +317,27 @@ class TablePanelChildRenderObjectElement<T extends AbstractFtModel<C>,
     assert(_currentlyUpdatingTableCellIndex == null);
 
     owner!.buildScope(this, () {
-      assert(_childElements.containsKey(index));
+      assert(_childElements.containsKey(index) ||
+          _keptAliveElements.containsKey(index));
       try {
         _currentlyUpdatingTableCellIndex = index;
-        final Element? result = updateChild(_childElements[index], null, index);
+        final Element? result = updateChild(
+            _childElements[index] ?? _keptAliveElements[index], null, index);
         assert(result == null);
       } finally {
         _currentlyUpdatingTableCellIndex = null;
       }
-      _childElements.remove(index);
-      assert(!_childElements.containsKey(index));
+      if (_childElements.remove(index) == null) {
+        _keptAliveElements.remove(index);
+      }
+
+      assert(!_childElements.containsKey(index) ||
+          !_keptAliveElements.containsKey(index));
     });
+    assert(_keptAliveElements.length < 2,
+        '_keptAliveElements alive elements is ${_keptAliveElements.length}');
+
+    debugPrint('keptAliveElements length ${_keptAliveElements.length}');
   }
 
   @override
@@ -331,6 +352,8 @@ class TablePanelChildRenderObjectElement<T extends AbstractFtModel<C>,
     // the visitor:
     assert(!_childElements.values.any((Element? child) => child == null));
     _childElements.values.cast<Element>().toList().forEach(visitor);
+    assert(!_keptAliveElements.values.any((Element? child) => child == null));
+    _keptAliveElements.values.cast<Element>().toList().forEach(visitor);
   }
 
   @override
@@ -375,6 +398,34 @@ class TablePanelChildRenderObjectElement<T extends AbstractFtModel<C>,
       cellIndex,
     );
   }
+
+  @override
+  void cellIndexFromElementsToKeepAlive(CellIndex cellIndex) {
+    assert(_childElements.containsKey(cellIndex),
+        'CellIndex: $cellIndex not found in _childElements');
+
+    if (_childElements.remove(cellIndex) case Element e) {
+      _keptAliveElements[cellIndex] = e;
+    }
+  }
+
+  @override
+  void cellIndexFromKeepAliveToElements(CellIndex cellIndex) {
+    assert(_keptAliveElements.containsKey(cellIndex),
+        'CellIndex: $cellIndex not found in _keptAliveElements');
+
+    if (_keptAliveElements.remove(cellIndex) case Element e) {
+      _childElements[cellIndex] = e;
+    }
+  }
+
+  @override
+  void removeKeepAliveElement(CellIndex cellIndex) {
+    assert(_keptAliveElements.containsKey(cellIndex),
+        'CellIndex: $cellIndex not found in _keptAliveElements');
+
+    _keptAliveElements.remove(cellIndex);
+  }
 }
 
 abstract class TablePanelRenderChildManager<C extends AbstractCell> {
@@ -395,6 +446,15 @@ abstract class TablePanelRenderChildManager<C extends AbstractCell> {
 
   //Added by Joan
   bool containsElement(CellIndex tableCellIndex);
+
+  //Added by Joan
+  void cellIndexFromElementsToKeepAlive(CellIndex cellIndex);
+
+  //Added by Joan
+  void cellIndexFromKeepAliveToElements(CellIndex cellIndex);
+
+  //Added by Joan
+  void removeKeepAliveElement(CellIndex cellIndex);
 }
 
 class TablePanelRenderViewport<T extends AbstractFtModel<C>,
@@ -560,35 +620,48 @@ class TablePanelRenderViewport<T extends AbstractFtModel<C>,
       }
     }
 
-    assert(() {
-      RenderBox? testChild = firstChild;
-      RenderBox? previous;
+    assert(
+      () {
+        RenderBox? testChild = firstChild;
+        RenderBox? previous;
 
-      while (testChild != null) {
-        var parentData = testChild.parentData as TableCellParentData;
-        if (previous != null) {
-          if (parentData.tableCellIndex <=
-              (previous.parentData as TableCellParentData).tableCellIndex) {
-            return false;
+        while (testChild != null) {
+          var parentData = testChild.parentData as TableCellParentData;
+          if (previous != null) {
+            if (parentData.tableCellIndex <=
+                (previous.parentData as TableCellParentData).tableCellIndex) {
+              debugPrint('The tableCellIndex is not right!');
+              return false;
+            }
           }
+          previous = testChild;
+          testChild = parentData.nextSibling;
         }
-        previous = testChild;
-        testChild = parentData.nextSibling;
-      }
-      return true;
-    }(), '$CellIndex not in right order');
+
+        if (previous != lastChild) {
+          debugPrint('The last child in the link does not math lastChild');
+          return false;
+        }
+        return true;
+      }(),
+    );
 
     childManager.didFinishLayout();
   }
 
-  @override
-  bool hitTest(BoxHitTestResult result, {required Offset position}) {
-    bool isHit = super.hitTest(result, position: position);
-    return isHit;
-  }
+  // @override
+  // bool hitTest(BoxHitTestResult result, {required Offset position}) {
+  //   bool isHit = super.hitTest(result, position: position);
+  //   return isHit;
+  // }
 
   @override
-  bool hitTestSelf(Offset position) => true;
+  bool hitTestSelf(Offset position) => false;
+
+  @override
+  bool hitTestChildren(BoxHitTestResult result, {required Offset position}) {
+    return defaultHitTestChildren(result, position: position);
+  }
 
   void layoutChild({
     required RenderBox child,
@@ -718,6 +791,52 @@ class TablePanelRenderViewport<T extends AbstractFtModel<C>,
   }
 
   @override
+  void move(RenderBox child, {RenderBox? after}) {
+    assert(false, 'Move not implemented correctly');
+    // There are two scenarios:
+    //
+    // 1. The child is not keptAlive.
+    // The child is in the childList maintained by ContainerRenderObjectMixin.
+    // We can call super.move and update parentData with the new slot.
+    //
+    // 2. The child is keptAlive.
+    // In this case, the child is no longer in the childList but might be stored in
+    // [_keepAliveBucket]. We need to update the location of the child in the bucket.
+    final TableCellParentData childParentData =
+        child.parentData! as TableCellParentData;
+    if (!childParentData.keptAlive) {
+      super.move(child, after: after);
+      childManager.didAdoptChild(child); // updates the slot in the parentData
+      // Its slot may change even if super.move does not change the position.
+      // In this case, we still want to mark as needs layout.
+      markNeedsLayout();
+    } else {
+      // If the child in the bucket is not current child, that means someone has
+      // already moved and replaced current child, and we cannot remove this child.
+      if (_keepAliveBucket[childParentData.tableCellIndex] == child) {
+        _keepAliveBucket.remove(childParentData.tableCellIndex);
+      }
+      assert(() {
+        _debugDanglingKeepAlives.remove(child);
+        return true;
+      }());
+      // Update the slot and reinsert back to _keepAliveBucket in the new slot.
+      childManager.didAdoptChild(child);
+      // If there is an existing child in the new slot, that mean that child will
+      // be moved to other index. In other cases, the existing child should have been
+      // removed by updateChild. Thus, it is ok to overwrite it.
+      assert(() {
+        if (_keepAliveBucket.containsKey(childParentData.tableCellIndex)) {
+          _debugDanglingKeepAlives
+              .add(_keepAliveBucket[childParentData.tableCellIndex]!);
+        }
+        return true;
+      }());
+      _keepAliveBucket[childParentData.tableCellIndex] = child;
+    }
+  }
+
+  @override
   void adoptChild(RenderObject child) {
     super.adoptChild(child);
     final TableCellParentData childParentData =
@@ -779,6 +898,7 @@ class TablePanelRenderViewport<T extends AbstractFtModel<C>,
   @override
   void insert(RenderBox child, {RenderBox? after}) {
     assert(!_keepAliveBucket.containsValue(child));
+
     super.insert(child, after: after);
     assert(firstChild != null);
     assert(_debugVerifyChildOrder());
@@ -798,6 +918,7 @@ class TablePanelRenderViewport<T extends AbstractFtModel<C>,
       return true;
     }());
     _keepAliveBucket.remove(childParentData.tableCellIndex);
+    childManager.removeKeepAliveElement(childParentData.tableCellIndex);
     dropChild(child);
   }
 
@@ -818,11 +939,51 @@ class TablePanelRenderViewport<T extends AbstractFtModel<C>,
       child.parentData = childParentData;
       super.adoptChild(child);
       childParentData.keptAlive = true;
+      childManager
+          .cellIndexFromElementsToKeepAlive(childParentData.tableCellIndex);
     } else {
       assert(child.parent == this);
       childManager.removeChild(child);
       assert(child.parent == null);
     }
+  }
+
+  void _destroyChild(RenderBox child) {
+    // final TableCellParentData childParentData =
+    //     child.parentData! as TableCellParentData;
+
+    // final index = childParentData.tableCellIndex;
+
+    // if (_keepAliveBucket.containsKey(index)) {
+    //   _keepAliveBucket.remove(index)!;
+
+    //   // dropChild(child);
+
+    //   // Added by Joan
+    //   //childManager.removeKeepAliveElement(index);
+    // }
+    assert(child.parent == this);
+    childManager.removeChild(child);
+    assert(child.parent == null);
+
+    // if (childParentData.keepAlive) {
+    //   assert(!childParentData.keptAlive);
+    //   remove(child);
+    //   _keepAliveBucket[childParentData.tableCellIndex] = child;
+    //   child.parentData = childParentData;
+    //   super.adoptChild(child);
+    //   childParentData.keptAlive = true;
+    //   childManager
+    //       .cellIndexFromElementsToKeepAlive(childParentData.tableCellIndex);
+    // } else {
+    //   assert(child.parent == this);
+    //   childManager.removeChild(child);
+    //   assert(child.parent == null);
+    // }
+    assert(_keepAliveBucket.length < 2,
+        '_keepAliveBucket is ${_keepAliveBucket.length}');
+
+    debugPrint('KeepAliveBucket length ${_keepAliveBucket.length}');
   }
 
   // columns 1024 -> 1023
@@ -837,6 +998,13 @@ class TablePanelRenderViewport<T extends AbstractFtModel<C>,
     invokeLayoutCallback<BoxConstraints>((BoxConstraints constraints) {
       RenderBox? child = firstChild;
 
+      for (var MapEntry(key: index, value: child)
+          in Map.from(_keepAliveBucket).entries) {
+        if (viewModel.cellsToRemove.contains(index)) {
+          _destroyChild(child);
+        }
+      }
+
       while (child != null) {
         TableCellParentData parentData =
             child.parentData as TableCellParentData;
@@ -848,8 +1016,7 @@ class TablePanelRenderViewport<T extends AbstractFtModel<C>,
         child = parentData.nextSibling;
 
         if (viewModel.cellsToRemove.contains(tableCellIndex)) {
-          print(' tableCellIndex ${tableCellIndex}');
-          childManager.removeChild(childToRemove);
+          _destroyChild(childToRemove);
         } else if (removeAll ||
             (garbageCollectRowsFrom != -1 &&
                 garbageCollectRowsFrom <= tableCellIndex.row) ||
@@ -861,16 +1028,13 @@ class TablePanelRenderViewport<T extends AbstractFtModel<C>,
             lastColumnIndex < tableCellIndex.column) {
           assert(childManager.containsElement(tableCellIndex),
               'Element bestaat niet $tableCellIndex');
-          // if (!tableCellIndex.edit) {
-          //   childManager.removeChild(childToRemove);
-          // }
+
           _destroyOrCacheChild(childToRemove);
-          if (tableCellIndex.edit) {
-            print(
-                'keepAlive: ${parentData.keepAlive}, keptAlive: ${parentData.keptAlive} ');
-          }
         }
       }
+
+      assert(
+          _debugVerifyChildOrder(), 'Garbage collection: Child order not oke');
     });
 
     garbageCollectRowsFrom = -1;
@@ -958,6 +1122,9 @@ class TablePanelRenderViewport<T extends AbstractFtModel<C>,
         assert(childParentData.keptAlive);
         dropChild(child);
         child.parentData = childParentData;
+        // Added by Joan
+        childManager.cellIndexFromKeepAliveToElements(index);
+
         insert(child, after: after);
         childParentData.keptAlive = false;
       } else {
@@ -1012,8 +1179,10 @@ class TablePanelRenderViewport<T extends AbstractFtModel<C>,
   void detach() {
     // _offset.removeListener(markNeedsLayout);
     // _sliverPosition?.removeListener(markNeedsLayout);
+
     _viewModel.removeListener(markNeedsLayout);
     super.detach();
+
     for (final RenderBox child in _keepAliveBucket.values) {
       child.detach();
     }
@@ -1089,6 +1258,11 @@ class TableCellParentData extends ContainerBoxParentData<RenderBox>
 
   @override
   bool keptAlive = false;
+
+  @override
+  String toString() {
+    return '${super.toString()}, CellIndex: $tableCellIndex';
+  }
 }
 
 class FtIndex {
@@ -1144,6 +1318,8 @@ class CellIndex extends FtIndex implements Comparable<CellIndex> {
     return row > index.row || (row == index.row && column >= index.column);
   }
 
+  bool get hasIndex => row != -1 && column != -1;
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1184,11 +1360,11 @@ class CellIndex extends FtIndex implements Comparable<CellIndex> {
   }
 }
 
-class CellIndexExtra extends CellIndex {
+class PanelCellIndex extends CellIndex {
   final int panelIndexX;
   final int panelIndexY;
 
-  const CellIndexExtra(
+  const PanelCellIndex(
       {this.panelIndexX = -1,
       this.panelIndexY = -1,
       super.column = -1,
@@ -1197,25 +1373,30 @@ class CellIndexExtra extends CellIndex {
       super.rows = 1,
       super.edit = false});
 
-  CellIndexExtra.from({
-    required CellIndex cellIndex,
-    this.panelIndexX = -1,
-    this.panelIndexY = -1,
-  }) : super(
+  PanelCellIndex.from(
+      {required CellIndex cellIndex,
+      this.panelIndexX = -1,
+      this.panelIndexY = -1,
+      bool? edit})
+      : super(
             row: cellIndex.row,
             column: cellIndex.column,
             rows: cellIndex.rows,
             columns: cellIndex.columns,
-            edit: cellIndex.edit);
+            edit: edit ?? cellIndex.edit);
 
   bool get isPanel =>
       panelIndexX > 0 && panelIndexX < 3 && panelIndexY > 0 && panelIndexY < 3;
+
+  int get scrollIndexX => panelIndexX == 1 ? 0 : 1;
+
+  int get scrollIndexY => panelIndexY == 1 ? 0 : 1;
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
 
-    if (other is CellIndexExtra) {
+    if (other is PanelCellIndex) {
       return other.panelIndexX == panelIndexX &&
           other.panelIndexY == panelIndexY &&
           runtimeType == other.runtimeType &&
@@ -1232,7 +1413,7 @@ class CellIndexExtra extends CellIndex {
   int get hashCode => column.hashCode ^ row.hashCode;
 
   @override
-  CellIndexExtra copyWith({
+  PanelCellIndex copyWith({
     int? panelIndexX,
     int? panelIndexY,
     int? column,
@@ -1241,7 +1422,7 @@ class CellIndexExtra extends CellIndex {
     int? rows,
     bool? edit,
   }) {
-    return CellIndexExtra(
+    return PanelCellIndex(
       panelIndexX: panelIndexX ?? this.panelIndexX,
       panelIndexY: panelIndexY ?? this.panelIndexY,
       column: column ?? this.column,
