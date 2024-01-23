@@ -36,6 +36,8 @@ class AutoFreezeArea {
 
   constains(position) => startPosition < position && position < endPosition;
 
+  bool indexInBody(int index) => freezeIndex <= index && index < endIndex;
+
   setPosition(AutoFreezeGetPosition position) {
     startPosition = position(startIndex);
     freezePosition = position(freezeIndex);

@@ -1,45 +1,65 @@
-import 'package:flutter/foundation.dart';
-
 // Copyright 2023 Joan Schipper. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-class Cell extends AbstractCell {
-  Cell({this.value = '', this.attr = const {}, this.repaintBoundaries = false});
+import '../panels/panel_viewport.dart';
+
+enum FtCellState {
+  ready,
+  inQuee,
+  removeFromQueueCandidate,
+  removedFromQuee,
+  empty,
+  error,
+  none
+}
+
+class FtCellGroupState {
+  FtCellState state;
+
+  FtCellGroupState(
+    this.state,
+  );
+}
+
+class Cell<T> extends AbstractCell {
+  const Cell({
+    this.value,
+    this.attr = const {},
+    super.merged,
+  });
 
   final Map attr;
-  final Object value;
-  final bool repaintBoundaries;
+  final T? value;
 
-  Cell copyWith({
-    Map? attr,
-    Object? value,
-    bool? repaintBoundaries,
-  }) {
+  get cellState => FtCellState.ready;
+
+  bool get isEditable => false;
+
+  @override
+  Cell copyWith({Map? attr, T? value, Merged? merged}) {
     return Cell(
       attr: attr ?? this.attr,
       value: value ?? this.value,
-      repaintBoundaries: repaintBoundaries ?? this.repaintBoundaries,
+      merged: merged ?? this.merged,
     );
   }
 }
 
 abstract class AbstractCell {
-  // AbstractCell({
-  //   required this.keepAlive,
-  // }) : assert(!keepAlive, 'KeepAlive not yet implemented.');
+  const AbstractCell({this.merged});
 
-  // bool keepAlive;
+  final Merged? merged;
 
-  Merged? merged;
+  AbstractCell copyWith({Merged? merged});
 }
 
 class Merged {
-  Merged(
-      {required this.startRow,
-      required this.lastRow,
-      required this.startColumn,
-      required this.lastColumn});
+  Merged({required FtIndex ftIndex, required int rows, required int columns})
+      : startRow = ftIndex.row,
+        lastRow = ftIndex.row + rows - 1,
+        startColumn = ftIndex.column,
+        lastColumn = ftIndex.column + columns - 1;
 
   final int startRow;
   final int lastRow;

@@ -2,11 +2,9 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+import 'dart:collection';
 import 'package:flextable/flextable.dart';
-import 'package:flextable/src/model/grid_ribbon.dart';
 import 'package:flutter/foundation.dart';
-import '../builders/cells.dart';
-import 'properties/flextable_grid_info.dart';
 import 'properties/flextable_selection_index.dart';
 
 const int keepSearching = -5;
@@ -21,7 +19,8 @@ enum SplitState {
   autoFreezeSplit,
   split,
   canceledFreezeSplit,
-  canceledSplit
+  canceledSplit,
+  canceledAutoFreezeSplit,
 }
 
 bool noSplit(SplitState split) =>
@@ -38,239 +37,199 @@ bool noManualSplit(SplitState split) =>
 typedef DefaultFtModel = FtModel<Cell>;
 
 class FtModel<C extends AbstractCell> extends AbstractFtModel<C> {
-  FtModel(
-      {super.tableColumns,
-      super.tableRows,
-      required super.defaultWidthCell,
-      required super.defaultHeightCell,
-      super.stateSplitX,
-      super.stateSplitY,
-      super.xSplit = 0.0,
-      super.ySplit = 0.0,
-      super.rowHeader = false,
-      super.columnHeader = false,
-      super.scrollUnlockX = false,
-      super.scrollUnlockY = false,
-      super.freezeColumns = -1,
-      super.freezeRows = -1,
-      super.specificHeight,
-      super.specificWidth,
-      super.tableScale = 1.0,
-      super.autoFreezeAreasX = const [],
-      super.autoFreezeX,
-      super.autoFreezeAreasY = const [],
-      super.autoFreezeY,
+  FtModel({
+    super.tableColumns,
+    super.tableRows,
+    required super.defaultWidthCell,
+    required super.defaultHeightCell,
+    super.stateSplitX,
+    super.stateSplitY,
+    super.xSplit = 0.0,
+    super.ySplit = 0.0,
+    super.rowHeader = false,
+    super.columnHeader = false,
+    super.scrollUnlockX = false,
+    super.scrollUnlockY = false,
+    super.freezeColumns = -1,
+    super.freezeRows = -1,
+    super.specificHeight,
+    super.specificWidth,
+    super.tableScale = 1.0,
+    super.autoFreezeAreasX,
+    super.autoFreezeX,
+    super.autoFreezeAreasY,
+    super.autoFreezeY,
 
-      //Default
-      this.autoTableRange = true,
-      TableLinesOneDirection? horizontalLines,
-      TableLinesOneDirection? verticalLines,
-      List<RowRibbon<C>?>? rowRibbon,
-      List<ColumnRibbon?>? columnRibbon})
-      : _rowRibbon = rowRibbon ?? <RowRibbon<C>?>[],
-        _columnRibbon = columnRibbon ?? <ColumnRibbon?>[],
+    //Default
+    this.autoTableRange = true,
+    TableLinesOneDirection? horizontalLines,
+    TableLinesOneDirection? verticalLines,
+    Map<int, RowRibbon>? rowRibbon,
+    Map<int, ColumnRibbon>? columnRibbon,
+    super.calculationPositionsNeededX,
+    super.calculationPositionsNeededY,
+  })  : rowRibbon = rowRibbon ?? HashMap<int, RowRibbon>(),
+        columnRibbon = columnRibbon ?? HashMap<int, ColumnRibbon>(),
         horizontalLines = horizontalLines ?? TableLinesOneDirection(),
         verticalLines = verticalLines ?? TableLinesOneDirection();
 
   bool autoTableRange;
   TableLinesOneDirection horizontalLines;
   TableLinesOneDirection verticalLines;
-  final List<RowRibbon<C>?> _rowRibbon;
-  final List<ColumnRibbon?> _columnRibbon;
+  final Map<int, RowRibbon> rowRibbon;
+  final Map<int, ColumnRibbon> columnRibbon;
 
-  GridRibbon ribbon<GridRibbon>(int index, List<GridRibbon?> list, newRibbon) {
-    GridRibbon? ribbon;
+  final _cells = HashMap<FtIndex, C>();
 
-    if (index < list.length) {
-      ribbon = list[index];
-
-      if (ribbon == null) {
-        ribbon = newRibbon();
-        list[index] = ribbon;
-      }
-    } else {
-      list.length = index + 1;
-      ribbon = newRibbon();
-      list[index] = ribbon;
-    }
-
-    assert(ribbon != null, 'No Ribbon found');
-
-    return ribbon!;
-  }
-
-  void addCell(
-      {required int row,
-      required int column,
+  @override
+  void updateCell(
+      {required FtIndex ftIndex,
       int rows = 1,
       int columns = 1,
       required C? cell,
-      C? previousCell}) {
-    RowRibbon<C> tableRow =
-        ribbon<RowRibbon<C>>(row, _rowRibbon, () => RowRibbon<C>());
+      C? previousCell,
+      checkPreviousCell = false}) {
+    assert((previousCell != null && !checkPreviousCell) || !checkPreviousCell,
+        'If checkPreviousCell is true, the function will find the previousCell. PreviousCell is expected to be null');
 
-    _placeCell(tableRow, column, cell);
+    /// Convert CellIndex and PanelCellIndex to a simple FtIndex
+    ///
+    ///
+    if (ftIndex case FtIndex cellIndex) {
+      ftIndex = FtIndex(row: cellIndex.row, column: cellIndex.column);
+    }
+
+    // Clean Previous cell
+    //
+
+    if (checkPreviousCell) {
+      previousCell = _cells[ftIndex];
+    }
+
+    if (previousCell case C previous) {
+      _cells.remove(ftIndex);
+
+      if (previous.merged case Merged m) {
+        if (m.rows > 1) {
+          removeMergedCellFromGrid(columnRibbon, ftIndex.column, m);
+        }
+        if (m.columns > 1) {
+          removeMergedCellFromGrid(rowRibbon, ftIndex.row, m);
+        }
+      }
+    }
+    // Add new/updated cell
+    //
 
     if (cell != null && rows > 1 || columns > 1) {
-      final merged = Merged(
-          startRow: row,
-          startColumn: column,
-          lastRow: row + rows - 1,
-          lastColumn: column + columns - 1);
+      final merged = Merged(ftIndex: ftIndex, rows: rows, columns: columns);
 
-      cell!.merged = merged;
+      cell = cell?.copyWith(merged: merged) as C?;
 
       if (rows > 1) {
-        columnRibbon(column).addMerged(merged);
+        columnRibbon
+            .putIfAbsent(ftIndex.column, () => ColumnRibbon())
+            .addMerged(merged);
       }
       if (columns > 1) {
-        rowRibbon(row).addMerged(merged);
+        rowRibbon.putIfAbsent(ftIndex.row, () => RowRibbon()).addMerged(merged);
       }
     }
 
-    if (autoTableRange && tableRows < row + rows) {
-      tableRows = row + rows;
+    _placeCell(ftIndex, cell);
+
+    if (autoTableRange && tableRows < ftIndex.row + rows) {
+      tableRows = ftIndex.row + rows;
     }
 
-    if (autoTableRange && tableColumns < column + columns) {
-      tableColumns = column + columns;
+    if (autoTableRange && tableColumns < ftIndex.column + columns) {
+      tableColumns = ftIndex.column + columns;
     }
   }
 
-  _placeCell(RowRibbon<C> rowRibbon, int column, C? cell) {
-    List<C?> columnList = rowRibbon.columnList;
-
-    if (column >= columnList.length) {
-      columnList.length = column + 1;
+  _placeCell(FtIndex ftIndex, C? cell) {
+    if (cell case C c) {
+      _cells[ftIndex] = c;
+    } else {
+      _cells.remove(ftIndex);
     }
-
-    columnList[column] = cell;
-
-    return rowRibbon;
   }
 
   @override
   C? cell({required int row, required int column}) {
-    if (row < _rowRibbon.length) {
-      final tableRow = _rowRibbon[row];
+    return _cells[FtIndex(row: row, column: column)];
+  }
 
-      final columnList = tableRow?.columnList;
-
-      if (columnList != null && column < columnList.length) {
-        return columnList[column];
+  Merged? removeMergedCellFromGrid(
+      Map<int, GridRibbon> gridRibbons, int index, Merged merged) {
+    if (gridRibbons[index] case GridRibbon g) {
+      var (m, empty) = g.removeMerged(merged: merged);
+      if (empty) {
+        gridRibbons.remove(index);
       }
+      return m;
     }
     return null;
   }
 
-  GridRibbon columnRibbon(int index) {
-    return ribbon<GridRibbon>(index, _columnRibbon, () => ColumnRibbon());
-  }
-
-  GridRibbon rowRibbon(int index) {
-    return ribbon<RowRibbon>(index, _rowRibbon, () => RowRibbon());
-  }
+  @override
+  Merged? findMergedRows(int row, int column) =>
+      columnRibbon[column]?.findMerged(index: row, startingOutside: false);
 
   @override
-  Merged? findMergedRows(int row, int column) {
-    return (column < _columnRibbon.length)
-        ? _columnRibbon[column]?.findMerged(index: row, startingOutside: false)
-        : null;
-  }
+  Merged? findMergedColumns(int row, int column) =>
+      rowRibbon[row]?.findMerged(index: column, startingOutside: false);
 
-  @override
-  Merged? findMergedColumns(int row, int column) {
-    return (row < _rowRibbon.length)
-        ? _rowRibbon[row]?.findMerged(index: column, startingOutside: false)
-        : null;
-  }
-
-  // _addMerged(
-  //     {required C cell,
-  //     required int row,
-  //     required int column,
-  //     required int rows,
-  //     required int columns}) {
-  //   cell.merged = Merged(
-  //       startRow: row,
-  //       startColumn: column,
-  //       lastRow: row + rows - 1,
-  //       lastColumn: column + columns - 1);
-
-  //   if (columns == 1) {
-  //     _addMergeOneDirection(
-  //         gridRibbon: columnRibbon(column), merged: cell.merged!);
-  //   } else if (rows == 1) {
-  //     _addMergeOneDirection(gridRibbon: rowRibbon(row), merged: cell.merged!);
-  //   }
-  // }
-
-  // addMergeOneDirection(
-  //     {required GridRibbon gridRibbon, required Merged merged}) {
-  //   final startIndex = (merged.startRow == merged.lastRow)
-  //       ? merged.startColumn
-  //       : merged.startRow;
-  //   final indexInList = (merged.startRow == merged.lastRow)
-  //       ? (i) => gridRibbon.mergedList[i].startColumn
-  //       : (i) => gridRibbon.mergedList[i].startRow;
-  //   final length = gridRibbon.mergedList.length;
-
-  //   int i = 0;
-
-  //   while (i < length && startIndex > indexInList(i)) {
-  //     i++;
-  //   }
-
-  //   gridRibbon.mergedList.insert(i, merged);
-  // }
-
-  FtModel copyWith(
-      {double? scrollX0pY0,
-      double? scrollX1pY0,
-      double? scrollY0pX0,
-      double? scrollY1pX0,
-      double? scrollX0pY1,
-      double? scrollX1pY1,
-      double? scrollY0pX1,
-      double? scrollY1pX1,
-      double? mainScrollX,
-      double? mainScrollY,
-      double? xSplit,
-      double? ySplit,
-      bool? rowHeader,
-      bool? columnHeader,
-      int? tableColumns,
-      int? tableRows,
-      double? defaultWidthCell,
-      double? defaultHeightCell,
-      List<RangeProperties>? specificHeight,
-      List<RangeProperties>? specificWidth,
-      bool? modifySplit,
-      bool? scheduleCorrectOffScroll,
-      int? topLeftCellPaneColumn,
-      int? topLeftCellPaneRow,
-      bool? scrollUnlockX,
-      bool? scrollUnlockY,
-      SplitState? stateSplitX,
-      SplitState? stateSplitY,
-      double? headerVisibility,
-      double? leftPanelMargin,
-      double? topPanelMargin,
-      double? rightPanelMargin,
-      double? bottomPanelMargin,
-      double? tableScale,
-      List<AutoFreezeArea>? autoFreezeAreasX,
-      bool? autoFreezeX,
-      List<AutoFreezeArea>? autoFreezeAreasY,
-      bool? autoFreezeY,
-      double? minSplitSpaceFromSide,
-      double? hitScrollBarThickness,
-      //Default
-      bool? autoTableRange,
-      TableLinesOneDirection? horizontalLineList,
-      TableLinesOneDirection? verticalLineList,
-      List<RowRibbon?>? rowRibbon,
-      List<ColumnRibbon?>? columnRibbon}) {
+  FtModel copyWith({
+    double? scrollX0pY0,
+    double? scrollX1pY0,
+    double? scrollY0pX0,
+    double? scrollY1pX0,
+    double? scrollX0pY1,
+    double? scrollX1pY1,
+    double? scrollY0pX1,
+    double? scrollY1pX1,
+    double? mainScrollX,
+    double? mainScrollY,
+    double? xSplit,
+    double? ySplit,
+    bool? rowHeader,
+    bool? columnHeader,
+    int? tableColumns,
+    int? tableRows,
+    double? defaultWidthCell,
+    double? defaultHeightCell,
+    List<RangeProperties>? specificHeight,
+    List<RangeProperties>? specificWidth,
+    bool? modifySplit,
+    bool? scheduleCorrectOffScroll,
+    int? topLeftCellPaneColumn,
+    int? topLeftCellPaneRow,
+    bool? scrollUnlockX,
+    bool? scrollUnlockY,
+    SplitState? stateSplitX,
+    SplitState? stateSplitY,
+    double? headerVisibility,
+    double? leftPanelMargin,
+    double? topPanelMargin,
+    double? rightPanelMargin,
+    double? bottomPanelMargin,
+    double? tableScale,
+    List<AutoFreezeArea>? autoFreezeAreasX,
+    bool? autoFreezeX,
+    List<AutoFreezeArea>? autoFreezeAreasY,
+    bool? autoFreezeY,
+    double? minSplitSpaceFromSide,
+    double? hitScrollBarThickness,
+    //Default
+    bool? autoTableRange,
+    TableLinesOneDirection? horizontalLines,
+    TableLinesOneDirection? verticalLines,
+    Map<int, RowRibbon>? rowRibbon,
+    Map<int, ColumnRibbon>? columnRibbon,
+    bool? calculationPositionsNeededX,
+    bool? calculationPositionsNeededY,
+  }) {
     return FtModel(
       xSplit: xSplit ?? this.xSplit,
       ySplit: ySplit ?? this.ySplit,
@@ -294,38 +253,17 @@ class FtModel<C extends AbstractCell> extends AbstractFtModel<C> {
       autoFreezeY: autoFreezeY ?? this.autoFreezeY,
       //Default
       autoTableRange: autoTableRange ?? this.autoTableRange,
-      horizontalLines: horizontalLineList ?? this.horizontalLines,
-      verticalLines: verticalLineList ?? this.verticalLines,
-      rowRibbon: rowRibbon ?? _rowRibbon,
-      columnRibbon: columnRibbon ?? _columnRibbon,
+      horizontalLines: horizontalLines ?? this.horizontalLines,
+      verticalLines: verticalLines ?? this.verticalLines,
+      rowRibbon: rowRibbon ?? this.rowRibbon,
+      columnRibbon: columnRibbon ?? this.columnRibbon,
+      calculationPositionsNeededX: calculationPositionsNeededX ?? true,
+      calculationPositionsNeededY: calculationPositionsNeededY ?? true,
     );
   }
 
   @override
-  void updateCell(C? previousCell, C? cell, CellIndex cellIndex) {
-    RowRibbon<C> tableRow =
-        ribbon<RowRibbon<C>>(cellIndex.row, _rowRibbon, () => RowRibbon<C>());
-
-    if (tableRow.columnList.elementAtOrNull(cellIndex.column)?.merged
-        case Merged merged) {
-      if (merged.columns > 1) {}
-    }
-
-    if (previousCell?.merged case Merged m) {
-      if (m.rows > 1) {
-        columnRibbon(cellIndex.column).removeMerged(merged: m);
-      }
-      if (m.columns > 1) {
-        rowRibbon(cellIndex.row).removeMerged(merged: m);
-      }
-    }
-    addCell(
-        row: cellIndex.row,
-        column: cellIndex.column,
-        rows: cellIndex.rows,
-        columns: cellIndex.columns,
-        cell: cell);
-  }
+  FtIndex isCellEditable(FtIndex cellIndex) => cellIndex;
 }
 
 abstract class AbstractFtModel<C extends AbstractCell> {
@@ -347,12 +285,16 @@ abstract class AbstractFtModel<C extends AbstractCell> {
     List<RangeProperties>? specificHeight,
     List<RangeProperties>? specificWidth,
     this.tableScale = 1.0,
-    this.autoFreezeAreasX = const [],
+    List<AutoFreezeArea>? autoFreezeAreasX,
     bool? autoFreezeX,
-    this.autoFreezeAreasY = const [],
+    List<AutoFreezeArea>? autoFreezeAreasY,
     bool? autoFreezeY,
+    this.calculationPositionsNeededX = true,
+    this.calculationPositionsNeededY = true,
   })  : _autoFreezeX = autoFreezeX,
         _autoFreezeY = autoFreezeY,
+        autoFreezeAreasX = autoFreezeAreasX ?? [],
+        autoFreezeAreasY = autoFreezeAreasY ?? [],
         assert(
             !(stateSplitX == SplitState.freezeSplit &&
                 stateSplitY == SplitState.split),
@@ -371,6 +313,9 @@ abstract class AbstractFtModel<C extends AbstractCell> {
         assert(() {
           int index = -1;
           int autoFreezeIndex = 0;
+          if (autoFreezeAreasX == null) {
+            return true;
+          }
           for (AutoFreezeArea f in autoFreezeAreasX) {
             if (f.startIndex <= index) {
               if (index == -1) {
@@ -405,6 +350,9 @@ abstract class AbstractFtModel<C extends AbstractCell> {
         assert(() {
           int index = -1;
           int autoFreezeIndex = 0;
+          if (autoFreezeAreasY == null) {
+            return true;
+          }
           for (AutoFreezeArea f in autoFreezeAreasY) {
             if (f.startIndex <= index) {
               if (index == -1) {
@@ -466,10 +414,18 @@ abstract class AbstractFtModel<C extends AbstractCell> {
 
   SplitState stateSplitX;
   SplitState stateSplitY;
+  bool calculationPositionsNeededX;
+  bool calculationPositionsNeededY;
 
   double tableScale;
-
   List<AutoFreezeArea> autoFreezeAreasX;
+
+  addAutoFreezeAreasX(List<AutoFreezeArea> autoFreezeAreas) {
+    autoFreezeAreasX
+      ..addAll(autoFreezeAreas)
+      ..sort((a, b) => a.startIndex.compareTo(b.startIndex));
+  }
+
   bool? _autoFreezeX;
 
   set autoFreezeX(bool value) {
@@ -478,7 +434,18 @@ abstract class AbstractFtModel<C extends AbstractCell> {
 
   bool get autoFreezeX => _autoFreezeX ?? autoFreezeAreasX.isNotEmpty;
 
+  bool get hasAutoFreezeX => autoFreezeAreasX.isNotEmpty;
+
+  bool recalculationNeededY = true;
+
   List<AutoFreezeArea> autoFreezeAreasY;
+
+  addAutoFreezeAreasY(Iterable<AutoFreezeArea> autoFreezeAreas) {
+    autoFreezeAreasY
+      ..addAll(autoFreezeAreas)
+      ..sort((a, b) => a.startIndex.compareTo(b.startIndex));
+  }
+
   bool? _autoFreezeY;
 
   set autoFreezeY(bool value) {
@@ -486,6 +453,8 @@ abstract class AbstractFtModel<C extends AbstractCell> {
   }
 
   bool get autoFreezeY => _autoFreezeY ?? autoFreezeAreasY.isNotEmpty;
+
+  bool get hasAutoFreezeY => autoFreezeAreasY.isNotEmpty;
 
   bool get noSplitX =>
       stateSplitX == SplitState.noSplit ||
@@ -521,15 +490,19 @@ abstract class AbstractFtModel<C extends AbstractCell> {
 
   bool get protectedScrollUnlockX =>
       ((!autoFreezeX || autoFreezeAreasX.isEmpty) &&
-                  stateSplitX == SplitState.noSplit) ||
-              stateSplitX == SplitState.split
+                  (stateSplitX == SplitState.noSplit ||
+                      stateSplitX == SplitState.split ||
+                      stateSplitX == SplitState.canceledSplit)) &&
+              stateSplitY == SplitState.split
           ? scrollUnlockX
           : false;
 
   bool get protectedScrollUnlockY =>
       ((!autoFreezeY || autoFreezeAreasY.isEmpty) &&
-                  stateSplitY == SplitState.noSplit) ||
-              stateSplitY == SplitState.split
+                  (stateSplitY == SplitState.noSplit ||
+                      stateSplitY == SplitState.split ||
+                      stateSplitY == SplitState.canceledSplit)) &&
+              stateSplitX == SplitState.split
           ? scrollUnlockY
           : false;
 
@@ -1212,25 +1185,27 @@ abstract class AbstractFtModel<C extends AbstractCell> {
   ///
   ///
 
-  CellIndex findCellIndex(double x, double y) {
-    int columnIndex =
-        _findCellIndex(x, specificWidth, tableColumns, defaultWidthCell);
-    int rowIndex =
-        _findCellIndex(y, specificHeight, tableRows, defaultHeightCell);
+  FtIndex findCellIndexFromPosition(double x, double y) {
+    return findCellIndexFromGridIndex(
+        rowIndex:
+            _findCellIndex(y, specificHeight, tableRows, defaultHeightCell),
+        columnIndex:
+            _findCellIndex(x, specificWidth, tableColumns, defaultWidthCell));
+  }
 
-    var (row, rows) =
-        switch ((rowIndex, findMergedRows(rowIndex, columnIndex))) {
-      (int _, Merged merged) => (merged.startRow, merged.rows),
-      (int rowIndex, _) => (rowIndex, 1)
+  FtIndex findCellIndexFromGridIndex(
+      {required int rowIndex, required int columnIndex}) {
+    var row = switch ((rowIndex, findMergedRows(rowIndex, columnIndex))) {
+      (int _, Merged merged) => merged.startRow,
+      (int rowIndex, _) => rowIndex
     };
 
-    var (column, columns) =
+    var column =
         switch ((columnIndex, findMergedColumns(rowIndex, columnIndex))) {
-      (int _, Merged merged) => (merged.startColumn, merged.columns),
-      (int columnIndex, _) => (columnIndex, 1)
+      (int _, Merged merged) => merged.startColumn,
+      (int columnIndex, _) => columnIndex
     };
-
-    return CellIndex(column: column, row: row, rows: rows, columns: columns);
+    return FtIndex(column: column, row: row);
   }
 
   int _findCellIndex(
@@ -1290,5 +1265,100 @@ abstract class AbstractFtModel<C extends AbstractCell> {
     }
   }
 
-  void updateCell(C? previousCell, C? cell, CellIndex cellIndex);
+  void updateCell(
+      {required FtIndex ftIndex,
+      int rows = 1,
+      int columns = 1,
+      required C? cell,
+      C? previousCell});
+
+  void didFinishLayout() {}
+
+  void didStartLayout() {}
+
+  FtIndex nextCell(PanelCellIndex current) {
+    int row = current.row;
+    int column = current.column + current.columns;
+
+    return isCellEditable(
+        findCellIndexFromGridIndex(rowIndex: row, columnIndex: column));
+  }
+
+  FtIndex isCellEditable(FtIndex cellIndex) => const FtIndex();
+
+  setInitialIndex(FtIndex index) {
+    if (index.row > 0) {
+      switch (stateSplitY) {
+        case SplitState.noSplit:
+          {
+            scrollY0pX0 = getY(index.row, 0);
+            break;
+          }
+        case SplitState.autoFreezeSplit:
+          {
+            double scrollY = getY(index.row, 0);
+            double deltaY = 0.0;
+            for (AutoFreezeArea area in autoFreezeAreasY) {
+              if (area.indexInBody(index.row)) {
+                deltaY = getY(area.startIndex, 0) - getY(area.freezeIndex, 0);
+                break;
+              }
+            }
+            mainScrollY = scrollY + deltaY;
+            break;
+          }
+        default:
+          {
+            assert(false, 'No support for stateSplitY');
+          }
+      }
+    }
+
+    if (index.column > 0) {
+      switch (stateSplitY) {
+        case SplitState.noSplit:
+          {
+            scrollX0pY0 = getX(index.column, 0);
+            break;
+          }
+        case SplitState.autoFreezeSplit:
+          {
+            double scrollX = getX(index.column, 0);
+            double deltaX = 0.0;
+            for (AutoFreezeArea area in autoFreezeAreasX) {
+              if (area.indexInBody(index.column)) {
+                deltaX = getX(area.startIndex, 0) - getX(area.freezeIndex, 0);
+                break;
+              }
+            }
+            mainScrollX = scrollX + deltaX;
+            break;
+          }
+        default:
+          {
+            assert(false, 'No support for stateSplitX');
+          }
+      }
+    }
+  }
+
+  calculatePositionsX() {
+    if (!calculationPositionsNeededX) {
+      return;
+    }
+    for (var element in autoFreezeAreasX) {
+      element.setPosition((p) => getX(p, 0));
+    }
+    calculationPositionsNeededX = false;
+  }
+
+  calculatePositionsY() {
+    if (!calculationPositionsNeededY) {
+      return;
+    }
+    for (var element in autoFreezeAreasY) {
+      element.setPosition((p) => getY(p, 0));
+    }
+    calculationPositionsNeededY = false;
+  }
 }

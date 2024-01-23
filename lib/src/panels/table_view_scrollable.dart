@@ -6,6 +6,7 @@ import 'dart:async';
 import 'package:flextable/src/properties.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 import '../../flextable.dart';

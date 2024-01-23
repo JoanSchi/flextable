@@ -47,6 +47,15 @@ class FlexTable<T extends AbstractFtModel<C>, C extends AbstractCell>
 
   @override
   State<StatefulWidget> createState() => FlexTableState<T, C>();
+
+  static FtViewModel<T, C>?
+      viewModelOf<T extends AbstractFtModel<C>, C extends AbstractCell>(
+          BuildContext context) {
+    final TableViewScrollableState<T, C>? result =
+        context.findAncestorStateOfType<TableViewScrollableState<T, C>>();
+
+    return result?.viewModel;
+  }
 }
 
 class FlexTableState<T extends AbstractFtModel<C>, C extends AbstractCell>

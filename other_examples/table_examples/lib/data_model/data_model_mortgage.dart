@@ -112,9 +112,8 @@ class MortgageTableModel {
       },
     );
 
-    flexTableModel.addCell(
-        row: row,
-        column: columnStart + 2,
+    flexTableModel.updateCell(
+        ftIndex: FtIndex(row: row, column: columnStart + 2),
         columns: 2,
         cell: Cell(value: 'Per maand', attr: {CellAttr.background: bc2}));
 
@@ -122,45 +121,36 @@ class MortgageTableModel {
 
     row++;
 
-    flexTableModel.addCell(
-        row: row,
-        column: column++,
+    flexTableModel.updateCell(
+        ftIndex: FtIndex(row: row, column: column++),
         cell: Cell(value: 'Datum', attr: {CellAttr.background: rowColor}));
 
-    flexTableModel.addCell(
-      row: row,
-      column: column++,
+    flexTableModel.updateCell(
+      ftIndex: FtIndex(row: row, column: column++),
       cell: Cell(value: 'Lening', attr: {CellAttr.background: rowColor}),
     );
 
-    flexTableModel.addCell(
-        row: row,
-        column: column++,
+    flexTableModel.updateCell(
+        ftIndex: FtIndex(row: row, column: column++),
         cell: Cell(value: 'Rente', attr: {CellAttr.background: rowColor}));
 
-    flexTableModel.addCell(
-        row: row,
-        column: column++,
+    flexTableModel.updateCell(
+        ftIndex: FtIndex(row: row, column: column++),
         cell: Cell(value: 'Aflossen', attr: {CellAttr.background: rowColor}));
-    flexTableModel.addCell(
-        row: row,
-        column: column++,
+    flexTableModel.updateCell(
+        ftIndex: FtIndex(row: row, column: column++),
         cell: Cell(value: 'Totaal', attr: {CellAttr.background: rowColor}));
-    flexTableModel.addCell(
-        row: row,
-        column: column++,
+    flexTableModel.updateCell(
+        ftIndex: FtIndex(row: row, column: column++),
         cell: Cell(value: 'Rente', attr: {CellAttr.background: rowColor}));
-    flexTableModel.addCell(
-        row: row,
-        column: column++,
+    flexTableModel.updateCell(
+        ftIndex: FtIndex(row: row, column: column++),
         cell: Cell(value: 'Teruggave', attr: {CellAttr.background: rowColor}));
-    flexTableModel.addCell(
-        row: row,
-        column: column++,
+    flexTableModel.updateCell(
+        ftIndex: FtIndex(row: row, column: column++),
         cell: Cell(value: 'Netto', attr: {CellAttr.background: rowColor}));
-    flexTableModel.addCell(
-        row: row,
-        column: column++,
+    flexTableModel.updateCell(
+        ftIndex: FtIndex(row: row, column: column++),
         cell: Cell(value: 'N. e/m', attr: {CellAttr.background: rowColor}));
 
     for (int i = 0; i < years; i++) {
@@ -181,27 +171,23 @@ class MortgageTableModel {
         repayYear += repay;
 
         column = columnStart;
-        flexTableModel.addCell(
-            row: row,
-            column: column++,
+        flexTableModel.updateCell(
+            ftIndex: FtIndex(row: row, column: column++),
             cell: Cell(
                 value: df.format(DateTime(currentYear, month + 1)),
                 attr: {CellAttr.background: rowColor}));
-        flexTableModel.addCell(
-            row: row,
-            column: column++,
+        flexTableModel.updateCell(
+            ftIndex: FtIndex(row: row, column: column++),
             cell: Cell(
                 value: nf.format(morgage),
                 attr: {CellAttr.background: rowColor}));
-        flexTableModel.addCell(
-            row: row,
-            column: column++,
+        flexTableModel.updateCell(
+            ftIndex: FtIndex(row: row, column: column++),
             cell: Cell(
                 value: nf.format(monthlyInterest),
                 attr: {CellAttr.background: rowColor}));
-        flexTableModel.addCell(
-            row: row,
-            column: column++,
+        flexTableModel.updateCell(
+            ftIndex: FtIndex(row: row, column: column++),
             cell: Cell(
                 value: nf.format(repay),
                 attr: {CellAttr.background: rowColor}));
@@ -220,37 +206,32 @@ class MortgageTableModel {
 
           final total = interestYear + repayYear;
           final back = interestYear * 0.42;
-          flexTableModel.addCell(
-              row: row - 11,
-              column: column++,
+          flexTableModel.updateCell(
+              ftIndex: FtIndex(row: row - 11, column: column++),
               rows: 12,
               cell: Cell(
                   value: nf.format(interestYear + repay),
                   attr: {CellAttr.background: yearColorBlock}));
-          flexTableModel.addCell(
-              row: row - 11,
-              column: column++,
+          flexTableModel.updateCell(
+              ftIndex: FtIndex(row: row - 11, column: column++),
               rows: 12,
               cell: Cell(
                   value: nf.format(interestYear),
                   attr: {CellAttr.background: yearColorBlockNext}));
-          flexTableModel.addCell(
-              row: row - 11,
-              column: column++,
+          flexTableModel.updateCell(
+              ftIndex: FtIndex(row: row - 11, column: column++),
               rows: 12,
               cell: Cell(
                   value: nf.format(back),
                   attr: {CellAttr.background: yearColorBlock}));
-          flexTableModel.addCell(
-              row: row - 11,
-              column: column++,
+          flexTableModel.updateCell(
+              ftIndex: FtIndex(row: row - 11, column: column++),
               rows: 12,
               cell: Cell(
                   value: nf.format(total - back),
                   attr: {CellAttr.background: yearColorBlockNext}));
-          flexTableModel.addCell(
-              row: row - 11,
-              column: column++,
+          flexTableModel.updateCell(
+              ftIndex: FtIndex(row: row - 11, column: column++),
               rows: 12,
               cell: Cell(
                   value:
@@ -363,10 +344,11 @@ class MortgageTableBuilder extends DefaultTableBuilder {
   @override
   Widget? cellBuilder(
     BuildContext context,
-    FtViewModel<FtModel<Cell>, Cell> viewModel,
+    double tableScale,
     Cell cell,
     LayoutPanelIndex layoutPanelIndex,
-    CellIndex tableCellIndex,
+    FtIndex tableCellIndex,
+    CellStatus cellStatus,
   ) {
     //RepaintBoundary for canvas layer
 
@@ -375,7 +357,7 @@ class MortgageTableBuilder extends DefaultTableBuilder {
         child: Center(
             child: Text(
           '${cell.value}',
-          textScaler: TextScaler.linear(viewModel.tableScale),
+          textScaler: TextScaler.linear(tableScale),
         )));
   }
 }

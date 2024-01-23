@@ -28,26 +28,24 @@ class DataModelInternationalTrade {
     int row = 0;
     int column = 0;
 
-    ftModel.addCell(
-        row: 0,
-        column: 0,
+    ftModel.updateCell(
+        ftIndex: const FtIndex(row: 0, column: 0),
         columns: 8 * 3,
-        cell: Cell(
+        cell: const Cell(
             value:
                 'Internationale handel; invoer en uitvoer van diensten naar land, kwartaal (mln euro)',
             attr: {
               CellAttr.alignment: Alignment.centerLeft,
               CellAttr.textStyle:
-                  const TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold),
+                  TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold),
             }));
 
     int tempColumn = column;
     row++;
 
     for (var element in _columnHeader1) {
-      ftModel.addCell(
-          row: 1,
-          column: tempColumn,
+      ftModel.updateCell(
+          ftIndex: FtIndex(row: 1, column: tempColumn),
           columns: tempColumn == column ? 1 : 3,
           cell: Cell(value: element, attr: {
             CellAttr.background: Colors.blue[200]!,
@@ -80,8 +78,9 @@ class DataModelInternationalTrade {
             CellAttr.textAlign: TextAlign.left
           });
         }
-        ftModel.addCell(
-            row: row, column: tempColumn, cell: Cell(value: value, attr: attr));
+        ftModel.updateCell(
+            ftIndex: FtIndex(row: row, column: tempColumn),
+            cell: Cell(value: value, attr: attr));
         tempColumn++;
       }
 

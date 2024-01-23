@@ -27,9 +27,8 @@ class DataModelFruit {
           RangeProperties(min: 1, max: 2, length: 40.0)
         ]);
 
-    ftModel.addCell(
-        row: 0,
-        column: 0,
+    ftModel.updateCell(
+        ftIndex: const FtIndex(row: 0, column: 0),
         columns: 5,
         cell: Cell(
             value:
@@ -41,9 +40,8 @@ class DataModelFruit {
                   fontWeight: FontWeight.bold),
             }));
 
-    ftModel.addCell(
-        row: 1,
-        column: 1,
+    ftModel.updateCell(
+        ftIndex: const FtIndex(row: 1, column: 1),
         columns: 4,
         cell: Cell(value: 'Perioden (ha/J)', attr: {
           CellAttr.background: Colors.lime[500],
@@ -66,8 +64,9 @@ class DataModelFruit {
                 fontWeight: FontWeight.bold),
           if (tempColumn == 0) CellAttr.textAlign: TextAlign.left
         };
-        ftModel.addCell(
-            row: row, column: tempColumn, cell: Cell(value: value, attr: attr));
+        ftModel.updateCell(
+            ftIndex: FtIndex(row: row, column: tempColumn),
+            cell: Cell(value: value, attr: attr));
 
         tempColumn++;
       }

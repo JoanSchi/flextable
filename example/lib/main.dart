@@ -57,9 +57,8 @@ class _ShortExampleState extends State<ShortExample> {
               fontSize: 20, color: Color.fromARGB(255, 70, 78, 38)),
         };
 
-        model.addCell(
-            row: r,
-            column: c,
+        model.updateCell(
+            ftIndex: FtIndex(row: r, column: c),
             cell: Cell(value: '${numberToCharacter(c)}$r', attr: attr),
             rows: rows);
       }

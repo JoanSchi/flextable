@@ -7,13 +7,14 @@ library flextable;
 //Model
 export 'src/model/model.dart'
     show AbstractFtModel, FtModel, SplitState, DefaultFtModel;
-export 'src/model/grid_ribbon.dart' show GridRibbon;
+export 'src/model/grid_ribbon.dart' show GridRibbon, RowRibbon, ColumnRibbon;
 export 'src/flextable.dart' show FlexTable, DefaultFlexTable;
 
 export 'src/model/view_model.dart' show FtViewModel, DefaultFtViewModel;
 
 //Build
-export 'src/builders/cells.dart' show AbstractCell, Cell;
+export 'src/builders/cells.dart'
+    show AbstractCell, Cell, Merged, FtCellState, FtCellGroupState;
 export 'src/model/mergable_lines.dart'
     show
         TableLinesOneDirection,
@@ -23,7 +24,7 @@ export 'src/model/mergable_lines.dart'
         LineRange,
         noLine;
 export 'src/builders/abstract_table_builder.dart'
-    show LineHeader, AbstractTableBuilder;
+    show LineHeader, AbstractTableBuilder, ViewModelBuildContextEntension;
 export 'src/builders/line_node_paint.dart' show calculateLinePosition;
 
 export 'src/builders/table_builder.dart' show DefaultTableBuilder;
@@ -31,7 +32,8 @@ export 'src/panels/table_multi_panel_viewport.dart' show LayoutPanelIndex;
 export 'src/builders/cell_widgets.dart'
     show CellAttr, TableTextRotate, PercentageBackground, PercentagePainter;
 export 'src/builders/split_lines_paint.dart' show defaultDrawPaintSplit;
-export 'src/panels/panel_viewport.dart' show CellIndex, PanelCellIndex;
+export 'src/panels/panel_viewport.dart'
+    show FtIndex, PanelCellIndex, CellStatus;
 export 'src/panels/header_viewport.dart' show TableHeaderIndex;
 export 'src/model/controller.dart' show FtController, DefaultFtController;
 export 'src/listeners/flextable_change_notifier.dart'
@@ -59,5 +61,19 @@ export 'src/utilities/number_to_character.dart' show numberToCharacter;
 export 'src/extra/grid_border_layout.dart'
     show GridBorderLayout, GridBorderLayoutPosition;
 export 'src/extra/table_scale_slider.dart' show TableScaleSlider;
+export 'src/extra/table_settings_bottom_sheet.dart'
+    show TableSettingsBottomSheet;
 
 export 'src/extra/selection_keep_alive.dart' show SelectionKeepAlive;
+
+// Edit
+export 'src/builders/edit_table_builder.dart' show DefaultEditTableBuilder;
+export 'src/builders/edit_text.dart' show FtEditText, FtTextEditInputType;
+
+//Async
+export 'src/async/area_initializer.dart' show AreaInitializer;
+export 'src/async/async_area__model.dart' show AsyncAreaModel;
+export 'src/async/async_cell.dart' show AsyncCell;
+export 'src/async/create_table_area.dart'
+    show DefinedTableArea, CreateTableArea;
+export 'src/async/table_area_queue.dart' show TableAreaQueue;

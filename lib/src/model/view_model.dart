@@ -4,26 +4,29 @@
 
 import 'dart:async';
 import 'dart:collection';
-import 'package:flextable/src/model/model.dart';
+import 'dart:math' as math;
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/physics.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
+
+import 'package:flextable/src/builders/shared_text_controller.dart';
+import 'package:flextable/src/model/model.dart';
+
 import '../../flextable.dart';
 import '../gesture_scroll/table_animation_controller.dart';
 import '../gesture_scroll/table_drag_details.dart';
 import '../gesture_scroll/table_scroll_activity.dart';
 import '../gesture_scroll/table_scroll_physics.dart';
 import '../listeners/inner_change_notifiers.dart';
-import '../panels/panel_viewport.dart';
 import '../properties.dart';
-import 'scroll_metrics.dart';
 import 'properties/flextable_freeze_change.dart';
 import 'properties/flextable_grid_layout.dart';
 import 'properties/flextable_header_properties.dart';
 import 'properties/flextable_selection_index.dart';
-import 'dart:math' as math;
+import 'scroll_metrics.dart';
 
 const precisionMargin = 0.01;
 
@@ -59,12 +62,23 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
     required this.tableChangeNotifiers,
     required this.properties,
   })  : _scrollChangeNotifier = scrollChangeNotifier,
-        _scaleChangeNotifier = scaleChangeNotifier {
-    // Scroll
-    //
-    //
-    //
-    //
+        _scaleChangeNotifier = scaleChangeNotifier,
+        sharedTextControllersByIndex =
+            oldPosition?.sharedTextControllersByIndex ??
+                SharedTextControllersByIndex(),
+        _editCell = oldPosition?.editCell ?? const PanelCellIndex() {
+    ///
+    ///
+
+    model
+      ..calculatePositionsX()
+      ..calculatePositionsY();
+
+    /// Scroll
+    ///
+    ///
+    ///
+    ///
     context.setCanDrag(true);
 
     if (activity == null) goIdle(0, 0);
@@ -99,13 +113,6 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
     ratioSizeAnimatedSplitChangeY = stateSplitY != SplitState.split ? 0.0 : 1.0;
 
     calculateHeaderWidth();
-
-    for (var element in model.autoFreezeAreasX) {
-      element.setPosition(getX);
-    }
-    for (var element in model.autoFreezeAreasY) {
-      element.setPosition(getY);
-    }
 
     _layoutIndex = List.generate(16, (int index) {
       int r = index % 4;
@@ -160,34 +167,75 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
   ScrollPosition? sliverScrollPosition;
   bool scrolling = false;
 
-  /// Edit
-  ///
-  /// cellsToRemove is cleared at the end of the performlayout function of TableMultiPanelViewport
-  PanelCellIndex _editCell = const PanelCellIndex();
-
   HashSet<FtIndex> cellsToRemove = HashSet<FtIndex>();
+
+  DateTime? previousCellTime;
+
+  PanelCellIndex previousEditCell = const PanelCellIndex();
+
+  PanelCellIndex _editCell;
 
   set editCell(PanelCellIndex value) {
     if (_editCell == value) {
       return;
     }
 
-    if (_editCell.isIndex) {
-      cellsToRemove.add(_editCell);
-    }
+    previousCellTime = null;
+
+    previousEditCell = _editCell;
+
     if (value.isIndex) {
-      cellsToRemove.add(value);
+      store(value.scrollIndexX, value.scrollIndexY);
+      showCell(value);
+    }
+
+    if (previousEditCell.isIndex && !value.isIndex) {
+      previousCellTime = DateTime.now();
     }
     _editCell = value;
   }
 
+  store(scrollIndexX, scrollIndexY) {
+    switch (stateSplitY) {
+      case SplitState.freezeSplit || SplitState.split:
+        {
+          restoreScroll = RestoreScroll(
+              scrollIndexX: scrollIndexX,
+              scrollIndexY: scrollIndexY,
+              scrollY0: getScrollY(scrollIndexX, 0),
+              scrollY1: getScrollY(scrollIndexX, 1));
+
+          break;
+        }
+      case SplitState.autoFreezeSplit || SplitState.noSplit:
+        {
+          restoreScroll = RestoreScroll(
+              scrollIndexX: scrollIndexX,
+              scrollIndexY: scrollIndexY,
+              mainScrollY: mainScrollY);
+          break;
+        }
+
+      default:
+        {}
+    }
+  }
+
   PanelCellIndex get editCell => _editCell;
 
-  clearEditCell(CellIndex cellIndex) {
+  void clearEditCell(FtIndex cellIndex) {
     if (editCell == cellIndex) {
       editCell = const PanelCellIndex();
     }
   }
+
+  void updateCellPanel(LayoutPanelIndex layoutPanelIndex) {
+    _editCell = editCell.copyWith(
+        panelIndexX: layoutPanelIndex.xIndex,
+        panelIndexY: layoutPanelIndex.yIndex);
+  }
+
+  final SharedTextControllersByIndex sharedTextControllersByIndex;
 
   // ViewModel
   //
@@ -310,7 +358,6 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
   void correctBy(Offset value) {}
 
   void jumpTo(int scrollIndexX, int scrollIndexY, Offset value) {
-    goIdle(scrollIndexX, scrollIndexY);
     Offset pixels = getScrollScaled(scrollIndexX, scrollIndexY, true);
     if (pixels != value) {
       final oldPixels = pixels;
@@ -335,7 +382,7 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
       jumpTo(scrollIndexX, scrollIndexY, to);
       return Future<void>.value();
     } else {
-      return animateToScaled(scrollIndexX, scrollIndexY, to,
+      return animateTo(scrollIndexX, scrollIndexY, to,
           duration: duration, curve: curve ?? Curves.ease);
     }
   }
@@ -775,8 +822,7 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
 
   bool get allowImplicitScrolling => physics.allowImplicitScrolling;
 
-  Future<void> animateToScaled(
-      int scrollIndexX, int scrollIndexY, Offset toScaled,
+  Future<void> animateTo(int scrollIndexX, int scrollIndexY, Offset toScaled,
       {Duration? duration, Curve? curve}) {
     final from = getScrollScaled(scrollIndexX, scrollIndexY, true);
 
@@ -788,7 +834,7 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
       return Future<void>.value();
     }
 
-    final activity = AnimateToActivity(
+    final activity = DrivenTableScrollActivity(
       scrollIndexX,
       scrollIndexY,
       this,
@@ -796,6 +842,25 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
       vsync: context.vsync,
       from: from,
       to: toScaled,
+      duration: duration ?? const Duration(milliseconds: 200),
+      curve: curve ?? Curves.ease,
+    );
+
+    beginActivity(activity);
+
+    return activity.done;
+  }
+
+  Future<void> animatesTo(
+      {required List<AnimatedToItem> items, Duration? duration, Curve? curve}) {
+    if (items.isEmpty) {
+      return Future<void>.value();
+    }
+    final activity = DrivenMultiScrollActivity(
+      items: items,
+      delegate: this,
+      enableScrollNotification: false,
+      vsync: context.vsync,
       duration: duration ?? const Duration(milliseconds: 200),
       curve: curve ?? Curves.ease,
     );
@@ -919,6 +984,10 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
 
   @override
   void goIdle(int scrollIndexX, int scrollIndexY) {
+    if (scheduleCorrectOffScroll) {
+      correctOffScroll(scrollIndexX, scrollIndexY);
+      scheduleCorrectOffScroll = false;
+    }
     beginActivity(TableIdleScrollActivity(
         scrollIndexX, scrollIndexY, this, scrollNotificationEnabled));
   }
@@ -1095,7 +1164,7 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
       case SplitState.freezeSplit:
         return properties.spaceSplitFreeze * ratioFreezeChangeX;
       case SplitState.autoFreezeSplit:
-        return autoFreezeAreaY.spaceSplit(properties.spaceSplitFreeze);
+        return 0.0; //autoFreezeAreaY.spaceSplit(properties.spaceSplitFreeze);
       case SplitState.split:
         return properties.spaceSplit;
       default:
@@ -1108,7 +1177,8 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
       case SplitState.freezeSplit:
         return properties.spaceSplitFreeze * ratioFreezeChangeY;
       case SplitState.autoFreezeSplit:
-        return autoFreezeAreaY.spaceSplit(properties.spaceSplitFreeze);
+        return 0.0;
+      //autoFreezeAreaY.spaceSplit(properties.spaceSplitFreeze);
       case SplitState.split:
         return properties.spaceSplit;
       default:
@@ -1231,8 +1301,10 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
     }
   }
 
-  calculateAutoFreezeX() {
+  calculateAutoFreezeX({double? width}) {
     if (!model.autoFreezePossibleX) return;
+
+    width ??= _widthMainPanel;
 
     scrollX0pY0 = mainScrollX;
     assert(!protectedScrollUnlockX,
@@ -1246,35 +1318,43 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
           orElse: () => autoFreezeNoRange);
     }
 
-    if (autoFreezeAreaX.freeze &&
-        _isFreezeSplitInWindowX(
-            _widthMainPanel, autoFreezeAreaX.header * tableScale)) {
-      if (mainScrollX < autoFreezeAreaX.d) {
-        scrollX0pY0 = autoFreezeAreaX.startPosition;
-        scrollX1pY0 = mainScrollX +
-            (autoFreezeAreaX.freezePosition - autoFreezeAreaX.startPosition);
-      } else {
-        scrollX0pY0 =
-            autoFreezeAreaX.startPosition + (mainScrollX - autoFreezeAreaX.d);
-        scrollX1pY0 = mainScrollX +
-            (autoFreezeAreaX.freezePosition - autoFreezeAreaX.startPosition) -
-            (mainScrollX - autoFreezeAreaX.d);
-      }
-
-      if (model.stateSplitX != SplitState.autoFreezeSplit) {
-        if (autoFreezeAreaX.header * tableScale < viewportDimensionX(0) / 2.0) {
-          switchX();
+    if (_isSplitInWindowX(width, SplitState.autoFreezeSplit)) {
+      if (autoFreezeAreaX.freeze) {
+        if (mainScrollX < autoFreezeAreaX.d) {
+          scrollX0pY0 = autoFreezeAreaX.startPosition;
+          scrollX1pY0 = mainScrollX +
+              (autoFreezeAreaX.freezePosition - autoFreezeAreaX.startPosition);
+        } else {
+          scrollX0pY0 =
+              autoFreezeAreaX.startPosition + (mainScrollX - autoFreezeAreaX.d);
+          scrollX1pY0 = mainScrollX +
+              (autoFreezeAreaX.freezePosition - autoFreezeAreaX.startPosition) -
+              (mainScrollX - autoFreezeAreaX.d);
         }
-        model.stateSplitX = SplitState.autoFreezeSplit;
-      }
 
-      model.topLeftCellPaneColumn = autoFreezeAreaX.freezeIndex;
+        if (model.stateSplitX != SplitState.autoFreezeSplit) {
+          if (autoFreezeAreaX.header * tableScale <
+              viewportDimensionX(0) / 2.0) {
+            switchX();
+          }
+          model.stateSplitX = SplitState.autoFreezeSplit;
+        }
+
+        model.topLeftCellPaneColumn = autoFreezeAreaX.freezeIndex;
+      } else {
+        if (stateSplitX == SplitState.autoFreezeSplit) {
+          if (previousHeader * tableScale < viewportDimensionX(0) / 2.0) {
+            switchX();
+          }
+          stateSplitX = SplitState.noSplit;
+        }
+      }
     } else {
       if (stateSplitX == SplitState.autoFreezeSplit) {
         if (previousHeader * tableScale < viewportDimensionX(0) / 2.0) {
           switchX();
         }
-        stateSplitX = SplitState.noSplit;
+        stateSplitX = SplitState.canceledAutoFreezeSplit;
       }
     }
   }
@@ -1330,8 +1410,10 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
     }
   }
 
-  calculateAutoFreezeY() {
+  calculateAutoFreezeY({double? height}) {
     if (!model.autoFreezePossibleY) return;
+
+    height ??= _heightMainPanel;
 
     scrollY0pX0 = mainScrollY;
     assert(!protectedScrollUnlockY,
@@ -1345,35 +1427,56 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
           orElse: () => autoFreezeNoRange);
     }
 
-    if (autoFreezeAreaY.freeze &&
-        _isFreezeSplitInWindowY(
-            _heightMainPanel, autoFreezeAreaY.header * tableScale)) {
-      if (mainScrollY < autoFreezeAreaY.d) {
-        scrollY0pX0 = autoFreezeAreaY.startPosition;
-        scrollY1pX0 = mainScrollY +
-            (autoFreezeAreaY.freezePosition - autoFreezeAreaY.startPosition);
+    if (_isSplitInWindowY(height, SplitState.autoFreezeSplit)) {
+      if (autoFreezeAreaY.freeze) {
+        if (mainScrollY < autoFreezeAreaY.d) {
+          scrollY0pX0 = autoFreezeAreaY.startPosition;
+          scrollY1pX0 = mainScrollY +
+              (autoFreezeAreaY.freezePosition - autoFreezeAreaY.startPosition);
+        } else {
+          scrollY0pX0 =
+              autoFreezeAreaY.startPosition + (mainScrollY - autoFreezeAreaY.d);
+          scrollY1pX0 = mainScrollY +
+              (autoFreezeAreaY.freezePosition - autoFreezeAreaY.startPosition) -
+              (mainScrollY - autoFreezeAreaY.d);
+        }
+
+        if (stateSplitY != SplitState.autoFreezeSplit) {
+          if (autoFreezeAreaY.header * tableScale <
+              viewportDimensionY(0) / 2.0) {
+            switchY();
+          }
+          stateSplitY = SplitState.autoFreezeSplit;
+        }
+
+        model.topLeftCellPaneRow = autoFreezeAreaY.freezeIndex;
       } else {
-        scrollY0pX0 =
-            autoFreezeAreaY.startPosition + (mainScrollY - autoFreezeAreaY.d);
-        scrollY1pX0 = mainScrollY +
-            (autoFreezeAreaY.freezePosition - autoFreezeAreaY.startPosition) -
-            (mainScrollY - autoFreezeAreaY.d);
-      }
-
-      if (stateSplitY != SplitState.autoFreezeSplit) {
-        if (autoFreezeAreaY.header * tableScale < viewportDimensionY(0) / 2.0) {
-          switchY();
+        if (stateSplitY == SplitState.autoFreezeSplit) {
+          if (previousHeader * tableScale < viewportDimensionY(0) / 2.0) {
+            switchY();
+          }
+          stateSplitY = SplitState.noSplit;
         }
-        stateSplitY = SplitState.autoFreezeSplit;
       }
-
-      model.topLeftCellPaneRow = autoFreezeAreaY.freezeIndex;
     } else {
-      if (stateSplitY == SplitState.autoFreezeSplit) {
-        if (previousHeader * tableScale < viewportDimensionY(0) / 2.0) {
-          switchY();
+      if (editCell.isIndex) {
+        if (stateSplitY == SplitState.autoFreezeSplit) {
+          if (autoFreezeAreaY.freeze) {
+            final row = editCell.row;
+            if (row < autoFreezeAreaY.freezeIndex) {
+              mainScrollY = autoFreezeAreaY.startPosition;
+            }
+          }
         }
-        stateSplitY = SplitState.noSplit;
+
+        stateSplitY = SplitState.canceledAutoFreezeSplit;
+      } else {
+        if (stateSplitY == SplitState.autoFreezeSplit) {
+          if (previousHeader * tableScale < viewportDimensionY(0) / 2.0) {
+            switchY();
+          }
+          stateSplitY = SplitState.canceledAutoFreezeSplit;
+        }
       }
     }
   }
@@ -1576,10 +1679,7 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
 
     final xSplitCorrected = _xSplit - leftHeaderPanelLength - sizeScrollBarLeft;
 
-    if (xSplitCorrected <
-        widthLayoutList[1].panelLength +
-            widthLayoutList[2].panelLength -
-            xSplitCorrected) {
+    if (xSplitCorrected < twoPanelViewPortDimensionX() - xSplitCorrected) {
       switchPanels = !switchPanels;
     }
 
@@ -1729,10 +1829,7 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
 
     final ySplitCorrected = _ySplit - topHeaderPanelLength - sizeScrollBarTop;
 
-    if (ySplitCorrected <
-        heightLayoutList[1].panelLength +
-            heightLayoutList[2].panelLength -
-            ySplitCorrected) {
+    if (ySplitCorrected < twoPanelViewPortDimensionY() - ySplitCorrected) {
       switchPanels = !switchPanels;
     }
 
@@ -1752,8 +1849,7 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
       return 0.0;
     } else if (stateSplitX == SplitState.freezeSplit) {
       if (horizontal == 0) {
-        final width =
-            widthLayoutList[1].panelLength + widthLayoutList[2].panelLength;
+        final width = twoPanelViewPortDimensionX();
 
         final positionFreeze = getX(model.topLeftCellPaneColumn) * tableScale;
         return width - freezeMiniSizeScaledX > positionFreeze
@@ -1775,8 +1871,7 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
       return 0.0;
     } else if (stateSplitY == SplitState.freezeSplit) {
       if (vertical == 0) {
-        final height =
-            heightLayoutList[1].panelLength + heightLayoutList[2].panelLength;
+        final height = twoPanelViewPortDimensionY();
 
         final heightFreeze = getY(model.topLeftCellPaneRow) * tableScale;
         return height - freezeMiniSizeScaledY > heightFreeze
@@ -1794,8 +1889,7 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
     double maxScroll;
 
     if (model.autoFreezePossibleX) {
-      double lengthPanels = widthLayoutList[2].panelEndPosition -
-          widthLayoutList[1].panelPosition;
+      double lengthPanels = twoPanelViewPortDimensionX();
 
       maxScroll = model.sheetWidth * tableScale - lengthPanels;
     } else {
@@ -1814,8 +1908,7 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
     double maxScroll;
 
     if (model.autoFreezePossibleY) {
-      double lengthPanels = heightLayoutList[2].panelEndPosition -
-          heightLayoutList[1].panelPosition;
+      double lengthPanels = twoPanelViewPortDimensionY();
 
       maxScroll = model.sheetHeight * tableScale - lengthPanels;
     } else {
@@ -2082,21 +2175,16 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
             maxWidthNoSplit + sizeScrollBarRight + rightHeaderLayoutLength,
         width: width);
 
-    if (widthChanged) {
-      calculateAutoFreezeX();
-    }
-
-    if (heightChanged) {
-      calculateAutoFreezeY();
-    }
-
-    if (deltaHeight > 0.0 || deltaWidth > 0.0) {
-      debugPrint('showEditCell trigged by Resize');
-      showEditCell();
-    } else if (widthChanged || heightChanged || scheduleCorrectOffScroll) {
+    // if (!(activity?.isScrolling ?? false)) {
+    if (deltaHeight > 0.0 || deltaWidth > 0.0 && editCell.isIndex) {
+      showCell(editCell);
+    } else if ((widthChanged || heightChanged) &&
+        (previousCellTime == null) &&
+        (activity?.isScrolling ?? false)) {
       scheduleCorrectOffScroll = false;
       correctOffScroll(0, 0);
     }
+    // }
 
     if (widthChanged ||
         heightChanged ||
@@ -2208,66 +2296,224 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
     }
   }
 
-  bool _isFreezeSplitInWindowX(double width, double widthFreezedPanel) {
-    final xStartPanel = leftHeaderPanelLength + properties.panelPadding.left;
-    final xEndPanel =
-        width - sizeScrollBarTrack - properties.panelPadding.right;
+  bool _isSplitInWindowX(double width, SplitState stateSplitX) {
+    double minimumWidthForCell = 0.0;
+    int column = -1;
 
-    final xStartTable = properties.minimalSizeDividedWindow * tableScale;
-    final xEndTable = xEndPanel -
-        xStartPanel -
-        properties.minimalSizeDividedWindow * tableScale;
+    if (editCell.isIndex) {
+      column = editCell.columns;
+      final x0 = getY(editCell.column);
+      final x1 = getY(editCell.column + editCell.columns);
 
-    return widthFreezedPanel > xStartTable && widthFreezedPanel < xEndTable;
+      minimumWidthForCell =
+          (x1 - x0 + properties.editPadding.horizontal) * tableScale;
+    }
+
+    final minWidthPanel = properties.minimalSizeDividedWindow * tableScale;
+
+    switch (stateSplitX) {
+      case SplitState.autoFreezeSplit:
+        {
+          final minimumWidthPanel2 =
+              (autoFreezeAreaX.freeze && column > autoFreezeAreaX.freezeIndex)
+                  ? math.max(minWidthPanel, minimumWidthForCell)
+                  : minWidthPanel;
+
+          final xStartPanel =
+              leftHeaderPanelLength + properties.panelPadding.left;
+          final xEndPanel =
+              width - sizeScrollBarTrack - properties.panelPadding.right;
+
+          final panel2 =
+              xEndPanel - xStartPanel - autoFreezeAreaX.header * tableScale;
+          return minimumWidthPanel2 <= panel2;
+        }
+      case SplitState.freezeSplit:
+        {
+          final minimumWidthPanel2 = column > model.topLeftCellPaneColumn
+              ? math.max(minWidthPanel, minimumWidthForCell)
+              : minWidthPanel;
+
+          final xStartPanel =
+              leftHeaderPanelLength + properties.panelPadding.left;
+          final xEndPanel =
+              width - sizeScrollBarTrack - properties.panelPadding.right;
+
+          double panel2 = xEndPanel -
+              xStartPanel -
+              (getX(model.topLeftCellPaneColumn) - scrollX0pY0) * tableScale;
+          return minimumWidthPanel2 <= panel2;
+        }
+      case SplitState.split:
+        {
+          final xEnd = width -
+              sizeScrollBarTrack -
+              rightHeaderLayoutLength -
+              properties.panelPadding.right;
+
+          final minimumHeightPanel2 = editCell.panelIndexX == 3
+              ? math.max(minWidthPanel, minimumWidthForCell)
+              : minWidthPanel;
+
+          return minimumHeightPanel2 < xEnd - _xSplit;
+        }
+      default:
+        {
+          return false;
+        }
+    }
   }
 
-  bool _isFreezeSplitInWindowY(double height, double heightFreezedPanel) {
-    final yStartPanel = topHeaderPanelLength + properties.panelPadding.top;
-    final yEndPanel =
-        height - sizeScrollBarTrack - properties.panelPadding.bottom;
-    final yStartTable = properties.minimalSizeDividedWindow * tableScale;
-    final yEndTable = yEndPanel -
-        yStartPanel -
-        properties.minimalSizeDividedWindow * tableScale;
+  bool _isSplitInWindowY(double height, SplitState stateSplitY) {
+    double minimumHeightForCell = 0.0;
+    int row = -1;
 
-    return heightFreezedPanel > yStartTable && heightFreezedPanel < yEndTable;
+    if (editCell.isIndex) {
+      row = editCell.row;
+      final y0 = getY(editCell.row);
+      final y1 = getY(editCell.row + editCell.rows);
+
+      minimumHeightForCell =
+          (y1 - y0 + properties.editPadding.vertical) * tableScale;
+    }
+    final minHeightPanel = properties.minimalSizeDividedWindow * tableScale;
+
+    switch (stateSplitY) {
+      case SplitState.autoFreezeSplit:
+        {
+          final minimumHeightPanel2 =
+              (autoFreezeAreaY.freeze && row > autoFreezeAreaY.freezeIndex)
+                  ? math.max(minHeightPanel, minimumHeightForCell)
+                  : minHeightPanel;
+
+          final yStartPanel =
+              topHeaderPanelLength + properties.panelPadding.top;
+          final yEndPanel =
+              height - sizeScrollBarTrack - properties.panelPadding.bottom;
+
+          final panel2 =
+              yEndPanel - yStartPanel - autoFreezeAreaY.header * tableScale;
+
+          return minimumHeightPanel2 <= panel2;
+        }
+      case SplitState.freezeSplit:
+        {
+          final minimumHeightPanel2 = row > model.topLeftCellPaneRow
+              ? math.max(minHeightPanel, minimumHeightForCell)
+              : minHeightPanel;
+
+          final yStartPanel =
+              topHeaderPanelLength + properties.panelPadding.top;
+          final yEndPanel =
+              height - sizeScrollBarTrack - properties.panelPadding.bottom;
+
+          double panel2 = yEndPanel -
+              yStartPanel -
+              (getY(model.topLeftCellPaneRow) - scrollY0pX0) * tableScale;
+          return minimumHeightPanel2 <= panel2;
+        }
+      case SplitState.split:
+        {
+          final yEnd = height -
+              sizeScrollBarTrack -
+              bottomHeaderLayoutLength -
+              properties.panelPadding.bottom * tableScale;
+
+          final minimumHeightPanel2 = editCell.panelIndexY == 3
+              ? math.max(minHeightPanel, minimumHeightForCell)
+              : minHeightPanel;
+
+          return minimumHeightPanel2 < yEnd - _ySplit;
+        }
+      default:
+        {
+          return false;
+        }
+    }
   }
 
-  bool isSplitInWindowX(double width) {
-    final xStart = (protectedScrollUnlockY ? sizeScrollBarTrack : 0.0) +
-        leftHeaderPanelLength +
-        properties.panelPadding.left +
-        properties.minimalSizeDividedWindow * tableScale;
-    final xEnd = width -
-        sizeScrollBarTrack -
-        rightHeaderLayoutLength -
-        properties.panelPadding.right -
-        properties.minimalSizeDividedWindow * tableScale;
+  // bool isSplitInWindowX(double width) {
+  //   final xStart = (protectedScrollUnlockY ? sizeScrollBarTrack : 0.0) +
+  //       leftHeaderPanelLength +
+  //       properties.panelPadding.left +
+  //       properties.minimalSizeDividedWindow * tableScale;
+  //   final xEnd = width -
+  //       sizeScrollBarTrack -
+  //       rightHeaderLayoutLength -
+  //       properties.panelPadding.right -
+  //       properties.minimalSizeDividedWindow * tableScale;
 
-    return _xSplit >= xStart && _xSplit <= xEnd;
-  }
+  //   return _xSplit >= xStart && _xSplit <= xEnd;
+  // }
 
-  bool isSplitInWindowY(double height) {
-    final yStart = (protectedScrollUnlockX ? sizeScrollBarTrack : 0.0) +
-        topHeaderPanelLength +
-        properties.panelPadding.top +
-        properties.minimalSizeDividedWindow * tableScale;
-    final yEnd = height -
-        sizeScrollBarTrack -
-        bottomHeaderLayoutLength -
-        properties.minimalSizeDividedWindow * tableScale;
+  // bool isSplitInWindowY(double height) {
+  //   final yStart = (protectedScrollUnlockX ? sizeScrollBarTrack : 0.0) +
+  //       topHeaderPanelLength +
+  //       properties.panelPadding.top +
+  //       properties.minimalSizeDividedWindow * tableScale;
+  //   final yEnd = height -
+  //       sizeScrollBarTrack -
+  //       bottomHeaderLayoutLength -
+  //       properties.minimalSizeDividedWindow * tableScale;
 
-    return _ySplit >= yStart && _ySplit <= yEnd;
-  }
+  //   return _ySplit >= yStart && _ySplit <= yEnd;
+  // }
 
   adjustSplitStateAfterWidthResize(double width) {
-    switch (stateSplitX) {
-      case SplitState.canceledFreezeSplit:
+    if ((editCell.isIndex, stateSplitX)
+        case (
+          true,
+          SplitState.canceledAutoFreezeSplit ||
+              SplitState.canceledFreezeSplit ||
+              SplitState.canceledSplit
+        )) {
+      return;
+    }
+
+    switch ((autoFreezePossibleX, stateSplitX)) {
+      /// AutoFreezeSplit
+      ///
+      ///
+
+      case (true, SplitState.autoFreezeSplit || SplitState.noSplit):
         {
-          if (_isFreezeSplitInWindowX(width,
-              (getX(model.topLeftCellPaneColumn) - scrollX0pY0) * tableScale)) {
+          calculateAutoFreezeX(width: width);
+
+          if (stateSplitX == SplitState.autoFreezeSplit &&
+              previousEditCell.isIndex &&
+              withinTimeFrameShowPreviousCell) {
+            // showCell(previousEditCell.copyWith(row: previousEditCell.row - 1));
+            // previousEditCell = const PanelCellIndex();
+          }
+          break;
+        }
+      case (true, SplitState.canceledAutoFreezeSplit):
+        {
+          // Nothing to do
+          break;
+        }
+
+      /// FreezeSplit
+      ///
+      ///
+
+      case (_, SplitState.freezeSplit):
+        {
+          if (!_isSplitInWindowX(width, SplitState.freezeSplit)) {
+            stateSplitX = SplitState.canceledFreezeSplit;
+
+            mainScrollX =
+                scrollX1pY0 - (getX(model.topLeftCellPaneColumn) - scrollX0pY0);
+          }
+
+          break;
+        }
+      case (_, SplitState.canceledFreezeSplit):
+        {
+          if (_isSplitInWindowX(width, SplitState.freezeSplit)) {
             stateSplitX = SplitState.freezeSplit;
 
+            scrollX0pY0 = getX(model.topLeftCellPaneColumn);
             final noScrollX1pY0 =
                 mainScrollX + (getX(model.topLeftCellPaneColumn) - scrollX0pY0);
 
@@ -2278,64 +2524,114 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
           }
           break;
         }
-      case SplitState.freezeSplit:
-        {
-          if (!_isFreezeSplitInWindowX(width,
-              (getX(model.topLeftCellPaneColumn) - scrollX0pY0) * tableScale)) {
-            stateSplitX = SplitState.canceledFreezeSplit;
 
-            mainScrollX =
-                scrollX1pY0 - (getX(model.topLeftCellPaneColumn) - scrollX0pY0);
-          }
-          break;
-        }
-      case SplitState.canceledSplit:
+      /// Split
+      ///
+      ///
+
+      case (_, SplitState.split):
         {
-          if (isSplitInWindowX(width)) {
-            stateSplitX = SplitState.split;
-            scrollX0pY0 = mainScrollX;
-          }
-          break;
-        }
-      case SplitState.split:
-        {
-          if (!isSplitInWindowX(width)) {
+          if (!_isSplitInWindowX(width, SplitState.split)) {
             stateSplitX = SplitState.canceledSplit;
             mainScrollX = scrollX0pY0;
           }
           break;
         }
 
-      default:
+      case (_, SplitState.canceledSplit):
         {
-          if (model.autoFreezePossibleX) {
-            calculateAutoFreezeX();
+          if (_isSplitInWindowX(width, SplitState.split)) {
+            stateSplitX = SplitState.split;
+            scrollX0pY0 = mainScrollX;
           }
+          break;
         }
+
+      default:
+        {}
     }
   }
 
-  adjustSplitStateAfterHeightResize(double height) {
-    switch (stateSplitY) {
-      case SplitState.canceledFreezeSplit:
-        {
-          if (_isFreezeSplitInWindowY(height,
-              (getY(model.topLeftCellPaneRow) - scrollY0pX0) * tableScale)) {
-            stateSplitY = SplitState.freezeSplit;
-            final noScrollY1pX0 =
-                mainScrollY + (getY(model.topLeftCellPaneRow) - scrollY0pX0);
+  bool get withinTimeFrameShowPreviousCell {
+    final p = previousCellTime;
 
-            //Keep scroll unless beyound the freeze line
-            if (scrollY1pX0 < noScrollY1pX0) {
-              scrollY1pX0 = noScrollY1pX0;
+    if (p == null) {
+      return false;
+    }
+
+    return (DateTime.now().difference(p) <= const Duration(milliseconds: 140));
+  }
+
+  RestoreScroll restoreScroll = const RestoreScroll();
+
+  adjustSplitStateAfterHeightResize(double height) {
+    if ((editCell.isIndex, stateSplitY)
+        case (
+          true,
+          SplitState.canceledAutoFreezeSplit ||
+              SplitState.canceledFreezeSplit ||
+              SplitState.canceledSplit
+        )) {
+      return;
+    }
+
+    switch ((autoFreezePossibleY, stateSplitY)) {
+      /// AutoFreezeSplit
+      ///
+      ///
+
+      case (true, SplitState.autoFreezeSplit || SplitState.noSplit):
+        {
+          calculateAutoFreezeY(height: height);
+
+          break;
+        }
+      case (true, SplitState.canceledAutoFreezeSplit):
+        {
+          calculateAutoFreezeY(height: height);
+
+          if (stateSplitY == SplitState.autoFreezeSplit &&
+              previousEditCell.isIndex &&
+              withinTimeFrameShowPreviousCell) {
+            scheduleMicrotask(() {
+              animateRestoreScroll(restoreScroll.copyIf(useMainScrollY: true));
+            });
+          }
+          break;
+        }
+
+      /// Split
+      ///
+      ///
+
+      case (_, SplitState.split):
+        {
+          if (!_isSplitInWindowY(height, SplitState.split)) {
+            stateSplitY = SplitState.canceledSplit;
+          }
+          break;
+        }
+
+      case (_, SplitState.canceledSplit):
+        {
+          if (_isSplitInWindowY(height, SplitState.split)) {
+            stateSplitY = SplitState.split;
+            if (withinTimeFrameShowPreviousCell) {
+              scheduleMicrotask(() {
+                animateRestoreScroll(
+                    restoreScroll.copyIf(useScrollY0: true, useScrollY1: true));
+              });
             }
           }
           break;
         }
-      case SplitState.freezeSplit:
+
+      /// FreezeSplit
+      ///
+      ///
+      case (_, SplitState.freezeSplit):
         {
-          if (!_isFreezeSplitInWindowY(height,
-              (getY(model.topLeftCellPaneRow) - scrollY0pX0) * tableScale)) {
+          if (!_isSplitInWindowY(height, SplitState.freezeSplit)) {
             stateSplitY = SplitState.canceledFreezeSplit;
 
             mainScrollY =
@@ -2343,25 +2639,31 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
           }
           break;
         }
-      case SplitState.canceledSplit:
+      case (_, SplitState.canceledFreezeSplit):
         {
-          if (isSplitInWindowY(height)) {
-            stateSplitY = SplitState.split;
+          if (_isSplitInWindowY(height, SplitState.freezeSplit)) {
+            stateSplitY = SplitState.freezeSplit;
+
+            final noScrollY1pX0 =
+                mainScrollY + (getY(model.topLeftCellPaneRow) - scrollY0pX0);
+
+            //Keep scroll unless beyound the freeze line
+            if (scrollY1pX0 < noScrollY1pX0) {
+              scrollY1pX0 = noScrollY1pX0;
+            }
+
+            if (restoreScroll.scrollY0 case double s) {
+              scrollY0pX0 = s;
+            }
           }
           break;
         }
-      case SplitState.split:
-        {
-          if (!isSplitInWindowY(height)) {
-            stateSplitY = SplitState.canceledSplit;
-          }
-          break;
-        }
+
       default:
         {
-          if (model.autoFreezePossibleY) {
-            calculateAutoFreezeY();
-          }
+          // if (model.autoFreezePossibleY) {
+          //   calculateAutoFreezeY();
+          // }
         }
     }
   }
@@ -2768,6 +3070,9 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
             marginBegin: halfSpace,
             marginEnd: endMargin);
       }
+
+      // print(
+      //     'twoPanelViewPortDimensionY ${twoPanelViewPortDimensionY()} $mainScrollY');
     }
 
     gridLayoutList[0].setGridLayout(
@@ -2821,11 +3126,16 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
       properties.panelPadding.vertical;
 
   markNeedsLayout() {
-    notifyListeners();
-    _notifyChange();
-    scheduleMicrotask(() {
-      //cellsToRefresh.clear();
-    });
+    if (mounted) {
+      notifyListeners();
+      _notifyChange();
+      scheduleMicrotask(() {
+        //cellsToRefresh.clear();
+      });
+    } else {
+      debugPrint(
+          'Try to notifyListeners will viewModel is unMounted already (disposed)');
+    }
   }
 
   _notifyChange() {
@@ -2872,6 +3182,7 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
     switch (split) {
       case SplitState.canceledFreezeSplit:
       case SplitState.canceledSplit:
+      case SplitState.canceledAutoFreezeSplit:
       case SplitState.noSplit:
         {
           setRatio(gl[1].panelLength < sheetLengthScale ? 1.0 : 0.0);
@@ -2984,8 +3295,8 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
     return false;
   }
 
-  CellIndex freezeIndex(Offset position) {
-    return CellIndex(
+  FtIndex freezeIndex(Offset position) {
+    return FtIndex(
         column: model.findIntersectionIndexX(
             distance: (position.dx +
                     getScrollX(0, 0) * tableScale -
@@ -3182,20 +3493,26 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
   @override
   List<GridLayout> get tableLayoutY => heightLayoutList;
 
+  double twoPanelViewPortDimensionX() =>
+      widthLayoutList[1].panelLength + widthLayoutList[2].panelLength;
+
+  double twoPanelViewPortDimensionY() =>
+      heightLayoutList[1].panelLength + heightLayoutList[2].panelLength;
+
   @override
   double viewportDimensionX(int scrollIndexX) {
     if (model.autoFreezePossibleX) {
       return widthLayoutList[1].panelLength + widthLayoutList[2].panelLength;
     }
     switch (stateSplitX) {
-      case SplitState.canceledFreezeSplit:
-      case SplitState.canceledSplit:
-      case SplitState.noSplit:
+      case SplitState.canceledFreezeSplit ||
+            SplitState.canceledSplit ||
+            SplitState.canceledAutoFreezeSplit ||
+            SplitState.noSplit:
         return widthLayoutList[1].panelLength;
       case SplitState.autoFreezeSplit:
-      case SplitState.freezeSplit:
         return widthLayoutList[1].panelLength + widthLayoutList[2].panelLength;
-      case SplitState.split:
+      case SplitState.freezeSplit || SplitState.split:
         return widthLayoutList[scrollIndexX + 1].panelLength;
     }
   }
@@ -3207,15 +3524,15 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
     }
 
     switch (stateSplitY) {
-      case SplitState.canceledFreezeSplit:
-      case SplitState.canceledSplit:
-      case SplitState.noSplit:
+      case SplitState.canceledFreezeSplit ||
+            SplitState.canceledSplit ||
+            SplitState.canceledAutoFreezeSplit ||
+            SplitState.noSplit:
         return heightLayoutList[1].panelLength;
       case SplitState.autoFreezeSplit:
-      case SplitState.freezeSplit:
         return heightLayoutList[1].panelLength +
             heightLayoutList[2].panelLength;
-      case SplitState.split:
+      case SplitState.freezeSplit || SplitState.split:
         return heightLayoutList[scrollIndexY + 1].panelLength;
     }
   }
@@ -3239,6 +3556,7 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
     switch (stateSplitX) {
       case SplitState.canceledFreezeSplit:
       case SplitState.canceledSplit:
+      case SplitState.canceledAutoFreezeSplit:
       case SplitState.noSplit:
         return widthLayoutList[1].gridLength;
       case SplitState.autoFreezeSplit:
@@ -3262,6 +3580,7 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
     switch (stateSplitY) {
       case SplitState.canceledFreezeSplit:
       case SplitState.canceledSplit:
+      case SplitState.canceledAutoFreezeSplit:
       case SplitState.noSplit:
         return heightLayoutList[1].gridLength;
       case SplitState.autoFreezeSplit:
@@ -3334,14 +3653,16 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
             break;
           }
 
-        case SplitState.noSplit:
-        case SplitState.autoFreezeSplit:
-        case SplitState.canceledFreezeSplit:
-        case SplitState.canceledSplit:
+        case SplitState.noSplit ||
+              SplitState.autoFreezeSplit ||
+              SplitState.canceledFreezeSplit ||
+              SplitState.canceledSplit:
           {
             calculateAutoFreezeX();
             break;
           }
+        default:
+          {}
       }
     } else {
       if (stateSplitX == SplitState.autoFreezeSplit) {
@@ -3373,14 +3694,16 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
             break;
           }
 
-        case SplitState.noSplit:
-        case SplitState.autoFreezeSplit:
-        case SplitState.canceledFreezeSplit:
-        case SplitState.canceledSplit:
+        case SplitState.noSplit ||
+              SplitState.autoFreezeSplit ||
+              SplitState.canceledFreezeSplit ||
+              SplitState.canceledSplit:
           {
             calculateAutoFreezeY();
             break;
           }
+        default:
+          {}
       }
     } else {
       if (stateSplitY == SplitState.autoFreezeSplit) {
@@ -3400,7 +3723,7 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
   ///
   ///
 
-  PanelCellIndex? findCell(Offset offset) {
+  PanelCellIndex findCell(Offset offset) {
     int panelIndexX = -1;
     double correctX = 0.0;
     int panelIndexY = -1;
@@ -3414,7 +3737,7 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
       }
     }
     if (panelIndexX == -1) {
-      return null;
+      return const PanelCellIndex();
     }
 
     for (GridLayout gl in heightLayoutList) {
@@ -3425,39 +3748,27 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
       }
     }
     if (panelIndexY == -1) {
-      return null;
+      return const PanelCellIndex();
     }
 
-    final cellIndex = model.findCellIndex(
+    final cellIndex = model.isCellEditable(model.findCellIndexFromPosition(
         correctX / tableScale +
             getScrollX(panelIndexX <= 1 ? 0 : 1, panelIndexY <= 1 ? 0 : 1),
         correctY / tableScale +
-            getScrollY(panelIndexX <= 1 ? 0 : 1, panelIndexY <= 1 ? 0 : 1));
-
-    Offset t = getScroll(0, 0, true);
-
-    // animateTo(0, 0, t + const Offset(50, 50));
+            getScrollY(panelIndexX <= 1 ? 0 : 1, panelIndexY <= 1 ? 0 : 1)));
 
     return PanelCellIndex.from(
         panelIndexX: panelIndexX,
         panelIndexY: panelIndexY,
-        cellIndex: cellIndex);
+        ftIndex: cellIndex,
+        cell: model.cell(row: cellIndex.row, column: cellIndex.column));
   }
 
   ///
   ///
   ///
 
-  CellIndex nextCell(CellIndex current) {
-    int row = current.row;
-    int column = current.column + current.columns;
-
-    int columns = model.findMergedColumns(row, column)?.columns ?? 1;
-    int rows = model.findMergedRows(row, column)?.rows ?? 1;
-
-    return CellIndex(
-        row: row, column: column, columns: columns, rows: rows, edit: true);
-  }
+  FtIndex nextCell(PanelCellIndex current) => model.nextCell(current);
 
   ///
   ///
@@ -3468,13 +3779,20 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
   ///
   ///
 
-  bool showEditCellScheduled = false;
+  bool showCellScheduled = false;
 
-  void showEditCell() {
+  void showCell(PanelCellIndex index) {
     void scheduleAnimatedScroll() {
-      if (_editCell.isIndex) {
-        int scrollIndexX = editCell.scrollIndexX;
-        int scrollIndexY = editCell.scrollIndexY;
+      if (index.isIndex) {
+        int scrollIndexX = switch (stateSplitX) {
+          (SplitState.split || SplitState.freezeSplit) => index.scrollIndexX,
+          (_) => 0
+        };
+
+        int scrollIndexY = switch (stateSplitY) {
+          (SplitState.split || SplitState.freezeSplit) => index.scrollIndexY,
+          (_) => 0
+        };
 
         double scrollX =
             getScrollScaledX(scrollIndexX, scrollIndexY, scrollActivity: true);
@@ -3487,8 +3805,8 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
 
         double widthPanel = viewportDimensionX(scrollIndexX);
 
-        double x0 = getX(_editCell.column) * tableScale;
-        double x1 = getX(_editCell.column + _editCell.columns) * tableScale;
+        double x0 = getX(index.column) * tableScale;
+        double x1 = getX(index.column + index.columns) * tableScale;
 
         double widthCell = x1 - x0;
         double leftPadding = math.min(
@@ -3502,16 +3820,21 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
           case SplitState.autoFreezeSplit:
             {
               if (autoFreezeAreaX.freeze) {
-                if (_editCell.column >= autoFreezeAreaX.startIndex &&
-                    _editCell.column < autoFreezeAreaX.freezeIndex) {
+                if (index.column >= autoFreezeAreaX.startIndex &&
+                    index.column < autoFreezeAreaX.freezeIndex) {
                   skipX = true;
-                } else if (_editCell.column >= autoFreezeAreaX.freezeIndex &&
-                    _editCell.column < autoFreezeAreaX.endIndex) {
+                } else if (index.column >= autoFreezeAreaX.freezeIndex &&
+                    index.column < autoFreezeAreaX.endIndex) {
                   leftPadding = (autoFreezeAreaX.freezePosition -
                           autoFreezeAreaX.startPosition) *
                       tableScale;
                 }
               }
+              break;
+            }
+          case SplitState.freezeSplit:
+            {
+              skipX = index.column < model.topLeftCellPaneColumn;
               break;
             }
           default:
@@ -3524,8 +3847,8 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
 
         double heightPanel = viewportDimensionY(scrollIndexY);
 
-        double y0 = getY(_editCell.row) * tableScale;
-        double y1 = getY(_editCell.row + editCell.rows) * tableScale;
+        double y0 = getY(index.row) * tableScale;
+        double y1 = getY(index.row + index.rows) * tableScale;
 
         double heightCell = y1 - y0;
 
@@ -3543,16 +3866,22 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
           case SplitState.autoFreezeSplit:
             {
               if (autoFreezeAreaY.freeze) {
-                if (_editCell.row >= autoFreezeAreaY.startIndex &&
-                    _editCell.row < autoFreezeAreaY.freezeIndex) {
+                if (index.row >= autoFreezeAreaY.startIndex &&
+                    index.row < autoFreezeAreaY.freezeIndex) {
                   skipY = true;
-                } else if (_editCell.row >= autoFreezeAreaY.freezeIndex &&
-                    _editCell.row <= autoFreezeAreaY.endIndex) {
+                } else if (index.row >= autoFreezeAreaY.freezeIndex &&
+                    index.row <= autoFreezeAreaY.endIndex) {
                   topPadding = (autoFreezeAreaY.freezePosition -
                           autoFreezeAreaY.startPosition) *
                       tableScale;
                 }
               }
+
+              break;
+            }
+          case SplitState.freezeSplit:
+            {
+              skipY = index.row < model.topLeftCellPaneRow;
               break;
             }
           default:
@@ -3600,7 +3929,7 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
             setScrollScaledY(scrollIndexX, scrollIndexY, yTo);
             markNeedsLayout();
           } else {
-            animateToScaled(scrollIndexX, scrollIndexY, Offset(xTo, yTo));
+            animateTo(scrollIndexX, scrollIndexY, Offset(xTo, yTo));
           }
           return;
         }
@@ -3613,11 +3942,109 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
     ///
     ///
 
-    if (_editCell.isIndex && !showEditCellScheduled) {
+    if (index.isIndex && !showCellScheduled) {
       scheduleMicrotask(() {
-        showEditCellScheduled = false;
+        showCellScheduled = false;
         scheduleAnimatedScroll();
       });
     }
+  }
+
+  ///
+  ///
+  ///
+  ///
+  ///
+
+  void didFinishLayout() {
+    model.didFinishLayout();
+  }
+
+  void didStartLayout() {
+    model.didStartLayout();
+  }
+
+  animateRestoreScroll(RestoreScroll animateScroll) {
+    if (animateScroll.isEmpty) {
+      return;
+    }
+
+    switch (stateSplitY) {
+      case SplitState.autoFreezeSplit:
+        {
+          if (animateScroll.mainScrollY case double scrollY) {
+            animatesTo(items: [
+              AnimatedToItem(
+                scrollIndexX: 0,
+                scrollIndexY: 0,
+                fromX: mainScrollX * tableScale,
+                fromY: mainScrollY * tableScale,
+                toY: scrollY * tableScale,
+              )
+            ]);
+          }
+          break;
+        }
+      case SplitState.split:
+        {
+          animatesTo(items: [
+            if (animateScroll.scrollY0 case double scrollY0)
+              AnimatedToItem(
+                scrollIndexX: animateScroll.scrollIndexX,
+                scrollIndexY: 0,
+                fromX: getScrollScaledX(animateScroll.scrollIndexX, 0),
+                fromY: getScrollScaledY(animateScroll.scrollIndexX, 0),
+                toY: scrollY0 * tableScale,
+              ),
+            if (animateScroll.scrollY1 case double scrollY1)
+              AnimatedToItem(
+                scrollIndexX: animateScroll.scrollIndexX,
+                scrollIndexY: 1,
+                fromX: getScrollScaledX(animateScroll.scrollIndexX, 1),
+                fromY: getScrollScaledY(animateScroll.scrollIndexX, 1),
+                toY: scrollY1 * tableScale,
+              )
+          ]);
+        }
+      default:
+        {}
+    }
+  }
+}
+
+class RestoreScroll {
+  final int scrollIndexX;
+  final int scrollIndexY;
+  final double? mainScrollY;
+  final double? scrollY0;
+  final double? scrollY1;
+
+  const RestoreScroll({
+    this.scrollIndexX = -1,
+    this.scrollIndexY = -1,
+    this.mainScrollY,
+    this.scrollY0,
+    this.scrollY1,
+  });
+
+  bool get isEmpty =>
+      scrollIndexX == -1 &&
+      scrollIndexY == -1 &&
+      mainScrollY == null &&
+      scrollY0 == null &&
+      scrollY1 == null;
+
+  RestoreScroll copyIf({
+    bool useMainScrollY = false,
+    bool useScrollY0 = false,
+    bool useScrollY1 = false,
+  }) {
+    return RestoreScroll(
+      scrollIndexX: scrollIndexX,
+      scrollIndexY: scrollIndexY,
+      mainScrollY: useMainScrollY ? mainScrollY : null,
+      scrollY0: useScrollY0 ? scrollY0 : null,
+      scrollY1: useScrollY1 ? scrollY1 : null,
+    );
   }
 }

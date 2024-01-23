@@ -49,17 +49,37 @@
             "name": "text_edit_example",
             "type": "dart",
             "request": "launch",
-            "cwd": "text_edit_example",
+            "cwd": "other_examples/text_edit_example",
             "program": "lib/main.dart"
         },
         {
             "name": "text_edit_example (profile mode)",
             "type": "dart",
             "request": "launch",
-            "cwd": "text_edit_example",
+            "cwd": "other_examples/text_edit_example",
             "program": "lib/main.dart",
             "flutterMode": "profile"
         },
+
+
+        {
+            "name": "async_table_example",
+            "type": "dart",
+            "request": "launch",
+            "cwd": "async_table_example",
+            "program": "lib/main.dart"
+        },
+        {
+            "name": "async_table_example (profile mode)",
+            "type": "dart",
+            "request": "launch",
+            "cwd": "async_table_example",
+            "program": "lib/main.dart",
+            "flutterMode": "profile"
+        },
+
+
+
          
     ]
 }

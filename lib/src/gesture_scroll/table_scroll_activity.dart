@@ -847,7 +847,7 @@ class AdjustScroll {
   }
 }
 
-class AnimateToActivity extends TableScrollActivity {
+class DrivenTableScrollActivity extends TableScrollActivity {
   TickerProvider vsync;
   late AnimationController _controller;
   late Animation<Offset> _animation;
@@ -856,8 +856,8 @@ class AnimateToActivity extends TableScrollActivity {
   Offset? previous;
   bool stop = false;
 
-  AnimateToActivity(super.scrollIndexX, super.scrollIndexY, super.delegate,
-      super.enableScrollNotification,
+  DrivenTableScrollActivity(super.scrollIndexX, super.scrollIndexY,
+      super.delegate, super.enableScrollNotification,
       {required this.vsync,
       required this.from,
       required this.to,
@@ -891,7 +891,7 @@ class AnimateToActivity extends TableScrollActivity {
   end() {
     debugPrint('end and isDisposed $isDisposed from $from to $to');
     if (!isDisposed) {
-      delegate.goBallistic(scrollIndexX, scrollIndexY, 0, 0);
+      // delegate.goBallistic(scrollIndexX, scrollIndexY, 0, 0);
     }
   }
 
@@ -916,4 +916,107 @@ class AnimateToActivity extends TableScrollActivity {
 
   @override
   double get yVelocity => _controller.velocity * (to.dy - from.dy).abs();
+}
+
+class DrivenMultiScrollActivity extends TableScrollActivity {
+  TickerProvider vsync;
+  late AnimationController _controller;
+  bool stop = false;
+  double distanceX = 0.0;
+  double distanceY = 0.0;
+
+  DrivenMultiScrollActivity(
+      {required List<AnimatedToItem> items,
+      required TableScrollActivityDelegate delegate,
+      required bool enableScrollNotification,
+      required this.vsync,
+      required Duration duration,
+      required Curve curve})
+      : super(-1, -1, delegate, enableScrollNotification) {
+    _controller = AnimationController(vsync: vsync, duration: duration)
+      ..addListener(() {
+        for (AnimatedToItem animatedScrollPanel in items) {
+          animatedScrollPanel.scroll(delegate);
+        }
+      })
+      ..forward().then((value) => end());
+    _completer = Completer<void>();
+
+    for (AnimatedToItem animatedScrollPanel in items) {
+      animatedScrollPanel.drive(_controller, curve);
+      distanceX = animatedScrollPanel.distanceX;
+      distanceY = animatedScrollPanel.distanceY;
+    }
+    distanceX /= items.length;
+    distanceY /= items.length;
+  }
+
+  late final Completer<void> _completer;
+
+  update(TableDragUpdateDetails details) {
+    if (stop) return;
+  }
+
+  end() {
+    if (!isDisposed) {
+      // delegate.goBallistic(scrollIndexX, scrollIndexY, 0, 0);
+    }
+  }
+
+  Future<void> get done => _completer.future;
+
+  @override
+  dispose() {
+    super.dispose();
+    _completer.complete();
+    _controller.dispose();
+  }
+
+  @override
+  bool get isScrolling =>
+      true; //last schedule can still check for scroll //_controller.isAnimating;
+
+  @override
+  bool get shouldIgnorePointer => false;
+
+  @override
+  double get xVelocity => _controller.velocity * distanceX;
+
+  @override
+  double get yVelocity => _controller.velocity * distanceY;
+}
+
+class AnimatedToItem {
+  int scrollIndexX;
+  int scrollIndexY;
+
+  Offset begin;
+  Offset end;
+  late Tween<Offset> tween;
+  late Animation _animation;
+
+  AnimatedToItem({
+    required this.scrollIndexX,
+    required this.scrollIndexY,
+    required double fromX,
+    required double fromY,
+    double? toX,
+    double? toY,
+  })  : begin = Offset(fromX, fromY),
+        end = Offset(toX ?? fromX, toY ?? fromY) {
+    tween = Tween<Offset>(begin: begin, end: end);
+  }
+
+  drive(AnimationController controller, Curve curve) {
+    _animation =
+        controller.drive<double>(CurveTween(curve: curve)).drive<Offset>(tween);
+  }
+
+  double get distanceX => (end.dx - begin.dx).abs();
+
+  double get distanceY => (end.dy - begin.dy).abs();
+
+  scroll(TableScrollActivityDelegate delegate) {
+    delegate.setPixels(scrollIndexX, scrollIndexY, _animation.value);
+  }
 }

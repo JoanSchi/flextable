@@ -2,9 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-import 'package:flextable/src/panels/panel_viewport.dart';
 import 'package:flutter/material.dart';
-
 import '../../../flextable.dart';
 
 class SelectCell extends StatefulWidget {
@@ -27,11 +25,14 @@ class _SelectCellState extends State<SelectCell> {
         localPosition = details.localPosition;
       },
       onTap: () {
-        PanelCellIndex? index = widget.viewModel.findCell(localPosition);
+        final v = widget.viewModel;
+        final f = v.findCell(localPosition);
 
-        if (index != null && index.isPanel) {
+        if (!v.editCell.sameIndex(f)) {
+          final editable = v.model.isCellEditable(f).isIndex;
+
           widget.viewModel
-            ..editCell = index.copyWith(edit: true)
+            ..editCell = editable ? f : const PanelCellIndex()
             ..markNeedsLayout();
         }
       },

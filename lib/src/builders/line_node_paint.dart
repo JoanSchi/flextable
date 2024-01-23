@@ -4,7 +4,6 @@
 
 import 'package:flextable/flextable.dart';
 import 'package:flutter/widgets.dart';
-import '../model/properties/flextable_grid_info.dart';
 
 calculateLinePosition({
   required Canvas canvas,

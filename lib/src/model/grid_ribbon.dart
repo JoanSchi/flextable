@@ -8,13 +8,11 @@ import 'package:flutter/foundation.dart';
 
 import '../builders/cells.dart';
 
-class RowRibbon<C extends AbstractCell> extends GridRibbon {
+class RowRibbon extends GridRibbon {
   // Add indentifier if you like;
-  List<C?> columnList;
 
   RowRibbon()
-      : columnList = <C?>[],
-        super(
+      : super(
             firstIndex: (Merged merged) => merged.startColumn,
             lastIndex: (Merged merged) => merged.lastColumn);
 }
@@ -80,8 +78,8 @@ abstract class GridRibbon {
     }());
   }
 
-  Merged? removeMerged({Merged? merged, int? index}) =>
+  (Merged?, bool) removeMerged({Merged? merged, int? index}) =>
       merged == null && index == null
-          ? null
-          : mergedMap.remove(index ?? firstIndex(merged!));
+          ? (null, mergedMap.isEmpty)
+          : (mergedMap.remove(index ?? firstIndex(merged!)), mergedMap.isEmpty);
 }

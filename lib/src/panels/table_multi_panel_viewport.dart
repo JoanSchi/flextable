@@ -397,10 +397,14 @@ class TableMultiPanelRenderObjectElement<T extends AbstractFtModel<C>,
   }
 
   @override
-  void didFinishLayout() {}
+  void didFinishLayout() {
+    widget.viewModel.didFinishLayout();
+  }
 
   @override
-  void didStartLayout() {}
+  void didStartLayout() {
+    widget.viewModel.didStartLayout();
+  }
 
   @override
   void removeChild(RenderBox child) {

@@ -3,8 +3,7 @@
 // license that can be found in the LICENSE file.
 
 import 'package:flextable/flextable.dart';
-import '../builders/cells.dart';
-import '../model/properties/flextable_grid_info.dart';
+import 'package:flutter/rendering.dart';
 
 class TableInterator<T extends AbstractFtModel<C>, C extends AbstractCell> {
   TableInterator({
@@ -33,6 +32,8 @@ class TableInterator<T extends AbstractFtModel<C>, C extends AbstractCell> {
   double width = 0.0;
   int editRowIndex = -1;
   int editColumnIndex = -1;
+  int focusRowIndex = -1;
+  int focusColumnIndex = -1;
 
   set viewModel(FtViewModel<T, C> value) {
     _viewModel = value;
@@ -56,20 +57,137 @@ class TableInterator<T extends AbstractFtModel<C>, C extends AbstractCell> {
       firstColumnIndex = columnInfoList.first.index;
       lastColumnIndex = columnInfoList.last.index;
     }
+
+    //EditCell
+
     final ec = _viewModel.editCell;
-    if ((_viewModel.model.anyFreezeSplitX ||
-            _viewModel.noSplitX ||
-            ec.panelIndexX == tpli.xIndex) &&
-        (_viewModel.model.anyFreezeSplitX ||
-            _viewModel.model.anyFreezeSplitY ||
-            _viewModel.noSplitY ||
-            ec.panelIndexY == tpli.yIndex)) {
-      editRowIndex = ec.row;
-      editColumnIndex = ec.column;
-    } else {
-      editRowIndex = -1;
-      editColumnIndex = -1;
+    editColumnIndex = ec.column;
+    editRowIndex = ec.row;
+
+    switch ((_viewModel.stateSplitX, tpli.xIndex, ec.panelIndexX, ec.column)) {
+      case (
+          SplitState.split,
+          int panelIndexX,
+          int panelIndexEditX,
+          int columnEdit
+        ):
+        {
+          editColumnIndex = columnEdit;
+          focusColumnIndex = (panelIndexX == panelIndexEditX) ? columnEdit : -1;
+          break;
+        }
+      case (
+          SplitState.autoFreezeSplit,
+          int panelIndexEditX,
+          int _,
+          int columnEdit
+        ):
+        {
+          editColumnIndex = focusColumnIndex = fr(panelIndexEditX,
+              _viewModel.autoFreezeAreaX.freezeIndex, columnEdit);
+          break;
+        }
+      case (SplitState.freezeSplit, int panelIndexEditX, int _, int columnEdit):
+        {
+          editColumnIndex = focusColumnIndex = fr(panelIndexEditX,
+              _viewModel.model.topLeftCellPaneColumn, columnEdit);
+
+          break;
+        }
+      case (_, _, int _, int columnEdit):
+        {
+          editColumnIndex = focusColumnIndex = columnEdit;
+          break;
+        }
     }
+
+    switch ((_viewModel.stateSplitY, tpli.yIndex, ec.panelIndexY, ec.row)) {
+      case (
+          SplitState.split,
+          int panelIndexY,
+          int panelIndexEditY,
+          int rowEdit
+        ):
+        {
+          editRowIndex = rowEdit;
+          focusRowIndex = (panelIndexY == panelIndexEditY) ? rowEdit : -1;
+          break;
+        }
+
+      case (SplitState.autoFreezeSplit, int panelIndexY, _, int rowEdit):
+        {
+          editRowIndex = focusRowIndex =
+              fr(panelIndexY, _viewModel.autoFreezeAreaY.freezeIndex, rowEdit);
+          break;
+        }
+
+      case (SplitState.freezeSplit, int panelIndexEditY, _, int rowEdit):
+        {
+          editRowIndex = focusRowIndex =
+              fr(panelIndexEditY, _viewModel.model.topLeftCellPaneRow, rowEdit);
+          break;
+        }
+      case (_, _, _, int rowEdit):
+        {
+          editRowIndex = focusRowIndex = rowEdit;
+          break;
+        }
+    }
+  }
+
+  int fr(int panel, int freeze, int index) {
+    if (panel == 1 && index < freeze) {
+      return index;
+    } else if (panel == 2 && freeze <= index) {
+      return index;
+    } else {
+      return -1;
+    }
+  }
+
+  FtIndex tt(LayoutPanelIndex tpli) {
+    int row;
+    switch (_viewModel.stateSplitY) {
+      case SplitState.autoFreezeSplit:
+        {
+          row = fr(tpli.yIndex, _viewModel.autoFreezeAreaY.freezeIndex,
+              editRowIndex);
+          break;
+        }
+      case SplitState.freezeSplit:
+        {
+          row = fr(
+              tpli.yIndex, _viewModel.model.topLeftCellPaneRow, editRowIndex);
+          break;
+        }
+      default:
+        {
+          row = editRowIndex;
+        }
+    }
+
+    int column;
+
+    switch (_viewModel.stateSplitX) {
+      case SplitState.autoFreezeSplit:
+        {
+          column = fr(tpli.xIndex, _viewModel.autoFreezeAreaX.freezeIndex,
+              editColumnIndex);
+          break;
+        }
+      case SplitState.freezeSplit:
+        {
+          column = fr(tpli.xIndex, _viewModel.model.topLeftCellPaneColumn,
+              editColumnIndex);
+          break;
+        }
+      default:
+        {
+          column = editColumnIndex;
+        }
+    }
+
+    return FtIndex(row: row, column: column);
   }
 
   bool get next {
@@ -168,12 +286,12 @@ class TableInterator<T extends AbstractFtModel<C>, C extends AbstractCell> {
     }
   }
 
-  CellIndex get tableCellIndex => CellIndex(
+  FtIndex get tableCellIndex {
+    return FtIndex(
       row: rowIndex,
       column: columnIndex,
-      rows: rows,
-      columns: columns,
-      edit: editRowIndex == rowIndex && editColumnIndex == columnIndex);
+    );
+  }
 
   GridInfo findPositionRow(int toIndex) {
     if (toIndex < firstRowIndex || toIndex > lastRowIndex) {
@@ -190,4 +308,42 @@ class TableInterator<T extends AbstractFtModel<C>, C extends AbstractCell> {
       return columnInfoList[toIndex - firstColumnIndex];
     }
   }
+
+  (FtIndex, C?, CellStatus, Rect) get editCellOutsideInteration {
+    if (focusRowIndex != -1 && focusColumnIndex != -1) {
+      C? cell = model.cell(row: focusRowIndex, column: focusColumnIndex);
+
+      final x0 = model.getX(focusRowIndex, 0);
+      final columns = (cell?.merged?.columns ?? 1);
+      final x1 = model.getX(focusRowIndex + columns, 0);
+
+      final y0 = model.getX(focusColumnIndex, 0);
+      final rows = (cell?.merged?.rows ?? 1);
+      final y1 = model.getX(focusColumnIndex + rows, 0);
+      return (
+        FtIndex(
+          row: focusRowIndex,
+          column: focusColumnIndex,
+        ),
+        model.cell(row: focusRowIndex, column: focusColumnIndex),
+        const CellStatus(edit: true, hasFocus: true),
+        Rect.fromLTRB(x0, y0, x1, y1)
+      );
+    } else {
+      return (const FtIndex(), null, const CellStatus(), Rect.zero);
+    }
+  }
+
+  FtIndex get editCellIndex =>
+      FtIndex(row: editRowIndex, column: editColumnIndex);
+
+  CellStatus get editCellStatus => CellStatus(
+      edit: editRowIndex != -1 && editColumnIndex != -1,
+      hasFocus: focusRowIndex != -1 && focusColumnIndex != -1);
+
+  bool get hasFocus => focusRowIndex != -1 && focusColumnIndex != -1;
+
+  CellStatus get cellStatus => CellStatus(
+      edit: editRowIndex == rowIndex && editColumnIndex == columnIndex,
+      hasFocus: focusRowIndex == rowIndex && focusColumnIndex == columnIndex);
 }

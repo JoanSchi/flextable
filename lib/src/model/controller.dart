@@ -39,6 +39,19 @@ class FtController<T extends AbstractFtModel<C>, C extends AbstractCell>
     return _viewModels.last;
   }
 
+  FtViewModel<T, C>? lastViewModelOrNull({stretch = 3}) {
+    if (_viewModels.isEmpty) {
+      return null;
+    }
+    assert(_viewModels.length <= stretch,
+        'ScrollController attached to multiple scroll views.');
+    if (_viewModels.length > 1) {
+      debugPrint(
+          'LastViewModel viewModel number is: ${_viewModels.length} (delayed microTask?)');
+    }
+    return _viewModels.last;
+  }
+
   void attach(FtViewModel<T, C> viewModel) {
     assert(!_viewModels.contains(viewModel));
     _viewModels.add(viewModel);

@@ -5,26 +5,23 @@
 import 'package:flutter/material.dart';
 import '../../flextable.dart';
 
+extension ViewModelBuildContextEntension on BuildContext {
+  FtViewModel<T, C>?
+      viewModel<T extends AbstractFtModel<C>, C extends AbstractCell>() =>
+          FlexTable.viewModelOf<T, C>(this);
+}
+
 abstract class AbstractTableBuilder<T extends AbstractFtModel<C>,
     C extends AbstractCell> {
   AbstractTableBuilder();
 
-  Widget testCellBuilder(
-    BuildContext context,
-  ) {
-    return GestureDetector(
-        onTap: () {
-          print('test build');
-        },
-        child: Container(color: Colors.pink));
-  }
-
   Widget? cellBuilder(
     BuildContext context,
-    FtViewModel<T, C> viewModel,
+    double tableScale,
     C cell,
     LayoutPanelIndex layoutPanelIndex,
-    CellIndex tableCellIndex,
+    FtIndex tableCellIndex,
+    CellStatus cellStatus,
   );
 
   Widget backgroundPanel(

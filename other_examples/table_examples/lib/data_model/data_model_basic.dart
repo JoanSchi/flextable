@@ -48,9 +48,8 @@ class DataModelBasic {
               ? const Color.fromARGB(255, 140, 191, 237)
               : Colors.white10,
         };
-        ftModel.addCell(
-            row: r,
-            column: c,
+        ftModel.updateCell(
+            ftIndex: FtIndex(row: r, column: c),
             cell: Cell(value: '${numberToCharacter(c)}$r', attr: attr));
       }
     }

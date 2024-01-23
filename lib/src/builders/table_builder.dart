@@ -25,17 +25,17 @@ class DefaultTableBuilder extends AbstractTableBuilder<FtModel<Cell>, Cell> {
 
   @override
   Widget? cellBuilder(
-    BuildContext context,
-    FtViewModel<FtModel<Cell>, Cell> viewModel,
-    Cell cell,
-    LayoutPanelIndex layoutPanelIndex,
-    CellIndex tableCellIndex,
-  ) {
+      BuildContext context,
+      double tableScale,
+      Cell cell,
+      LayoutPanelIndex layoutPanelIndex,
+      FtIndex tableCellIndex,
+      CellStatus cellStatus) {
     Widget text = Text(
       '${cell.value}',
       textAlign: cell.attr[CellAttr.textAlign],
       style: cell.attr[CellAttr.textStyle],
-      textScaler: TextScaler.linear(viewModel.tableScale),
+      textScaler: TextScaler.linear(tableScale),
     );
 
     if (cell.attr.containsKey(CellAttr.rotate)) {
@@ -45,7 +45,7 @@ class DefaultTableBuilder extends AbstractTableBuilder<FtModel<Cell>, Cell> {
 
     Widget child = Container(
         padding: const EdgeInsets.symmetric(vertical: 2.0, horizontal: 5.0) *
-            viewModel.tableScale,
+            tableScale,
         alignment: cell.attr[CellAttr.alignment] ?? Alignment.center,
         color: cell.attr[CellAttr.background],
         child: text);
@@ -61,7 +61,7 @@ class DefaultTableBuilder extends AbstractTableBuilder<FtModel<Cell>, Cell> {
       child = child;
     }
 
-    return cell.repaintBoundaries ? RepaintBoundary(child: child) : child;
+    return child;
   }
 
   @override

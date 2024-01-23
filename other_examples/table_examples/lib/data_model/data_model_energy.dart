@@ -43,9 +43,8 @@ class DataModelEngery {
     for (List<_Item> rowItems in _columnHeader) {
       int columnTemp = column + 2;
       for (_Item item in rowItems) {
-        ftModel.addCell(
-            row: row,
-            column: columnTemp,
+        ftModel.updateCell(
+            ftIndex: FtIndex(row: row, column: columnTemp),
             cell: Cell(
                 value: item.value,
                 attr: {CellAttr.background: Colors.grey[50]!}),
@@ -58,9 +57,8 @@ class DataModelEngery {
     int rowTemp = row;
 
     for (var item in _rowHeader1) {
-      ftModel.addCell(
-          row: rowTemp,
-          column: column,
+      ftModel.updateCell(
+          ftIndex: FtIndex(row: rowTemp, column: column),
           cell: Cell(value: item.value, attr: {
             CellAttr.background: Colors.blueGrey[50]!,
             CellAttr.rotate: -90
@@ -73,9 +71,8 @@ class DataModelEngery {
     rowTemp = row;
 
     for (String value in _rowHeader2) {
-      ftModel.addCell(
-        row: rowTemp,
-        column: column,
+      ftModel.updateCell(
+        ftIndex: FtIndex(row: rowTemp, column: column),
         cell: Cell(
           value: value,
           attr: {
@@ -105,9 +102,8 @@ class DataModelEngery {
               ratio: value / 100.0);
         }
 
-        ftModel.addCell(
-            row: r + row,
-            column: c + column,
+        ftModel.updateCell(
+            ftIndex: FtIndex(row: r + row, column: c + column),
             cell: Cell(value: value, attr: attr));
       }
     }

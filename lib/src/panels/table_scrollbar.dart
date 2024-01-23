@@ -689,6 +689,7 @@ class ScrollbarPainter extends ChangeNotifier implements CustomPainter {
       if (drawVerticalScrollBar != DrawScrollBar.none) {
         final thumbExtent = it.thumbExtentY;
         final thumbOffsetLocal = it.getScrollToTrackY(thumbExtent);
+
         final thumbOffset =
             it.trackPositionY + it.paddingTrackBeginY + thumbOffsetLocal;
 
@@ -1040,21 +1041,21 @@ class IterateScrollable {
   double get trackExtentY =>
       trackDimensionY - paddingTrackBeginY - paddingTrackEndY;
 
-  double get paddingTrackBeginX => metrics.noSplitX
-      ? paddingTrackOutside
-      : (scrollIndexX == 0 ? paddingTrackOutside : paddingTrackInside);
+  double get paddingTrackBeginX => metrics.stateSplitX == SplitState.split
+      ? (scrollIndexX == 0 ? paddingTrackOutside : paddingTrackInside)
+      : paddingTrackOutside;
 
-  double get paddingTrackEndX => metrics.noSplitX
-      ? paddingTrackOutside
-      : (scrollIndexX == 0 ? paddingTrackInside : paddingTrackOutside);
+  double get paddingTrackEndX => metrics.stateSplitX == SplitState.split
+      ? (scrollIndexX == 0 ? paddingTrackInside : paddingTrackOutside)
+      : paddingTrackOutside;
 
-  double get paddingTrackBeginY => metrics.noSplitY
-      ? paddingTrackOutside
-      : (scrollIndexY == 0 ? paddingTrackOutside : paddingTrackInside);
+  double get paddingTrackBeginY => metrics.stateSplitY == SplitState.split
+      ? (scrollIndexY == 0 ? paddingTrackOutside : paddingTrackInside)
+      : paddingTrackOutside;
 
-  double get paddingTrackEndY => metrics.noSplitY
-      ? paddingTrackOutside
-      : (scrollIndexY == 0 ? paddingTrackInside : paddingTrackOutside);
+  double get paddingTrackEndY => metrics.stateSplitY == SplitState.split
+      ? (scrollIndexY == 0 ? paddingTrackInside : paddingTrackOutside)
+      : paddingTrackOutside;
 
   double get totalContentExtentX {
     return maxScrollExtentX - minScrollExtentX + viewportDimensionX;
@@ -1106,7 +1107,6 @@ class IterateScrollable {
     final double fractionPast = (scrollableExtent > 0)
         ? ((pixelsY - minScrollExtentY) / scrollableExtent).clamp(0.0, 1.0)
         : 0.0;
-
     return fractionPast * (trackExtentY - thumbExtent);
   }
 
