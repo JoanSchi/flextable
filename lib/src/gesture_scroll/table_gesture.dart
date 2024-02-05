@@ -13,9 +13,7 @@ typedef ComputeHitSlop = double Function(
 
 class TableGestureRecognizer extends MyDragGestureRecognizer {
   /// Create a gesture recognizer for tracking movement on a plane.
-  TableGestureRecognizer(
-      {Object? debugOwner, Set<PointerDeviceKind>? supportedDevices})
-      : super(debugOwner: debugOwner, supportedDevices: supportedDevices);
+  TableGestureRecognizer({super.debugOwner, super.supportedDevices});
   ComputeHitSlop hitSlope = computeHitSlop;
 
   @override
@@ -86,11 +84,11 @@ abstract class MyDragGestureRecognizer extends OneSequenceGestureRecognizer {
   /// Initialize the object.
 
   MyDragGestureRecognizer({
-    Object? debugOwner,
-    Set<PointerDeviceKind>? supportedDevices,
+    super.debugOwner,
+    super.supportedDevices,
     this.dragStartBehavior = DragStartBehavior.start,
     this.velocityTrackerBuilder = _defaultBuilder,
-  }) : super(debugOwner: debugOwner, supportedDevices: supportedDevices);
+  });
 
   static VelocityTracker _defaultBuilder(PointerEvent event) =>
       VelocityTracker.withKind(event.kind);

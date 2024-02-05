@@ -708,13 +708,9 @@ abstract class LineLinkedList<E extends LineLinkedListEntry<E>> {
 
 class EmptyLineNode extends LineNode {
   EmptyLineNode({
-    required int startIndex,
-    int? endIndex,
-  }) : super(
-            startIndex: startIndex,
-            endIndex: endIndex,
-            before: noLine,
-            after: noLine);
+    required super.startIndex,
+    super.endIndex,
+  }) : super(before: noLine, after: noLine);
 }
 
 class LineNode extends LineLinkedListEntry<LineNode> {

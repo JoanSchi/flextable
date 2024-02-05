@@ -136,8 +136,7 @@ class TableScrollPhysics {
 class TableClampingScrollPhysics extends TableScrollPhysics {
   /// Creates scroll physics that prevent the scroll offset from exceeding the
   /// bounds of the content..
-  const TableClampingScrollPhysics({TableScrollPhysics? parent})
-      : super(parent: parent);
+  const TableClampingScrollPhysics({super.parent});
 
   @override
   TableClampingScrollPhysics applyTo(TableScrollPhysics? ancestor) {

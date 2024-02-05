@@ -20,11 +20,11 @@ class DataModelFruit {
         scrollUnlockX: scrollUnlockX,
         scrollUnlockY: scrollUnlockY,
         specificWidth: [
-          RangeProperties(min: 0, max: 0, length: 120.0)
+          RangeProperties(start: 0, last: 0, size: 120.0)
         ],
         specificHeight: [
-          RangeProperties(min: 0, length: 60.0),
-          RangeProperties(min: 1, max: 2, length: 40.0)
+          RangeProperties(start: 0, size: 60.0),
+          RangeProperties(start: 1, last: 2, size: 40.0)
         ]);
 
     ftModel.updateCell(

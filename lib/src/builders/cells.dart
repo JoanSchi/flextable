@@ -22,27 +22,37 @@ class FtCellGroupState {
   );
 }
 
-class Cell<T> extends AbstractCell {
+class Cell<T, I> extends AbstractCell {
   const Cell({
     this.value,
     this.attr = const {},
     super.merged,
+    this.groupState,
+    this.identifier,
   });
 
   final Map attr;
   final T? value;
+  final FtCellGroupState? groupState;
+  final I? identifier;
 
-  get cellState => FtCellState.ready;
+  FtCellState get cellState => groupState?.state ?? FtCellState.ready;
 
   bool get isEditable => false;
 
   @override
-  Cell copyWith({Map? attr, T? value, Merged? merged}) {
+  Cell copyWith(
+      {Map? attr,
+      T? value,
+      Merged? merged,
+      FtCellGroupState? groupState,
+      I? identifier}) {
     return Cell(
-      attr: attr ?? this.attr,
-      value: value ?? this.value,
-      merged: merged ?? this.merged,
-    );
+        groupState: groupState ?? this.groupState,
+        attr: attr ?? this.attr,
+        value: value ?? this.value,
+        merged: merged ?? this.merged,
+        identifier: identifier ?? this.identifier);
   }
 }
 

@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-import 'dart:collection';
 import 'package:flextable/flextable.dart';
 import 'package:flutter/foundation.dart';
 import 'properties/flextable_selection_index.dart';
@@ -33,238 +32,6 @@ bool noManualSplit(SplitState split) =>
     split == SplitState.autoFreezeSplit ||
     split == SplitState.canceledFreezeSplit ||
     split == SplitState.canceledSplit;
-
-typedef DefaultFtModel = FtModel<Cell>;
-
-class FtModel<C extends AbstractCell> extends AbstractFtModel<C> {
-  FtModel({
-    super.tableColumns,
-    super.tableRows,
-    required super.defaultWidthCell,
-    required super.defaultHeightCell,
-    super.stateSplitX,
-    super.stateSplitY,
-    super.xSplit = 0.0,
-    super.ySplit = 0.0,
-    super.rowHeader = false,
-    super.columnHeader = false,
-    super.scrollUnlockX = false,
-    super.scrollUnlockY = false,
-    super.freezeColumns = -1,
-    super.freezeRows = -1,
-    super.specificHeight,
-    super.specificWidth,
-    super.tableScale = 1.0,
-    super.autoFreezeAreasX,
-    super.autoFreezeX,
-    super.autoFreezeAreasY,
-    super.autoFreezeY,
-
-    //Default
-    this.autoTableRange = true,
-    TableLinesOneDirection? horizontalLines,
-    TableLinesOneDirection? verticalLines,
-    Map<int, RowRibbon>? rowRibbon,
-    Map<int, ColumnRibbon>? columnRibbon,
-    super.calculationPositionsNeededX,
-    super.calculationPositionsNeededY,
-  })  : rowRibbon = rowRibbon ?? HashMap<int, RowRibbon>(),
-        columnRibbon = columnRibbon ?? HashMap<int, ColumnRibbon>(),
-        horizontalLines = horizontalLines ?? TableLinesOneDirection(),
-        verticalLines = verticalLines ?? TableLinesOneDirection();
-
-  bool autoTableRange;
-  TableLinesOneDirection horizontalLines;
-  TableLinesOneDirection verticalLines;
-  final Map<int, RowRibbon> rowRibbon;
-  final Map<int, ColumnRibbon> columnRibbon;
-
-  final _cells = HashMap<FtIndex, C>();
-
-  @override
-  void updateCell(
-      {required FtIndex ftIndex,
-      int rows = 1,
-      int columns = 1,
-      required C? cell,
-      C? previousCell,
-      checkPreviousCell = false}) {
-    assert((previousCell != null && !checkPreviousCell) || !checkPreviousCell,
-        'If checkPreviousCell is true, the function will find the previousCell. PreviousCell is expected to be null');
-
-    /// Convert CellIndex and PanelCellIndex to a simple FtIndex
-    ///
-    ///
-    if (ftIndex case FtIndex cellIndex) {
-      ftIndex = FtIndex(row: cellIndex.row, column: cellIndex.column);
-    }
-
-    // Clean Previous cell
-    //
-
-    if (checkPreviousCell) {
-      previousCell = _cells[ftIndex];
-    }
-
-    if (previousCell case C previous) {
-      _cells.remove(ftIndex);
-
-      if (previous.merged case Merged m) {
-        if (m.rows > 1) {
-          removeMergedCellFromGrid(columnRibbon, ftIndex.column, m);
-        }
-        if (m.columns > 1) {
-          removeMergedCellFromGrid(rowRibbon, ftIndex.row, m);
-        }
-      }
-    }
-    // Add new/updated cell
-    //
-
-    if (cell != null && rows > 1 || columns > 1) {
-      final merged = Merged(ftIndex: ftIndex, rows: rows, columns: columns);
-
-      cell = cell?.copyWith(merged: merged) as C?;
-
-      if (rows > 1) {
-        columnRibbon
-            .putIfAbsent(ftIndex.column, () => ColumnRibbon())
-            .addMerged(merged);
-      }
-      if (columns > 1) {
-        rowRibbon.putIfAbsent(ftIndex.row, () => RowRibbon()).addMerged(merged);
-      }
-    }
-
-    _placeCell(ftIndex, cell);
-
-    if (autoTableRange && tableRows < ftIndex.row + rows) {
-      tableRows = ftIndex.row + rows;
-    }
-
-    if (autoTableRange && tableColumns < ftIndex.column + columns) {
-      tableColumns = ftIndex.column + columns;
-    }
-  }
-
-  _placeCell(FtIndex ftIndex, C? cell) {
-    if (cell case C c) {
-      _cells[ftIndex] = c;
-    } else {
-      _cells.remove(ftIndex);
-    }
-  }
-
-  @override
-  C? cell({required int row, required int column}) {
-    return _cells[FtIndex(row: row, column: column)];
-  }
-
-  Merged? removeMergedCellFromGrid(
-      Map<int, GridRibbon> gridRibbons, int index, Merged merged) {
-    if (gridRibbons[index] case GridRibbon g) {
-      var (m, empty) = g.removeMerged(merged: merged);
-      if (empty) {
-        gridRibbons.remove(index);
-      }
-      return m;
-    }
-    return null;
-  }
-
-  @override
-  Merged? findMergedRows(int row, int column) =>
-      columnRibbon[column]?.findMerged(index: row, startingOutside: false);
-
-  @override
-  Merged? findMergedColumns(int row, int column) =>
-      rowRibbon[row]?.findMerged(index: column, startingOutside: false);
-
-  FtModel copyWith({
-    double? scrollX0pY0,
-    double? scrollX1pY0,
-    double? scrollY0pX0,
-    double? scrollY1pX0,
-    double? scrollX0pY1,
-    double? scrollX1pY1,
-    double? scrollY0pX1,
-    double? scrollY1pX1,
-    double? mainScrollX,
-    double? mainScrollY,
-    double? xSplit,
-    double? ySplit,
-    bool? rowHeader,
-    bool? columnHeader,
-    int? tableColumns,
-    int? tableRows,
-    double? defaultWidthCell,
-    double? defaultHeightCell,
-    List<RangeProperties>? specificHeight,
-    List<RangeProperties>? specificWidth,
-    bool? modifySplit,
-    bool? scheduleCorrectOffScroll,
-    int? topLeftCellPaneColumn,
-    int? topLeftCellPaneRow,
-    bool? scrollUnlockX,
-    bool? scrollUnlockY,
-    SplitState? stateSplitX,
-    SplitState? stateSplitY,
-    double? headerVisibility,
-    double? leftPanelMargin,
-    double? topPanelMargin,
-    double? rightPanelMargin,
-    double? bottomPanelMargin,
-    double? tableScale,
-    List<AutoFreezeArea>? autoFreezeAreasX,
-    bool? autoFreezeX,
-    List<AutoFreezeArea>? autoFreezeAreasY,
-    bool? autoFreezeY,
-    double? minSplitSpaceFromSide,
-    double? hitScrollBarThickness,
-    //Default
-    bool? autoTableRange,
-    TableLinesOneDirection? horizontalLines,
-    TableLinesOneDirection? verticalLines,
-    Map<int, RowRibbon>? rowRibbon,
-    Map<int, ColumnRibbon>? columnRibbon,
-    bool? calculationPositionsNeededX,
-    bool? calculationPositionsNeededY,
-  }) {
-    return FtModel(
-      xSplit: xSplit ?? this.xSplit,
-      ySplit: ySplit ?? this.ySplit,
-      rowHeader: rowHeader ?? this.rowHeader,
-      columnHeader: columnHeader ?? this.columnHeader,
-      tableColumns: tableColumns ?? this.tableColumns,
-      tableRows: tableRows ?? this.tableRows,
-      defaultWidthCell: defaultWidthCell ?? this.defaultWidthCell,
-      defaultHeightCell: defaultHeightCell ?? this.defaultHeightCell,
-      specificHeight: specificHeight ?? specificHeight,
-      specificWidth: specificWidth ?? specificWidth,
-      scrollUnlockX: scrollUnlockX ?? this.scrollUnlockX,
-      scrollUnlockY: scrollUnlockY ?? this.scrollUnlockY,
-      stateSplitX: stateSplitX ?? this.stateSplitX,
-      stateSplitY: stateSplitY ?? this.stateSplitY,
-      tableScale: tableScale ?? this.tableScale,
-
-      autoFreezeAreasX: autoFreezeAreasX ?? this.autoFreezeAreasX,
-      autoFreezeX: autoFreezeX ?? this.autoFreezeX,
-      autoFreezeAreasY: autoFreezeAreasY ?? this.autoFreezeAreasY,
-      autoFreezeY: autoFreezeY ?? this.autoFreezeY,
-      //Default
-      autoTableRange: autoTableRange ?? this.autoTableRange,
-      horizontalLines: horizontalLines ?? this.horizontalLines,
-      verticalLines: verticalLines ?? this.verticalLines,
-      rowRibbon: rowRibbon ?? this.rowRibbon,
-      columnRibbon: columnRibbon ?? this.columnRibbon,
-      calculationPositionsNeededX: calculationPositionsNeededX ?? true,
-      calculationPositionsNeededY: calculationPositionsNeededY ?? true,
-    );
-  }
-
-  @override
-  FtIndex isCellEditable(FtIndex cellIndex) => cellIndex;
-}
 
 abstract class AbstractFtModel<C extends AbstractCell> {
   AbstractFtModel({
@@ -528,6 +295,8 @@ abstract class AbstractFtModel<C extends AbstractCell> {
 
   Merged? findMergedColumns(int row, int column);
 
+  PanelCellIndex editCell = const PanelCellIndex();
+
   /// Lenght en Position
   ///
   ///
@@ -554,20 +323,20 @@ abstract class AbstractFtModel<C extends AbstractCell> {
     int first = 0;
 
     for (var cp in specificLength) {
-      if (first < cp.min) {
-        length += (cp.min - first) * defaultCellLength;
+      if (first < cp.start) {
+        length += (cp.start - first) * defaultCellLength;
       }
 
-      double l = cp.length ?? defaultCellLength;
+      double l = cp.size ?? defaultCellLength;
 
-      if (cp.max < maxCells) {
-        length += (cp.max - cp.min + 1) * l;
+      if (cp.last < maxCells) {
+        length += (cp.last - cp.start + 1) * l;
       } else {
-        length += (maxCells - cp.min) * l;
+        length += (maxCells - cp.start) * l;
         return length;
       }
 
-      first = cp.max + 1;
+      first = cp.last + 1;
     }
 
     length += defaultCellLength * (maxCells - first);
@@ -604,27 +373,27 @@ abstract class AbstractFtModel<C extends AbstractCell> {
     int first = 0;
 
     for (RangeProperties cp in specificLength) {
-      if (index < cp.min) {
+      if (index < cp.start) {
         length += (index - first + pc) * defaultLength;
         return length;
-      } else if (first < cp.min) {
-        length += (cp.min - first) * defaultLength;
+      } else if (first < cp.start) {
+        length += (cp.start - first) * defaultLength;
       }
 
-      double l = cp.length ?? defaultLength;
+      double l = cp.size ?? defaultLength;
 
-      if (index > cp.max) {
+      if (index > cp.last) {
         if (!(cp.hidden || cp.collapsed)) {
-          length += (cp.max - cp.min + 1) * l;
+          length += (cp.last - cp.start + 1) * l;
         }
       } else {
         if (!(cp.hidden || cp.collapsed)) {
-          length += (index - cp.min + pc) * l; //without +1
+          length += (index - cp.start + pc) * l; //without +1
         }
         return length;
       }
 
-      first = cp.max + 1;
+      first = cp.last + 1;
     }
 
     if (first < index) {
@@ -736,20 +505,20 @@ abstract class AbstractFtModel<C extends AbstractCell> {
     for (int i = 0; i < listLength; i++) {
       final cp = specificLength[i];
 
-      if (index < cp.min) {
-        if (find(cp.min, defaultLength, true, i)) {
+      if (index < cp.start) {
+        if (find(cp.start, defaultLength, true, i)) {
           return;
         }
       }
 
-      if (index == cp.min) {
-        if (find(cp.max + 1, cp.length ?? defaultLength,
+      if (index == cp.start) {
+        if (find(cp.last + 1, cp.size ?? defaultLength,
             !(cp.hidden || cp.collapsed), i)) {
           return;
         }
       } else {
-        assert(index <= cp.max,
-            'Index $index should be equal or smaller then max ${cp.max}');
+        assert(index <= cp.last,
+            'Index $index should be equal or smaller then max ${cp.last}');
       }
     }
 
@@ -792,8 +561,8 @@ abstract class AbstractFtModel<C extends AbstractCell> {
       int findIndex = 0;
 
       for (RangeProperties cp in specificLength) {
-        if (findIndex < cp.min) {
-          double lengthDefaultSection = (cp.min - findIndex) * defaultLength;
+        if (findIndex < cp.start) {
+          double lengthDefaultSection = (cp.start - findIndex) * defaultLength;
 
           if (distance < length + lengthDefaultSection) {
             findIndex += (distance - length) ~/ defaultLength;
@@ -801,13 +570,13 @@ abstract class AbstractFtModel<C extends AbstractCell> {
             break;
           } else {
             length += lengthDefaultSection;
-            findIndex = cp.min;
+            findIndex = cp.start;
           }
         }
 
         if (!(cp.hidden || cp.collapsed)) {
-          double l = cp.length ?? defaultLength;
-          double lengthCostumSection = (cp.max - cp.min + 1) * l;
+          double l = cp.size ?? defaultLength;
+          double lengthCostumSection = (cp.last - cp.start + 1) * l;
 
           if (distance < length + lengthCostumSection) {
             findIndex += (distance - length) ~/ l;
@@ -815,10 +584,10 @@ abstract class AbstractFtModel<C extends AbstractCell> {
             break;
           } else {
             length += lengthCostumSection;
-            findIndex += cp.max - cp.min + 1;
+            findIndex += cp.last - cp.start + 1;
           }
         } else {
-          findIndex = cp.max + 1;
+          findIndex = cp.last + 1;
         }
       }
 
@@ -851,13 +620,13 @@ abstract class AbstractFtModel<C extends AbstractCell> {
              *
              */
       if (!firstFound) {
-        if (found > cp.max) {
+        if (found > cp.last) {
           if (cp.hidden || cp.collapsed) {
             if (hiddenStartIndex == -1 ||
-                maximumHiddenStartIndex + 1 < cp.min) {
-              hiddenStartIndex = cp.min;
+                maximumHiddenStartIndex + 1 < cp.start) {
+              hiddenStartIndex = cp.start;
             }
-            maximumHiddenStartIndex = cp.max;
+            maximumHiddenStartIndex = cp.last;
           } else {
             hiddenStartIndex = -1;
           }
@@ -870,13 +639,13 @@ abstract class AbstractFtModel<C extends AbstractCell> {
              *
              */
       if (!secondFound) {
-        if (cp.min > found &&
+        if (cp.start > found &&
             hiddenLastIndex != -1 &&
-            hiddenLastIndex < cp.min) {
+            hiddenLastIndex < cp.start) {
           secondFound = true;
         } else if (cp.hidden || cp.collapsed) {
-          if (cp.min == found || hiddenLastIndex == cp.min) {
-            hiddenLastIndex = cp.max + 1;
+          if (cp.start == found || hiddenLastIndex == cp.start) {
+            hiddenLastIndex = cp.last + 1;
           }
         }
       }
@@ -943,31 +712,31 @@ abstract class AbstractFtModel<C extends AbstractCell> {
       int currentIndex = 0;
 
       for (RangeProperties cp in specificLength) {
-        if (currentIndex < cp.min) {
-          double lengthDefaultArea = (cp.min - currentIndex) * defaultLength;
+        if (currentIndex < cp.start) {
+          double lengthDefaultArea = (cp.start - currentIndex) * defaultLength;
 
           if (distance <= lengthEvaluated + lengthDefaultArea) {
             return findIndexWitinRadial(
                 currentIndex, distance, lengthEvaluated, defaultLength);
           } else {
             lengthEvaluated += lengthDefaultArea;
-            currentIndex = cp.min;
+            currentIndex = cp.start;
           }
         }
 
         if (!(cp.hidden || cp.collapsed)) {
-          double customLength = cp.length ?? defaultLength;
-          double lengthCostumArea = (cp.max - cp.min + 1) * customLength;
+          double customLength = cp.size ?? defaultLength;
+          double lengthCostumArea = (cp.last - cp.start + 1) * customLength;
 
           if (distance <= lengthEvaluated + lengthCostumArea + radial / 2.0) {
             return findIndexWitinRadial(
                 currentIndex, distance, lengthEvaluated, customLength);
           } else {
             lengthEvaluated += lengthCostumArea;
-            currentIndex += cp.max - cp.min + 1;
+            currentIndex += cp.last - cp.start + 1;
           }
         } else {
-          currentIndex = cp.max + 1;
+          currentIndex = cp.last + 1;
         }
       }
 
@@ -1032,15 +801,15 @@ abstract class AbstractFtModel<C extends AbstractCell> {
     while (listIndex < lengthList) {
       final cp = specificLength[listIndex];
 
-      if (index < cp.min) {
-        final t = find(cp.min, defaultLength, true);
+      if (index < cp.start) {
+        final t = find(cp.start, defaultLength, true);
         if (t != null) {
           return t;
         }
       }
 
-      if (index == cp.min) {
-        final t = find(cp.max + 1, cp.length ?? defaultLength,
+      if (index == cp.start) {
+        final t = find(cp.last + 1, cp.size ?? defaultLength,
             !(cp.hidden || cp.collapsed));
 
         if (t != null) {
@@ -1107,15 +876,15 @@ abstract class AbstractFtModel<C extends AbstractCell> {
     while (listIndex < lengthList) {
       final cp = specificLength[listIndex];
 
-      if (index < cp.min) {
-        final t = find(cp.min, defaultLength, true);
+      if (index < cp.start) {
+        final t = find(cp.start, defaultLength, true);
         if (t != null) {
           return t;
         }
       }
 
-      if (index == cp.min) {
-        final t = find(cp.max + 1, cp.length ?? defaultLength,
+      if (index == cp.start) {
+        final t = find(cp.last + 1, cp.size ?? defaultLength,
             !(cp.hidden || cp.collapsed));
 
         if (t != null) {
@@ -1159,16 +928,16 @@ abstract class AbstractFtModel<C extends AbstractCell> {
     while (0 <= listIndex) {
       final cp = specificLength[listIndex];
 
-      if (index > cp.max + 1) {
-        final t = find(cp.max + 1, defaultLength, true);
+      if (index > cp.last + 1) {
+        final t = find(cp.last + 1, defaultLength, true);
         if (t != null) {
           return t;
         }
       }
 
-      if (index == cp.max + 1) {
+      if (index == cp.last + 1) {
         final t = find(
-            cp.min, cp.length ?? defaultLength, !(cp.hidden || cp.collapsed));
+            cp.start, cp.size ?? defaultLength, !(cp.hidden || cp.collapsed));
 
         if (t != null) {
           return t;
@@ -1232,31 +1001,31 @@ abstract class AbstractFtModel<C extends AbstractCell> {
       int currentIndex = 0;
 
       for (RangeProperties cp in specificLength) {
-        if (currentIndex < cp.min) {
-          double lengthDefaultArea = (cp.min - currentIndex) * defaultLength;
+        if (currentIndex < cp.start) {
+          double lengthDefaultArea = (cp.start - currentIndex) * defaultLength;
 
           if (distance <= lengthEvaluated + lengthDefaultArea) {
             return findIndexWitinRadial(
                 currentIndex, distance, lengthEvaluated, defaultLength);
           } else {
             lengthEvaluated += lengthDefaultArea;
-            currentIndex = cp.min;
+            currentIndex = cp.start;
           }
         }
 
         if (!(cp.hidden || cp.collapsed)) {
-          double customLength = cp.length ?? defaultLength;
-          double lengthCostumArea = (cp.max - cp.min + 1) * customLength;
+          double customLength = cp.size ?? defaultLength;
+          double lengthCostumArea = (cp.last - cp.start + 1) * customLength;
 
           if (distance <= lengthEvaluated + lengthCostumArea) {
             return findIndexWitinRadial(
                 currentIndex, distance, lengthEvaluated, customLength);
           } else {
             lengthEvaluated += lengthCostumArea;
-            currentIndex += cp.max - cp.min + 1;
+            currentIndex += cp.last - cp.start + 1;
           }
         } else {
-          currentIndex = cp.max + 1;
+          currentIndex = cp.last + 1;
         }
       }
 
@@ -1361,4 +1130,37 @@ abstract class AbstractFtModel<C extends AbstractCell> {
     }
     calculationPositionsNeededY = false;
   }
+
+  FtIndex? findIndexByKey(FtIndex oldIndex, key) {
+    return oldIndex;
+  }
+
+  void didPerformRebuild() {}
+
+  insertRowRange({
+    required int startRow,
+    int? endRow,
+  }) {
+    throw UnimplementedError();
+  }
+
+  removeRowRange({
+    required int startRow,
+    int? lastRow,
+  }) {
+    throw UnimplementedError();
+  }
+
+  insertColumns(
+      {required int column,
+      int columns = 1,
+      required Function(AbstractFtModel<C> model) updateModel}) {
+    throw UnimplementedError();
+  }
+
+  int? obtainNewRow(int index) {
+    throw UnimplementedError();
+  }
+
+  FtIndex? immutableFtIndex(FtIndex index) => null;
 }

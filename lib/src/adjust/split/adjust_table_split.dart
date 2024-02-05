@@ -12,10 +12,10 @@ import 'adjust_split_properties.dart';
 
 class AdjustTableSplit extends StatefulWidget {
   const AdjustTableSplit({
-    Key? key,
+    super.key,
     required this.viewModel,
     required this.properties,
-  }) : super(key: key);
+  });
 
   final FtViewModel viewModel;
   final AdjustSplitProperties properties;

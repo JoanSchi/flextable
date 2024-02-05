@@ -153,14 +153,13 @@ class TableTextRotate extends SingleChildRenderObjectWidget {
   /// The [transform] argument must not be null.
 
   TableTextRotate({
-    Key? key,
+    super.key,
     required this.angle,
     this.origin,
     this.alignment = Alignment.center,
     this.transformHitTests = true,
-    Widget? child,
-  })  : transform = Matrix4.rotationZ(angle),
-        super(key: key, child: child);
+    super.child,
+  }) : transform = Matrix4.rotationZ(angle);
 
   /// The matrix to transform the child by during painting.
   final double angle;

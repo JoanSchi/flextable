@@ -16,9 +16,8 @@ import 'dart:math' as math;
 class TableIdleScrollActivity extends TableScrollActivity {
   /// Creates a scroll activity that does nothing.
 
-  TableIdleScrollActivity(int scrollIndexX, int scrollIndexY,
-      TableScrollActivityDelegate delegate, enableScrollNotification)
-      : super(scrollIndexX, scrollIndexY, delegate, enableScrollNotification);
+  TableIdleScrollActivity(super.scrollIndexX, super.scrollIndexY,
+      super.delegate, super.enableScrollNotification);
 
   @override
   void applyNewDimensions() {
@@ -224,13 +223,12 @@ class TableDragScrollActivity extends TableScrollActivity {
   /// Creates an activity for when the user drags their finger across the
   /// screen.
   TableDragScrollActivity(
-    int scrollIndexX,
-    int scrollIndexY,
-    TableScrollActivityDelegate delegate,
+    super.scrollIndexX,
+    super.scrollIndexY,
+    super.delegate,
     TableDrag controller,
-    enableScrollNotification,
-  )   : _controller = controller,
-        super(scrollIndexX, scrollIndexY, delegate, enableScrollNotification);
+    super.enableScrollNotification,
+  ) : _controller = controller;
 
   TableDrag? _controller;
 

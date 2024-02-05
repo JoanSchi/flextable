@@ -8,31 +8,28 @@ import 'package:flutter/foundation.dart';
 
 import '../builders/cells.dart';
 
-class RowRibbon extends GridRibbon {
-  // Add indentifier if you like;
-
-  RowRibbon()
+class MergedColumns extends MergedRibbon {
+  MergedColumns()
       : super(
             firstIndex: (Merged merged) => merged.startColumn,
             lastIndex: (Merged merged) => merged.lastColumn);
 }
 
-class ColumnRibbon extends GridRibbon {
-  // Add indentifier if you like;
-  ColumnRibbon()
+class MergedRows extends MergedRibbon {
+  MergedRows()
       : super(
             firstIndex: (Merged merged) => merged.startRow,
             lastIndex: (Merged merged) => merged.lastRow);
 }
 
-abstract class GridRibbon {
+abstract class MergedRibbon {
   int listIndex = 0;
   int findIndex = -1;
   var mergedMap = SplayTreeMap<int, Merged>();
   Function(Merged merged) firstIndex;
   Function(Merged merged) lastIndex;
 
-  GridRibbon({
+  MergedRibbon({
     required this.firstIndex,
     required this.lastIndex,
   });

@@ -346,6 +346,7 @@ class TableMultiPanelRenderObjectElement<T extends AbstractFtModel<C>,
       _currentlyUpdatingTablePanelIndex = null;
       renderObject.debugChildIntegrityEnabled = true;
     }
+    widget.viewModel.didPerformRebuild();
   }
 
   @override

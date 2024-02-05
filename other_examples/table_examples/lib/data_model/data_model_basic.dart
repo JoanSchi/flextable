@@ -34,8 +34,8 @@ class DataModelBasic {
       autoFreezeAreasX: autoFreezeAreasX,
       autoFreezeAreasY: autoFreezeAreasY,
       specificHeight: [
-        RangeProperties(min: 9, max: 9, length: 100.0),
-        RangeProperties(min: 10, max: 15, length: 50.0)
+        RangeProperties(start: 9, last: 9, size: 100.0),
+        RangeProperties(start: 10, last: 15, size: 50.0)
       ],
     );
 

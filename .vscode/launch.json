@@ -53,6 +53,21 @@
             "program": "lib/main.dart"
         },
         {
+            "name": "row_change_example",
+            "type": "dart",
+            "request": "launch",
+            "cwd": "other_examples/row_change_example",
+            "program": "lib/main.dart"
+        },
+        {
+            "name": "row_change_example (profile mode)",
+            "type": "dart",
+            "request": "launch",
+            "cwd": "other_examples/row_change_example",
+            "program": "lib/main.dart",
+            "flutterMode": "profile"
+        },
+        {
             "name": "text_edit_example (profile mode)",
             "type": "dart",
             "request": "launch",
@@ -66,14 +81,14 @@
             "name": "async_table_example",
             "type": "dart",
             "request": "launch",
-            "cwd": "async_table_example",
+            "cwd": "other_examples/async_table_example",
             "program": "lib/main.dart"
         },
         {
             "name": "async_table_example (profile mode)",
             "type": "dart",
             "request": "launch",
-            "cwd": "async_table_example",
+            "cwd": "other_examples/async_table_example",
             "program": "lib/main.dart",
             "flutterMode": "profile"
         },

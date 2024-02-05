@@ -2,39 +2,58 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-class RangeProperties {
-  RangeProperties(
-      {this.length,
-      required this.min,
-      int? max,
-      this.collapsed = false,
-      this.hidden = false})
-      : assert(min <= (max ?? min),
-            'The max in the propertiesRange can not be smaller than min'),
-        max = max ?? min;
+class FtRange {
+  int start;
+  int last;
 
-  bool collapsed = false;
-  bool hidden = false;
-  double? length;
-  int min;
-  int max;
+  FtRange({
+    required this.start,
+    int? last,
+  })  : assert(start <= (last ?? start),
+            'The last in the propertiesRange can not be smaller than start'),
+        last = last ?? start;
 
-  setRange(int min, int max) {
-    this.min = min;
-    this.max = max;
-    assert(min <= max,
-        'The max in the propertiesRange can not be smaller than min');
+  setRange(int start, int last) {
+    this.start = start;
+    this.last = last;
+    assert(start <= last,
+        'The last in the propertiesRange can not be smaller than start');
   }
 
+  int get length => last - start + 1;
+
   int compareRange(RangeProperties another) {
-    if (min == another.min && max == another.max) {
+    if (start == another.start && last == another.last) {
       return 0;
     } else {
-      return max - another.min;
+      return last - another.start;
     }
   }
 
   bool contains(int index) {
-    return index >= min && index <= max;
+    return index >= start && index <= last;
   }
+}
+
+class RangeProperties extends FtRange {
+  RangeProperties(
+      {required super.start,
+      super.last,
+      this.size,
+      this.collapsed = false,
+      this.hidden = false});
+
+  bool collapsed = false;
+  bool hidden = false;
+  double? size;
+}
+
+class ChangeRange extends FtRange {
+  ChangeRange({
+    required super.start,
+    super.last,
+    required this.insert,
+  });
+
+  bool insert;
 }

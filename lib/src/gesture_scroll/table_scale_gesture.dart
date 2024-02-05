@@ -216,9 +216,9 @@ class TableScaleGestureRecognizer extends OneSequenceGestureRecognizer {
   ///
   /// {@macro flutter.gestures.GestureRecognizer.kind}
   TableScaleGestureRecognizer({
-    Object? debugOwner,
-    Set<PointerDeviceKind>? supportedDevices,
-  }) : super(debugOwner: debugOwner, supportedDevices: supportedDevices);
+    super.debugOwner,
+    super.supportedDevices,
+  });
 
   /// The pointers in contact with the screen have established a focal point and
   /// initial scale of 1.0.

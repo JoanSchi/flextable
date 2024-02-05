@@ -8,8 +8,6 @@ import 'package:flutter/widgets.dart';
 import '../gesture_scroll/table_scroll_physics.dart';
 import '../listeners/inner_change_notifiers.dart';
 
-typedef DefaultFtController = FtController<FtModel<Cell>, Cell>;
-
 class FtController<T extends AbstractFtModel<C>, C extends AbstractCell>
     extends ChangeNotifier {
   FtController();

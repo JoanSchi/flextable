@@ -30,7 +30,7 @@ const Duration _kScrollbarTimeToFade = Duration(milliseconds: 600);
 
 class TableScrollbar extends StatefulWidget {
   const TableScrollbar({
-    Key? key,
+    super.key,
     this.isAlwaysShown = false,
     this.scrollBarTrack = false,
     this.thumbSize,
@@ -44,7 +44,7 @@ class TableScrollbar extends StatefulWidget {
     required this.viewModel,
     required this.scrollChangeNotifier,
     this.platformIndependent = false,
-  }) : super(key: key);
+  });
 
   final FtViewModel viewModel;
   final InnerScrollChangeNotifier scrollChangeNotifier;

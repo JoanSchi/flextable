@@ -323,9 +323,9 @@ class MortgageTableModel {
     for (int i = 0; i < horizontalTables; i++) {
       final begin = i * 10;
       specificWidth
-          .add(RangeProperties(min: 0 + begin, max: 0 + begin, length: 90));
+          .add(RangeProperties(start: 0 + begin, last: 0 + begin, size: 90));
       specificWidth
-          .add(RangeProperties(min: 2 + begin, max: 2 + begin, length: 60));
+          .add(RangeProperties(start: 2 + begin, last: 2 + begin, size: 60));
     }
     return flexTableModel
       ..specificWidth = specificWidth

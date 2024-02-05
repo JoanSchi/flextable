@@ -5,16 +5,28 @@
 library flextable;
 
 //Model
-export 'src/model/model.dart'
-    show AbstractFtModel, FtModel, SplitState, DefaultFtModel;
-export 'src/model/grid_ribbon.dart' show GridRibbon, RowRibbon, ColumnRibbon;
+export 'src/model/model.dart' show AbstractFtModel, SplitState;
+export 'src/templates/model/basic_model.dart'
+    show FtModel, DefaultFtController, DefaultFtModel, DefaultFtViewModel;
+export 'src/templates/model/change_row_model.dart' show ChangeRowModel;
+export 'src/model/grid_ribbon.dart'
+    show MergedRibbon, MergedColumns, MergedRows;
 export 'src/flextable.dart' show FlexTable, DefaultFlexTable;
 
-export 'src/model/view_model.dart' show FtViewModel, DefaultFtViewModel;
+export 'src/model/view_model.dart' show FtViewModel;
 
 //Build
 export 'src/builders/cells.dart'
     show AbstractCell, Cell, Merged, FtCellState, FtCellGroupState;
+export 'src/templates/cells/advanced_cells.dart'
+    show
+        TextCell,
+        TextInputCell,
+        DigitInputCell,
+        DecimalInputCell,
+        BooleanCell,
+        SelectionCell,
+        DateTimeCell;
 export 'src/model/mergable_lines.dart'
     show
         TableLinesOneDirection,
@@ -35,7 +47,7 @@ export 'src/builders/split_lines_paint.dart' show defaultDrawPaintSplit;
 export 'src/panels/panel_viewport.dart'
     show FtIndex, PanelCellIndex, CellStatus;
 export 'src/panels/header_viewport.dart' show TableHeaderIndex;
-export 'src/model/controller.dart' show FtController, DefaultFtController;
+export 'src/model/controller.dart' show FtController;
 export 'src/listeners/flextable_change_notifier.dart'
     show TableChangeNotifier, ScaleChangeNotifier, ScrollChangeNotifier;
 
@@ -73,7 +85,6 @@ export 'src/builders/edit_text.dart' show FtEditText, FtTextEditInputType;
 //Async
 export 'src/async/area_initializer.dart' show AreaInitializer;
 export 'src/async/async_area__model.dart' show AsyncAreaModel;
-export 'src/async/async_cell.dart' show AsyncCell;
 export 'src/async/create_table_area.dart'
     show DefinedTableArea, CreateTableArea;
 export 'src/async/table_area_queue.dart' show TableAreaQueue;

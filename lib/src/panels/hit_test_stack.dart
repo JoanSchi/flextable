@@ -11,13 +11,13 @@ class MultiHitStack extends MultiChildRenderObjectWidget {
   /// By default, the non-positioned children of the stack are aligned by their
   /// top left corners.
   const MultiHitStack({
-    Key? key,
+    super.key,
     this.alignment = AlignmentDirectional.topStart,
     this.textDirection,
     this.fit = StackFit.loose,
     this.clipBehavior = Clip.hardEdge,
-    List<Widget> children = const <Widget>[],
-  }) : super(key: key, children: children);
+    super.children,
+  });
 
   /// How to align the non-positioned and partially-positioned children in the
   /// stack.
@@ -115,17 +115,12 @@ class MultiHitRenderStack extends RenderStack {
   /// By default, the non-positioned children of the stack are aligned by their
   /// top left corners.
   MultiHitRenderStack({
-    List<RenderBox>? children,
-    AlignmentGeometry alignment = AlignmentDirectional.topStart,
-    TextDirection? textDirection,
-    StackFit fit = StackFit.loose,
-    Clip clipBehavior = Clip.hardEdge,
-  }) : super(
-            children: children,
-            alignment: alignment,
-            textDirection: textDirection,
-            fit: fit,
-            clipBehavior: clipBehavior);
+    super.children,
+    super.alignment,
+    super.textDirection,
+    super.fit,
+    super.clipBehavior,
+  });
 
   @override
   bool hitTestChildren(BoxHitTestResult result, {required Offset position}) {

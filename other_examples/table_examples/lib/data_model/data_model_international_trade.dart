@@ -20,8 +20,8 @@ class DataModelInternationalTrade {
         scrollUnlockY: scrollUnlockY,
         autoFreezeAreasX: autofreezeAreaX,
         autoFreezeAreasY: autofreezeAreasY,
-        specificWidth: [RangeProperties(min: 0, max: 0, length: 160.0)],
-        specificHeight: [RangeProperties(min: 1, max: 2, length: 30.0)]);
+        specificWidth: [RangeProperties(start: 0, last: 0, size: 160.0)],
+        specificHeight: [RangeProperties(start: 1, last: 2, size: 30.0)]);
 
     int endTableColumns = 0;
     int endTableRows = 0;

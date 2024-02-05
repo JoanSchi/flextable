@@ -44,8 +44,6 @@ ScrollDirection _userScrollDirectionX = ScrollDirection.idle;
 
 // TableDragDecision dragDecision;
 
-typedef DefaultFtViewModel = FtViewModel<FtModel<Cell>, Cell>;
-
 class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
     extends ChangeNotifier
     with TableScrollMetrics
@@ -65,8 +63,7 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
         _scaleChangeNotifier = scaleChangeNotifier,
         sharedTextControllersByIndex =
             oldPosition?.sharedTextControllersByIndex ??
-                SharedTextControllersByIndex(),
-        _editCell = oldPosition?.editCell ?? const PanelCellIndex() {
+                SharedTextControllersByIndex() {
     ///
     ///
 
@@ -173,16 +170,14 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
 
   PanelCellIndex previousEditCell = const PanelCellIndex();
 
-  PanelCellIndex _editCell;
-
   set editCell(PanelCellIndex value) {
-    if (_editCell == value) {
+    if (model.editCell == value) {
       return;
     }
 
     previousCellTime = null;
 
-    previousEditCell = _editCell;
+    previousEditCell = model.editCell;
 
     if (value.isIndex) {
       store(value.scrollIndexX, value.scrollIndexY);
@@ -192,7 +187,7 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
     if (previousEditCell.isIndex && !value.isIndex) {
       previousCellTime = DateTime.now();
     }
-    _editCell = value;
+    model.editCell = value;
   }
 
   store(scrollIndexX, scrollIndexY) {
@@ -221,7 +216,7 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
     }
   }
 
-  PanelCellIndex get editCell => _editCell;
+  PanelCellIndex get editCell => model.editCell;
 
   void clearEditCell(FtIndex cellIndex) {
     if (editCell == cellIndex) {
@@ -230,7 +225,7 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
   }
 
   void updateCellPanel(LayoutPanelIndex layoutPanelIndex) {
-    _editCell = editCell.copyWith(
+    model.editCell = editCell.copyWith(
         panelIndexX: layoutPanelIndex.xIndex,
         panelIndexY: layoutPanelIndex.yIndex);
   }
@@ -3964,6 +3959,10 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
     model.didStartLayout();
   }
 
+  void didPerformRebuild() {
+    model.didPerformRebuild();
+  }
+
   animateRestoreScroll(RestoreScroll animateScroll) {
     if (animateScroll.isEmpty) {
       return;
@@ -4009,6 +4008,20 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
       default:
         {}
     }
+  }
+
+  insertRows({
+    required int startRow,
+    int? endRow,
+  }) {
+    model.insertRowRange(startRow: startRow, endRow: endRow);
+  }
+
+  removeRows({
+    required int startRow,
+    int? endRow,
+  }) {
+    model.removeRowRange(startRow: startRow, lastRow: endRow);
   }
 }
 

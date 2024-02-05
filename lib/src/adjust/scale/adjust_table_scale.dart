@@ -219,12 +219,9 @@ class TableScaleMouseState extends State<TableScaleMouse> {
 class TableScaleMouseGestureRecognizer extends MyDragGestureRecognizer {
   TableScaleMouseNotifier? tableScaleMouseNotifier;
   TableScaleMouseGestureRecognizer({
-    Object? debugOwner,
-    Set<PointerDeviceKind>? supportedDevices,
-  }) : super(
-          debugOwner: debugOwner,
-          supportedDevices: supportedDevices,
-        );
+    super.debugOwner,
+    super.supportedDevices,
+  });
 
   @override
   bool isFlingGesture(VelocityEstimate estimate, PointerDeviceKind kind) =>
@@ -330,11 +327,10 @@ class TableScaleMouseNotifier extends ChangeNotifier {
 
 class MouseScalePaint extends StatefulWidget {
   const MouseScalePaint(
-      {Key? key,
+      {super.key,
       required this.tableScaleMouseNotifier,
       required this.child,
-      required this.properties})
-      : super(key: key);
+      required this.properties});
 
   final TableScaleMouseNotifier tableScaleMouseNotifier;
   final Widget child;

@@ -46,9 +46,8 @@ class TableClampingScrollSimulation extends TableSimulation {
     required this.yVelocity,
     double xyVelocity = 0.0,
     this.friction = 0.015,
-    Tolerance tolerance = Tolerance.defaultTolerance,
-  })  : assert(_flingVelocityPenetration(0.0) == _initialVelocityPenetration),
-        super(tolerance: tolerance) {
+    super.tolerance = Tolerance.defaultTolerance,
+  }) : assert(_flingVelocityPenetration(0.0) == _initialVelocityPenetration) {
     _duration = _flingDuration(xyVelocity);
     _distanceX = (xVelocity * _duration / _initialVelocityPenetration).abs();
     _distanceY = (yVelocity * _duration / _initialVelocityPenetration).abs();

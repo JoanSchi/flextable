@@ -25,14 +25,14 @@ class DataModelEngery {
           AutoFreezeArea(startIndex: 0, freezeIndex: 3, endIndex: endTableRow)
         ],
         specificWidth: [
-          RangeProperties(min: 0, length: 40.0),
-          RangeProperties(min: 1, length: 210.0),
-          RangeProperties(min: 2, length: 150.0),
-          RangeProperties(min: 8, length: 150.0),
-          RangeProperties(min: endTableColumn, length: 2.0)
+          RangeProperties(start: 0, size: 40.0),
+          RangeProperties(start: 1, size: 210.0),
+          RangeProperties(start: 2, size: 150.0),
+          RangeProperties(start: 8, size: 150.0),
+          RangeProperties(start: endTableColumn, size: 2.0)
         ],
         specificHeight: [
-          RangeProperties(min: 2, length: 55.0),
+          RangeProperties(start: 2, size: 55.0),
         ],
         tableColumns: endTableColumn,
         tableRows: endTableRow);

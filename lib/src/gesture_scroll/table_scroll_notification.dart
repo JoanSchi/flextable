@@ -48,11 +48,11 @@ class TableScrollUpdateNotification extends TableScrollNotification {
   /// Creates a notification that a [Scrollable] widget has changed its scroll
   /// position.
   TableScrollUpdateNotification({
-    required TableScrollMetrics metrics,
-    BuildContext? context,
+    required super.metrics,
+    super.context,
     this.updateDragDetails,
     this.scrollDelta,
-  }) : super(metrics: metrics, context: context);
+  });
 
   /// If the [Scrollable] changed its scroll position because of a drag, the
   /// details about that drag update.
@@ -75,11 +75,11 @@ class TableScrollStartNotification extends TableScrollNotification {
   /// Creates a notification that a [Scrollable] widget has changed its scroll
   /// position.
   TableScrollStartNotification({
-    required TableScrollMetrics metrics,
-    BuildContext? context,
+    required super.metrics,
+    super.context,
     this.dragDetails,
     this.scrollDelta,
-  }) : super(metrics: metrics, context: context);
+  });
 
   /// If the [Scrollable] changed its scroll position because of a drag, the
   /// details about that drag update.
@@ -102,11 +102,11 @@ class TableScrollEndNotification extends TableScrollNotification {
   /// Creates a notification that a [Scrollable] widget has changed its scroll
   /// position.
   TableScrollEndNotification({
-    required TableScrollMetrics metrics,
-    BuildContext? context,
+    required super.metrics,
+    super.context,
     this.endDragDetails,
     this.scrollDelta,
-  }) : super(metrics: metrics, context: context);
+  });
 
   /// If the [Scrollable] changed its scroll position because of a drag, the
   /// details about that drag update.

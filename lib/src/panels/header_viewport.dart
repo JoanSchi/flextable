@@ -94,8 +94,7 @@ class TableHeaderViewport extends RenderObjectWidget {
 
 class TableHeaderChildRenderObjectElement extends RenderObjectElement
     implements TableHeaderRenderChildManager {
-  TableHeaderChildRenderObjectElement(TableHeaderViewport widget)
-      : super(widget);
+  TableHeaderChildRenderObjectElement(super.widget);
 
   final Map<TableHeaderIndex, Widget?> _childWidgets =
       HashMap<TableHeaderIndex, Widget?>();

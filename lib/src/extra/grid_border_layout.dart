@@ -7,12 +7,12 @@ import 'package:flutter/widgets.dart';
 
 class GridBorderLayout extends MultiChildRenderObjectWidget {
   const GridBorderLayout({
-    Key? key,
+    super.key,
     this.maxWidth,
     this.maxHeight,
     this.alignment = Alignment.topLeft,
-    List<Widget> children = const <Widget>[],
-  }) : super(key: key, children: children);
+    super.children = const <Widget>[],
+  });
 
   final double? maxWidth;
   final double? maxHeight;
@@ -323,7 +323,7 @@ class BorderGridLayoutParentData extends ContainerBoxParentData<RenderBox> {
 class GridBorderLayoutPosition
     extends ParentDataWidget<BorderGridLayoutParentData> {
   const GridBorderLayoutPosition({
-    Key? key,
+    super.key,
     this.row = 1,
     this.column = 1,
     this.rows = 1,
@@ -331,8 +331,8 @@ class GridBorderLayoutPosition
     this.measureHeight = false,
     this.measureWidth = false,
     this.squeezeRatio = 2.0,
-    required Widget child,
-  }) : super(key: key, child: child);
+    required super.child,
+  });
 
   final int row;
   final int column;

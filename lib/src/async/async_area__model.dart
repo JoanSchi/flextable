@@ -29,8 +29,8 @@ class AsyncAreaModel extends FtModel<Cell> {
       super.autoTableRange = true,
       super.horizontalLines,
       super.verticalLines,
-      super.rowRibbon,
-      super.columnRibbon,
+      super.mergedColumns,
+      super.mergedRows,
       super.calculationPositionsNeededX,
       super.calculationPositionsNeededY});
 
@@ -73,16 +73,12 @@ class AsyncAreaModel extends FtModel<Cell> {
     Cell? cell = super.cell(row: row, column: column);
 
     switch (cell) {
-      case (AsyncCell v):
+      case (Cell v):
         {
           if (v.cellState == FtCellState.removedFromQuee) {
             cell = obtainCellFromRowAreaFinder(
                 row: row, column: column, cellGroupState: v.groupState);
           }
-          break;
-        }
-      case (Cell _):
-        {
           break;
         }
 
@@ -180,8 +176,8 @@ class AsyncAreaModel extends FtModel<Cell> {
       bool? autoTableRange,
       TableLinesOneDirection? horizontalLines,
       TableLinesOneDirection? verticalLines,
-      Map<int, RowRibbon>? rowRibbon,
-      Map<int, ColumnRibbon>? columnRibbon,
+      Map<int, MergedColumns>? mergedColumns,
+      Map<int, MergedRows>? mergedRows,
       bool? calculationPositionsNeededX,
       bool? calculationPositionsNeededY}) {
     return AsyncAreaModel(
@@ -209,8 +205,8 @@ class AsyncAreaModel extends FtModel<Cell> {
       autoTableRange: autoTableRange ?? this.autoTableRange,
       horizontalLines: horizontalLines ?? this.horizontalLines,
       verticalLines: verticalLines ?? this.verticalLines,
-      rowRibbon: rowRibbon ?? this.rowRibbon,
-      columnRibbon: columnRibbon ?? this.columnRibbon,
+      mergedColumns: mergedColumns ?? this.mergedColumns,
+      mergedRows: mergedRows ?? this.mergedRows,
       calculationPositionsNeededX: calculationPositionsNeededX ?? true,
       calculationPositionsNeededY: calculationPositionsNeededY ?? true,
     );

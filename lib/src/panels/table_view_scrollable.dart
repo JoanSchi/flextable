@@ -33,7 +33,7 @@ typedef TableViewportBuilder<T extends AbstractFtModel<C>,
 class TableViewScrollable<T extends AbstractFtModel<C>, C extends AbstractCell>
     extends StatefulWidget {
   const TableViewScrollable(
-      {Key? key,
+      {super.key,
       required this.controller,
       this.physics,
       required this.viewportBuilder,
@@ -47,8 +47,7 @@ class TableViewScrollable<T extends AbstractFtModel<C>, C extends AbstractCell>
       this.rebuildNotifier,
       required this.tableChangeNotifiers,
       required this.properties})
-      : assert(semanticChildCount == null || semanticChildCount >= 0),
-        super(key: key);
+      : assert(semanticChildCount == null || semanticChildCount >= 0);
 
   final FtController<T, C> controller;
   final TableScrollPhysics? physics;
@@ -129,11 +128,11 @@ class TableViewScrollable<T extends AbstractFtModel<C>, C extends AbstractCell>
 class _ScrollableScope<T extends AbstractFtModel<C>, C extends AbstractCell>
     extends InheritedWidget {
   const _ScrollableScope({
-    Key? key,
+    super.key,
     required this.scrollable,
     required this.viewModel,
-    required Widget child,
-  }) : super(key: key, child: child);
+    required super.child,
+  });
 
   final TableViewScrollableState<T, C> scrollable;
   final FtViewModel<T, C> viewModel;
