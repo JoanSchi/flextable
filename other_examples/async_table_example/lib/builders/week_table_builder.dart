@@ -24,6 +24,7 @@ class TableWeekBuilder extends AbstractTableBuilder<AsyncAreaModel, Cell> {
   @override
   Widget? cellBuilder(
     BuildContext context,
+    FtViewModel<AsyncAreaModel, Cell> viewModel,
     double tableScale,
     Cell cell,
     LayoutPanelIndex layoutPanelIndex,

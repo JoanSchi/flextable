@@ -27,15 +27,14 @@ class RowChangeTableBuilder
   @override
   Widget? cellBuilder(
     BuildContext context,
+    FtViewModel<ChangeRowModel<Cell>, Cell> viewModel,
     double tableScale,
     Cell cell,
     LayoutPanelIndex layoutPanelIndex,
     FtIndex tableCellIndex,
     CellStatus cellStatus,
   ) {
-    final viewModel = context.viewModel<ChangeRowModel<Cell>, Cell>();
-
-    if (cellStatus.edit && viewModel != null) {
+    if (cellStatus.edit) {
       final nextCell = viewModel
           .nextCell(PanelCellIndex.from(ftIndex: tableCellIndex, cell: cell));
       final nextFocus = nextCell.isIndex;

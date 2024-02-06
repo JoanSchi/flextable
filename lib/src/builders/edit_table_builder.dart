@@ -31,6 +31,7 @@ class DefaultEditTableBuilder
   @override
   Widget? cellBuilder(
     BuildContext context,
+    FtViewModel<FtModel<Cell>, Cell> viewModel,
     double tableScale,
     Cell cell,
     LayoutPanelIndex layoutPanelIndex,

@@ -17,6 +17,7 @@ abstract class AbstractTableBuilder<T extends AbstractFtModel<C>,
 
   Widget? cellBuilder(
     BuildContext context,
+    FtViewModel<T, C> viewModel,
     double tableScale,
     C cell,
     LayoutPanelIndex layoutPanelIndex,
