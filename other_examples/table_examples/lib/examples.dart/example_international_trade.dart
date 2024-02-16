@@ -76,7 +76,7 @@ class _ExampleInternationalTradeState extends State<ExampleInternationalTrade>
       controller: _ftController,
       tableChangeNotifiers: [scaleChangeNotifier],
       model: ftModel,
-      tableBuilder: DefaultTableBuilder(),
+      tableBuilder: BasicTableBuilder(),
     );
 
     if (scaleSlider) {

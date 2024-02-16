@@ -66,7 +66,7 @@ class _ExampleEnergyState extends State<ExampleEnergy>
       tableChangeNotifiers: [tableScaleChangeNotifier],
       backgroundColor: Colors.grey[50],
       model: ftModel,
-      tableBuilder: DefaultTableBuilder(
+      tableBuilder: BasicTableBuilder(
           headerBackgroundColor: const Color.fromARGB(255, 244, 246, 248)),
     );
 

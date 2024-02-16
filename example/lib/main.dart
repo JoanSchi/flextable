@@ -47,19 +47,19 @@ class _ShortExampleState extends State<ShortExample> {
             continue;
           }
         }
-        Map attr = {
-          CellAttr.background: (r % 99 < 1
-              ? const Color.fromARGB(255, 249, 250, 245)
-              : ((r % 2) % 2 == 0
-                  ? Colors.white10
-                  : const Color.fromARGB(255, 229, 235, 206))),
-          CellAttr.textStyle: const TextStyle(
-              fontSize: 20, color: Color.fromARGB(255, 70, 78, 38)),
-        };
+        final style = TextCellStyle(
+            background: (r % 99 < 1
+                ? const Color.fromARGB(255, 249, 250, 245)
+                : ((r % 2) % 2 == 0
+                    ? Colors.white10
+                    : const Color.fromARGB(255, 229, 235, 206))),
+            padding: const EdgeInsets.all(2.0),
+            textStyle: const TextStyle(
+                fontSize: 20, color: Color.fromARGB(255, 70, 78, 38)));
 
         model.updateCell(
             ftIndex: FtIndex(row: r, column: c),
-            cell: Cell(value: '${numberToCharacter(c)}$r', attr: attr),
+            cell: Cell(value: '${numberToCharacter(c)}$r', style: style),
             rows: rows);
       }
     }
@@ -134,7 +134,7 @@ class _ShortExampleState extends State<ShortExample> {
         body: DefaultFlexTable(
           backgroundColor: Colors.white,
           model: model,
-          tableBuilder: DefaultTableBuilder(),
+          tableBuilder: BasicTableBuilder(),
         ));
   }
 }

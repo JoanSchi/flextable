@@ -26,11 +26,11 @@ const Set<PointerDeviceKind> kTouchLikeDeviceTypes = <PointerDeviceKind>{
   PointerDeviceKind.unknown,
 };
 
-typedef TableViewportBuilder<T extends AbstractFtModel<C>,
-        C extends AbstractCell>
-    = Widget Function(BuildContext context, FtViewModel<T, C> viewModel);
+typedef TableViewportBuilder<C extends AbstractCell,
+        M extends AbstractFtModel<C>>
+    = Widget Function(BuildContext context, FtViewModel<C, M> viewModel);
 
-class TableViewScrollable<T extends AbstractFtModel<C>, C extends AbstractCell>
+class TableViewScrollable<C extends AbstractCell, M extends AbstractFtModel<C>>
     extends StatefulWidget {
   const TableViewScrollable(
       {super.key,
@@ -49,9 +49,9 @@ class TableViewScrollable<T extends AbstractFtModel<C>, C extends AbstractCell>
       required this.properties})
       : assert(semanticChildCount == null || semanticChildCount >= 0);
 
-  final FtController<T, C> controller;
+  final FtController<C, M> controller;
   final TableScrollPhysics? physics;
-  final TableViewportBuilder<T, C> viewportBuilder;
+  final TableViewportBuilder<C, M> viewportBuilder;
 
   final bool excludeFromSemantics;
 
@@ -59,9 +59,9 @@ class TableViewScrollable<T extends AbstractFtModel<C>, C extends AbstractCell>
 
   final DragStartBehavior dragStartBehavior;
 
-  final T model;
+  final M model;
 
-  final AbstractTableBuilder<T, C> tableBuilder;
+  final AbstractTableBuilder<C, M> tableBuilder;
 
   final InnerScrollChangeNotifier innerScrollChangeNotifier;
 
@@ -74,7 +74,7 @@ class TableViewScrollable<T extends AbstractFtModel<C>, C extends AbstractCell>
   final FtProperties properties;
 
   @override
-  TableViewScrollableState<T, C> createState() => TableViewScrollableState();
+  TableViewScrollableState<C, M> createState() => TableViewScrollableState();
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
@@ -82,11 +82,11 @@ class TableViewScrollable<T extends AbstractFtModel<C>, C extends AbstractCell>
     properties.add(DiagnosticsProperty<TableScrollPhysics>('physics', physics));
   }
 
-  static TableViewScrollableState<T, C>?
-      of<T extends AbstractFtModel<C>, C extends AbstractCell>(
+  static TableViewScrollableState<C, M>?
+      of<C extends AbstractCell, M extends AbstractFtModel<C>>(
           BuildContext context) {
-    final _ScrollableScope<T, C>? widget =
-        context.dependOnInheritedWidgetOfExactType<_ScrollableScope<T, C>>();
+    final _ScrollableScope<C, M>? widget =
+        context.dependOnInheritedWidgetOfExactType<_ScrollableScope<C, M>>();
     return widget?.scrollable;
   }
 
@@ -125,7 +125,7 @@ class TableViewScrollable<T extends AbstractFtModel<C>, C extends AbstractCell>
 
 // Enable Scrollable.of() to work as if ScrollableState was an inherited widget.
 // ScrollableState.build() always rebuilds its _ScrollableScope.
-class _ScrollableScope<T extends AbstractFtModel<C>, C extends AbstractCell>
+class _ScrollableScope<C extends AbstractCell, M extends AbstractFtModel<C>>
     extends InheritedWidget {
   const _ScrollableScope({
     super.key,
@@ -134,8 +134,8 @@ class _ScrollableScope<T extends AbstractFtModel<C>, C extends AbstractCell>
     required super.child,
   });
 
-  final TableViewScrollableState<T, C> scrollable;
-  final FtViewModel<T, C> viewModel;
+  final TableViewScrollableState<C, M> scrollable;
+  final FtViewModel<C, M> viewModel;
 
   @override
   bool updateShouldNotify(_ScrollableScope old) {
@@ -143,12 +143,12 @@ class _ScrollableScope<T extends AbstractFtModel<C>, C extends AbstractCell>
   }
 }
 
-class TableViewScrollableState<T extends AbstractFtModel<C>,
-        C extends AbstractCell> extends State<TableViewScrollable<T, C>>
+class TableViewScrollableState<C extends AbstractCell,
+        M extends AbstractFtModel<C>> extends State<TableViewScrollable<C, M>>
     with TickerProviderStateMixin
     implements ScrollContext {
-  FtViewModel<T, C> get viewModel => _viewModel!;
-  FtViewModel<T, C>? _viewModel;
+  FtViewModel<C, M> get viewModel => _viewModel!;
+  FtViewModel<C, M>? _viewModel;
   InnerScaleChangeNotifier? _innerScaleChangeNotifier;
   ChangeNotifier? _rebuildNotifier;
 
@@ -164,8 +164,8 @@ class TableViewScrollableState<T extends AbstractFtModel<C>,
     _configuration = const TableScrollBehavior();
     _physics = _configuration.getScrollPhysics(context);
     if (widget.physics != null) _physics = widget.physics!.applyTo(_physics);
-    final FtController<T, C> controller = widget.controller;
-    final FtViewModel<T, C>? oldViewModel = _viewModel;
+    final FtController<C, M> controller = widget.controller;
+    final FtViewModel<C, M>? oldViewModel = _viewModel;
     if (oldViewModel != null) {
       controller.detach(oldViewModel);
       // It's important that we not dispose the old position until after the
@@ -235,7 +235,7 @@ class TableViewScrollableState<T extends AbstractFtModel<C>,
   }
 
   @override
-  void didUpdateWidget(TableViewScrollable<T, C> oldWidget) {
+  void didUpdateWidget(TableViewScrollable<C, M> oldWidget) {
     super.didUpdateWidget(oldWidget);
 
     if (widget.controller != oldWidget.controller) {
@@ -499,7 +499,7 @@ class TableViewScrollableState<T extends AbstractFtModel<C>,
 
   @override
   Widget build(BuildContext context) {
-    Widget result = _ScrollableScope<T, C>(
+    Widget result = _ScrollableScope<C, M>(
         scrollable: this,
         viewModel: viewModel,
         child: Listener(

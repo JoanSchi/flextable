@@ -8,16 +8,16 @@ import 'package:flutter/widgets.dart';
 import '../gesture_scroll/table_scroll_physics.dart';
 import '../listeners/inner_change_notifiers.dart';
 
-class FtController<T extends AbstractFtModel<C>, C extends AbstractCell>
+class FtController<C extends AbstractCell, M extends AbstractFtModel<C>>
     extends ChangeNotifier {
   FtController();
 
-  Iterable<FtViewModel<T, C>> get viewModels => _viewModels;
-  final List<FtViewModel<T, C>> _viewModels = <FtViewModel<T, C>>[];
+  Iterable<FtViewModel<C, M>> get viewModels => _viewModels;
+  final List<FtViewModel<C, M>> _viewModels = <FtViewModel<C, M>>[];
 
   bool get hasClients => _viewModels.isNotEmpty;
 
-  FtViewModel<T, C> get viewModel {
+  FtViewModel<C, M> get viewModel {
     assert(_viewModels.isNotEmpty,
         'ScrollController not attached to any scroll views.');
     assert(_viewModels.length == 1,
@@ -25,7 +25,7 @@ class FtController<T extends AbstractFtModel<C>, C extends AbstractCell>
     return _viewModels.single;
   }
 
-  FtViewModel<T, C> lastViewModel({stretch = 3}) {
+  FtViewModel<C, M> lastViewModel({stretch = 3}) {
     assert(_viewModels.isNotEmpty,
         'ScrollController not attached to any scroll views.');
     assert(_viewModels.length <= stretch,
@@ -37,7 +37,7 @@ class FtController<T extends AbstractFtModel<C>, C extends AbstractCell>
     return _viewModels.last;
   }
 
-  FtViewModel<T, C>? lastViewModelOrNull({stretch = 3}) {
+  FtViewModel<C, M>? lastViewModelOrNull({stretch = 3}) {
     if (_viewModels.isEmpty) {
       return null;
     }
@@ -50,13 +50,13 @@ class FtController<T extends AbstractFtModel<C>, C extends AbstractCell>
     return _viewModels.last;
   }
 
-  void attach(FtViewModel<T, C> viewModel) {
+  void attach(FtViewModel<C, M> viewModel) {
     assert(!_viewModels.contains(viewModel));
     _viewModels.add(viewModel);
     viewModel.addListener(notifyListeners);
   }
 
-  void detach(FtViewModel<T, C> viewModel) {
+  void detach(FtViewModel<C, M> viewModel) {
     assert(_viewModels.contains(viewModel));
     viewModel.removeListener(notifyListeners);
     _viewModels.remove(viewModel);
@@ -70,18 +70,18 @@ class FtController<T extends AbstractFtModel<C>, C extends AbstractCell>
     super.dispose();
   }
 
-  FtViewModel<T, C> createViewModel(
+  FtViewModel<C, M> createViewModel(
     TableScrollPhysics physics,
     ScrollContext context,
-    FtViewModel<T, C>? oldViewModel,
-    T model,
-    AbstractTableBuilder<T, C> tableBuilder,
+    FtViewModel<C, M>? oldViewModel,
+    M model,
+    AbstractTableBuilder tableBuilder,
     InnerScrollChangeNotifier scrollChangeNotifier,
     InnerScaleChangeNotifier scaleChangeNotifier,
     List<TableChangeNotifier> tableChangeNotifiers,
     FtProperties properties,
   ) {
-    return FtViewModel<T, C>(
+    return FtViewModel<C, M>(
         physics: physics,
         context: context,
         oldPosition: oldViewModel,

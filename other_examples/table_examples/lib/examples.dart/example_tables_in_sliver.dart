@@ -55,7 +55,7 @@ class _ExampleSliverInTablesState extends State<ExampleSliverInTables> {
     Widget makeTable(
         {required String id,
         required DefaultFtModel ftModel,
-        DefaultTableBuilder? tableBuilder}) {
+        BasicTableBuilder? tableBuilder}) {
       ScaleChangeNotifier scaleChangeNotifier =
           ScaleChangeNotifier(tableScale: ftModel.tableScale);
 
@@ -66,7 +66,7 @@ class _ExampleSliverInTablesState extends State<ExampleSliverInTables> {
         tableChangeNotifiers: [scaleChangeNotifier],
         controller: ftController,
         model: ftModel,
-        tableBuilder: DefaultTableBuilder(),
+        tableBuilder: BasicTableBuilder(),
       );
 
       if (scaleSlider) {
@@ -121,7 +121,7 @@ class _ExampleSliverInTablesState extends State<ExampleSliverInTables> {
                     autoFreezeListX: true,
                     autoFreezeListY: true,
                   ),
-                  tableBuilder: MortgageTableBuilder()),
+                  tableBuilder: BasicTableBuilder()),
               const InfoBox(
                 title: 'Stress table',
                 info: 'Manual freeze\nVertical split\nzoom',

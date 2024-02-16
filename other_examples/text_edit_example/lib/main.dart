@@ -45,19 +45,19 @@ class _TextEditExampleState extends State<TextEditExample>
       for (int c = 0; c < columns; c++) {
         int rows = 1;
 
-        Map attr = {
-          CellAttr.background: (r % 99 < 1
+        TextCellStyle style = TextCellStyle(
+          background: (r % 99 < 1
               ? const Color.fromARGB(255, 249, 250, 245)
               : ((r % 2) % 2 == 0
                   ? Colors.white10
                   : const Color.fromARGB(255, 229, 235, 206))),
-          CellAttr.textStyle: const TextStyle(
+          textStyle: const TextStyle(
               fontSize: 20, color: Color.fromARGB(255, 70, 78, 38)),
-        };
+        );
 
         model.updateCell(
             ftIndex: FtIndex(row: r, column: c),
-            cell: Cell(value: '${numberToCharacter(c)}$r', attr: attr),
+            cell: TextCell(value: '${numberToCharacter(c)}$r', style: style),
             rows: rows);
       }
     }
@@ -142,7 +142,7 @@ class _TextEditExampleState extends State<TextEditExample>
           backgroundColor: Colors.white,
           controller: _ftController,
           model: model,
-          tableBuilder: DefaultEditTableBuilder(),
+          tableBuilder: DefaultTableBuilder(),
         ));
   }
 }

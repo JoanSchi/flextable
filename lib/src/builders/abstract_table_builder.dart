@@ -5,25 +5,25 @@
 import 'package:flutter/material.dart';
 import '../../flextable.dart';
 
-extension ViewModelBuildContextEntension on BuildContext {
-  FtViewModel<T, C>?
-      viewModel<T extends AbstractFtModel<C>, C extends AbstractCell>() =>
-          FlexTable.viewModelOf<T, C>(this);
-}
+// extension ViewModelBuildContextEntension on BuildContext {
+//   FtViewModel<T, C>?
+//       viewModel<T extends AbstractFtModel<C>, C extends AbstractCell>() =>
+//           FlexTable.viewModelOf<T, C>(this);
+// }
 
-abstract class AbstractTableBuilder<T extends AbstractFtModel<C>,
-    C extends AbstractCell> {
+abstract class AbstractTableBuilder<C extends AbstractCell,
+    M extends AbstractFtModel<C>> {
   AbstractTableBuilder();
 
   Widget? cellBuilder(
-    BuildContext context,
-    FtViewModel<T, C> viewModel,
-    double tableScale,
-    C cell,
-    LayoutPanelIndex layoutPanelIndex,
-    FtIndex tableCellIndex,
-    CellStatus cellStatus,
-  );
+      BuildContext context,
+      FtViewModel<C, M> viewModel,
+      double tableScale,
+      C cell,
+      LayoutPanelIndex layoutPanelIndex,
+      FtIndex tableCellIndex,
+      CellStatus cellStatus,
+      ValueKey? valueKey);
 
   Widget backgroundPanel(
     BuildContext context,
@@ -31,19 +31,19 @@ abstract class AbstractTableBuilder<T extends AbstractFtModel<C>,
     Widget? child,
   );
 
-  Widget buildHeaderIndex(BuildContext context, T model,
+  Widget buildHeaderIndex(BuildContext context, M viewModel,
       TableHeaderIndex tableHeaderIndex, double scale);
 
-  LineHeader lineHeader(FtViewModel<T, C> viewModel, int panelIndex);
+  LineHeader lineHeader(FtViewModel<C, M> viewModel, int panelIndex);
 
-  void finalPaintMainPanel(FtViewModel<T, C> viewModel, PaintingContext context,
+  void finalPaintMainPanel(FtViewModel<C, M> viewModel, PaintingContext context,
       Offset offset, Size size);
 
   void firstPaintPanel(
     PaintingContext context,
     Offset offset,
     Size size,
-    FtViewModel<T, C> viewModel,
+    FtViewModel<C, M> viewModel,
     LayoutPanelIndex tableIndex,
     List<GridInfo> rowInfoList,
     List<GridInfo> columnInfoList,
@@ -53,7 +53,7 @@ abstract class AbstractTableBuilder<T extends AbstractFtModel<C>,
     PaintingContext context,
     Offset offset,
     Size size,
-    FtViewModel<T, C> viewModel,
+    FtViewModel<C, M> viewModel,
     LayoutPanelIndex tableIndex,
     List<GridInfo> rowInfoList,
     List<GridInfo> columnInfoList,

@@ -5,12 +5,12 @@
 import 'package:flextable/flextable.dart';
 import 'package:flutter/rendering.dart';
 
-class TableInterator<T extends AbstractFtModel<C>, C extends AbstractCell> {
+class TableInterator<C extends AbstractCell, M extends AbstractFtModel<C>> {
   TableInterator({
-    required FtViewModel<T, C> viewModel,
+    required FtViewModel<C, M> viewModel,
   }) : _viewModel = viewModel;
 
-  FtViewModel<T, C> _viewModel;
+  FtViewModel<C, M> _viewModel;
   late List<GridInfo> rowInfoList;
   late List<GridInfo> columnInfoList;
   int rowIndex = 0;
@@ -35,7 +35,7 @@ class TableInterator<T extends AbstractFtModel<C>, C extends AbstractCell> {
   int focusRowIndex = -1;
   int focusColumnIndex = -1;
 
-  set viewModel(FtViewModel<T, C> value) {
+  set viewModel(FtViewModel<C, M> value) {
     _viewModel = value;
   }
 

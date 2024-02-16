@@ -27,46 +27,50 @@ class DataModelFruit {
           RangeProperties(start: 1, last: 2, size: 40.0)
         ]);
 
-    ftModel.updateCell(
+    ftModel.insertCell(
         ftIndex: const FtIndex(row: 0, column: 0),
         columns: 5,
-        cell: Cell(
+        cell: TextCell(
             value:
                 'Fruitteelt open grond en onder glas; \n teeltoppervlakte, soort fruit',
-            attr: {
-              CellAttr.textStyle: TextStyle(
+            style: TextCellStyle(
+              textStyle: TextStyle(
                   color: Colors.green[900],
                   fontSize: 16.0,
                   fontWeight: FontWeight.bold),
-            }));
+            )));
 
-    ftModel.updateCell(
+    ftModel.insertCell(
         ftIndex: const FtIndex(row: 1, column: 1),
         columns: 4,
-        cell: Cell(value: 'Perioden (ha/J)', attr: {
-          CellAttr.background: Colors.lime[500],
-          CellAttr.textStyle: const TextStyle(
-              color: Colors.white, fontSize: 16.0, fontWeight: FontWeight.bold),
-        }));
+        cell: TextCell(
+            value: 'Perioden (ha/J)',
+            style: TextCellStyle(
+              background: Colors.lime[500],
+              textStyle: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16.0,
+                  fontWeight: FontWeight.bold),
+            )));
 
     for (var columns in _fruit) {
       int tempColumn = column;
 
       for (var value in columns) {
-        Map attr = {
-          CellAttr.background:
-              Colors.lime[row == 2 ? 500 : (row % 2 == 0 ? 50 : 100)],
-          if (tempColumn == 0) CellAttr.alignment: Alignment.centerLeft,
-          if (row == 2)
-            CellAttr.textStyle: const TextStyle(
-                color: Colors.white,
-                fontSize: 16.0,
-                fontWeight: FontWeight.bold),
-          if (tempColumn == 0) CellAttr.textAlign: TextAlign.left
-        };
-        ftModel.updateCell(
+        final style = TextCellStyle(
+            background: Colors.lime[row == 2 ? 500 : (row % 2 == 0 ? 50 : 100)],
+            alignment: (tempColumn == 0) ? Alignment.centerLeft : null,
+            textStyle: (row == 2)
+                ? const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16.0,
+                    fontWeight: FontWeight.bold)
+                : null,
+            textAlign: (tempColumn == 0) ? TextAlign.left : null);
+
+        ftModel.insertCell(
             ftIndex: FtIndex(row: row, column: tempColumn),
-            cell: Cell(value: value, attr: attr));
+            cell: Cell(value: value, style: style));
 
         tempColumn++;
       }

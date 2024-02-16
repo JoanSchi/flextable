@@ -3,20 +3,14 @@
 // license that can be found in the LICENSE file.
 
 import 'dart:collection';
-import '../model/model.dart';
-import '../model/view_model.dart';
-import 'package:flextable/src/panels/table_multi_panel_viewport.dart';
+import '../../flextable.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
-import '../model/properties/flextable_grid_info.dart';
-import '../builders/abstract_table_builder.dart';
 
-typedef HeaderIndexBuilder<T extends AbstractFtModel> = Widget Function(
-    BuildContext context,
-    T model,
-    TableHeaderIndex tableHeaderIndex,
-    double scale);
+typedef HeaderIndexBuilder<C extends AbstractCell, T extends AbstractFtModel<C>>
+    = Widget Function(BuildContext context, T model,
+        TableHeaderIndex tableHeaderIndex, double scale);
 
 class TableHeader extends StatelessWidget {
   const TableHeader(
@@ -46,7 +40,8 @@ class TableHeader extends StatelessWidget {
   }
 }
 
-class TableHeaderViewport extends RenderObjectWidget {
+class TableHeaderViewport<C extends AbstractCell, T extends AbstractFtModel<C>>
+    extends RenderObjectWidget {
   const TableHeaderViewport(
       {super.key,
       required this.viewModel,
@@ -56,9 +51,9 @@ class TableHeaderViewport extends RenderObjectWidget {
       required this.headerScale,
       required this.divider});
 
-  final FtViewModel viewModel;
+  final FtViewModel<C, T> viewModel;
   final int panelIndex;
-  final HeaderIndexBuilder headerIndexBuilder;
+  final HeaderIndexBuilder<C, T> headerIndexBuilder;
   final double tableScale;
   final double headerScale;
   final LineHeader divider;

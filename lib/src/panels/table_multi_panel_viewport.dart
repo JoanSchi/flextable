@@ -14,7 +14,7 @@ import 'header_viewport.dart';
 typedef TablePanelViewportBuilder = Widget Function(
     BuildContext context, int index);
 
-class TableMultiPanel<T extends AbstractFtModel<C>, C extends AbstractCell>
+class TableMultiPanel<C extends AbstractCell, M extends AbstractFtModel<C>>
     extends StatelessWidget {
   const TableMultiPanel(
       {super.key,
@@ -22,8 +22,8 @@ class TableMultiPanel<T extends AbstractFtModel<C>, C extends AbstractCell>
       required this.tableBuilder,
       required this.tableScale});
 
-  final FtViewModel<T, C> viewModel;
-  final AbstractTableBuilder<T, C> tableBuilder;
+  final FtViewModel<C, M> viewModel;
+  final AbstractTableBuilder<C, M> tableBuilder;
   final double tableScale;
 
   @override
@@ -39,7 +39,7 @@ class TableMultiPanel<T extends AbstractFtModel<C>, C extends AbstractCell>
             panelIndex == 6 ||
             panelIndex == 9 ||
             panelIndex == 10) {
-          panel = TablePanel<T, C>(
+          panel = TablePanel<C, M>(
             viewModel: viewModel,
             panelIndex: panelIndex,
             tableBuilder: tableBuilder,
@@ -108,8 +108,8 @@ class _SplitIterator implements Iterator<int> {
   int get current => _current;
 }
 
-class TableMultiPanelViewport<T extends AbstractFtModel<C>,
-    C extends AbstractCell> extends RenderObjectWidget {
+class TableMultiPanelViewport<C extends AbstractCell,
+    M extends AbstractFtModel<C>> extends RenderObjectWidget {
   const TableMultiPanelViewport(
       {super.key,
       required this.viewModel,
@@ -117,13 +117,13 @@ class TableMultiPanelViewport<T extends AbstractFtModel<C>,
       required this.tableBuilder,
       required this.tableScale});
 
-  final FtViewModel<T, C> viewModel;
+  final FtViewModel<C, M> viewModel;
   final TablePanelViewportBuilder builder;
   final AbstractTableBuilder tableBuilder;
   final double tableScale;
 
   @override
-  TableMultiPanelRenderViewport<T, C> createRenderObject(BuildContext context) {
+  TableMultiPanelRenderViewport<C, M> createRenderObject(BuildContext context) {
     final TableMultiPanelRenderChildManager element =
         context as TableMultiPanelRenderChildManager;
     return TableMultiPanelRenderViewport(
@@ -136,7 +136,7 @@ class TableMultiPanelViewport<T extends AbstractFtModel<C>,
 
   @override
   void updateRenderObject(
-      BuildContext context, TableMultiPanelRenderViewport<T, C> renderObject) {
+      BuildContext context, TableMultiPanelRenderViewport<C, M> renderObject) {
     renderObject
       ..viewModel = viewModel
       ..tableScale = tableScale
@@ -144,12 +144,12 @@ class TableMultiPanelViewport<T extends AbstractFtModel<C>,
   }
 
   @override
-  TableMultiPanelRenderObjectElement<T, C> createElement() =>
+  TableMultiPanelRenderObjectElement<C, M> createElement() =>
       TableMultiPanelRenderObjectElement(this);
 }
 
-class TableMultiPanelRenderObjectElement<T extends AbstractFtModel<C>,
-        C extends AbstractCell> extends RenderObjectElement
+class TableMultiPanelRenderObjectElement<C extends AbstractCell,
+        M extends AbstractFtModel<C>> extends RenderObjectElement
     implements TableMultiPanelRenderChildManager {
   TableMultiPanelRenderObjectElement(super.widget);
 
@@ -177,8 +177,8 @@ class TableMultiPanelRenderObjectElement<T extends AbstractFtModel<C>,
   final Set<Element> _forgottenChildren = HashSet<Element>();
 
   @override
-  TableMultiPanelRenderViewport<T, C> get renderObject =>
-      super.renderObject as TableMultiPanelRenderViewport<T, C>;
+  TableMultiPanelRenderViewport<C, M> get renderObject =>
+      super.renderObject as TableMultiPanelRenderViewport<C, M>;
 
   @override
   void insertRenderObjectChild(RenderObject child, int slot) {
@@ -437,13 +437,13 @@ class TableMultiPanelRenderObjectElement<T extends AbstractFtModel<C>,
   }
 }
 
-class TableMultiPanelRenderViewport<T extends AbstractFtModel<C>,
-        C extends AbstractCell> extends RenderBox
+class TableMultiPanelRenderViewport<C extends AbstractCell,
+        T extends AbstractFtModel<C>> extends RenderBox
     with
         ContainerRenderObjectMixin<RenderBox, TablePanelParentData>,
         RenderBoxContainerDefaultsMixin<RenderBox, TablePanelParentData> {
   TableMultiPanelRenderViewport({
-    required FtViewModel<T, C> viewModel,
+    required FtViewModel<C, T> viewModel,
     required this.childManager,
     required double tableScale,
     required AbstractTableBuilder tableBuilder,
@@ -452,13 +452,13 @@ class TableMultiPanelRenderViewport<T extends AbstractFtModel<C>,
         _tableBuilder = tableBuilder;
 
   TableMultiPanelRenderChildManager childManager;
-  FtViewModel<T, C> _viewModel;
+  FtViewModel<C, T> _viewModel;
   double _tableScale;
   AbstractTableBuilder _tableBuilder;
 
-  FtViewModel<T, C> get viewModel => _viewModel;
+  FtViewModel<C, T> get viewModel => _viewModel;
 
-  set viewModel(FtViewModel<T, C> value) {
+  set viewModel(FtViewModel<C, T> value) {
     if (value == _viewModel) return;
     if (attached) _viewModel.removeListener(markNeedsLayout);
     _viewModel = value;

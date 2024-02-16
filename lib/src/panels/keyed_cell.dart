@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-import 'package:flextable/flextable.dart';
 import 'package:flutter/material.dart';
 
 class KeyedCell extends StatelessWidget {
@@ -10,10 +9,8 @@ class KeyedCell extends StatelessWidget {
 
   final Widget child;
 
-  factory KeyedCell.wrap(FtIndex? childIndex, Widget child) {
-    final Key? key = child.key != null
-        ? ValueKey<Key>(child.key!)
-        : (childIndex != null ? ValueKey<FtIndex>(childIndex) : null);
+  factory KeyedCell.wrap(ValueKey? valueKey, Widget child) {
+    final Key? key = child.key != null ? ValueKey<Key>(child.key!) : valueKey;
     return KeyedCell(key: key, child: child);
   }
 

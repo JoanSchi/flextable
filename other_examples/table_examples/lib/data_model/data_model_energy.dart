@@ -43,11 +43,11 @@ class DataModelEngery {
     for (List<_Item> rowItems in _columnHeader) {
       int columnTemp = column + 2;
       for (_Item item in rowItems) {
-        ftModel.updateCell(
+        ftModel.insertCell(
             ftIndex: FtIndex(row: row, column: columnTemp),
-            cell: Cell(
+            cell: TextCell(
                 value: item.value,
-                attr: {CellAttr.background: Colors.grey[50]!}),
+                style: TextCellStyle(background: Colors.grey[50]!)),
             columns: item.length);
         columnTemp += item.length;
       }
@@ -57,12 +57,13 @@ class DataModelEngery {
     int rowTemp = row;
 
     for (var item in _rowHeader1) {
-      ftModel.updateCell(
+      ftModel.insertCell(
           ftIndex: FtIndex(row: rowTemp, column: column),
-          cell: Cell(value: item.value, attr: {
-            CellAttr.background: Colors.blueGrey[50]!,
-            CellAttr.rotate: -90
-          }),
+          cell: TextCell(
+            value: item.value,
+            style:
+                TextCellStyle(background: Colors.blueGrey[50]!, rotation: -90),
+          ),
           rows: item.length);
       rowTemp += item.length;
     }
@@ -71,15 +72,13 @@ class DataModelEngery {
     rowTemp = row;
 
     for (String value in _rowHeader2) {
-      ftModel.updateCell(
+      ftModel.insertCell(
         ftIndex: FtIndex(row: rowTemp, column: column),
         cell: Cell(
-          value: value,
-          attr: {
-            CellAttr.background: Colors.blueGrey[50]!,
-            CellAttr.alignment: Alignment.centerLeft
-          },
-        ),
+            value: value,
+            style: TextCellStyle(
+                background: Colors.blueGrey[50]!,
+                alignment: Alignment.centerLeft)),
       );
       rowTemp++;
     }
@@ -91,6 +90,8 @@ class DataModelEngery {
 
       for (int c = 0; c < dataColumns; c++) {
         var value = _data[r][c];
+        //TODO
+
         Map attr = {};
         if (c == 3 && value is num) {
           attr[CellAttr.percentagBackground] = PercentageBackground(
@@ -102,9 +103,11 @@ class DataModelEngery {
               ratio: value / 100.0);
         }
 
-        ftModel.updateCell(
+        ftModel.insertCell(
             ftIndex: FtIndex(row: r + row, column: c + column),
-            cell: Cell(value: value, attr: attr));
+            cell: Cell(
+              value: value,
+            ));
       }
     }
 

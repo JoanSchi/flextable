@@ -55,3 +55,9 @@ class ScrollChangeNotifier extends ChangeNotifier with TableChangeNotifier {
   bool _mounted = true;
   bool get mounted => _mounted;
 }
+
+class RebuildNotifier extends ChangeNotifier {
+  void notify() {
+    notifyListeners();
+  }
+}

@@ -3,6 +3,7 @@
 // license that can be found in the LICENSE file.
 
 import '../panels/panel_viewport.dart';
+import '../templates/cells/cell_styles.dart';
 
 enum FtCellState {
   ready,
@@ -22,43 +23,41 @@ class FtCellGroupState {
   );
 }
 
-class Cell<T, I> extends AbstractCell {
+class Cell<T, I, S extends CellStyle> extends AbstractCell<I> {
   const Cell({
     this.value,
-    this.attr = const {},
+    this.style,
     super.merged,
     this.groupState,
-    this.identifier,
+    super.identifier,
   });
 
-  final Map attr;
+  final S? style;
   final T? value;
   final FtCellGroupState? groupState;
-  final I? identifier;
-
   FtCellState get cellState => groupState?.state ?? FtCellState.ready;
 
-  bool get isEditable => false;
+  bool get editable => false;
 
   @override
-  Cell copyWith(
-      {Map? attr,
+  Cell<T, I, S> copyWith(
+      {S? style,
       T? value,
       Merged? merged,
       FtCellGroupState? groupState,
       I? identifier}) {
     return Cell(
         groupState: groupState ?? this.groupState,
-        attr: attr ?? this.attr,
+        style: style ?? this.style,
         value: value ?? this.value,
         merged: merged ?? this.merged,
         identifier: identifier ?? this.identifier);
   }
 }
 
-abstract class AbstractCell {
-  const AbstractCell({this.merged});
-
+abstract class AbstractCell<I> {
+  const AbstractCell({this.merged, this.identifier});
+  final I? identifier;
   final Merged? merged;
 
   AbstractCell copyWith({Merged? merged});

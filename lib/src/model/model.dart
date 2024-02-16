@@ -58,6 +58,8 @@ abstract class AbstractFtModel<C extends AbstractCell> {
     bool? autoFreezeY,
     this.calculationPositionsNeededX = true,
     this.calculationPositionsNeededY = true,
+    TableLinesOneDirection? horizontalLines,
+    TableLinesOneDirection? verticalLines,
   })  : _autoFreezeX = autoFreezeX,
         _autoFreezeY = autoFreezeY,
         autoFreezeAreasX = autoFreezeAreasX ?? [],
@@ -77,6 +79,8 @@ abstract class AbstractFtModel<C extends AbstractCell> {
             'Select the number of rows to freeze'),
         specificWidth = specificWidth ?? [],
         specificHeight = specificHeight ?? [],
+        verticalLines = verticalLines ?? TableLinesOneDirection(),
+        horizontalLines = horizontalLines ?? TableLinesOneDirection(),
         assert(() {
           int index = -1;
           int autoFreezeIndex = 0;
@@ -218,6 +222,15 @@ abstract class AbstractFtModel<C extends AbstractCell> {
   set autoFreezeY(bool value) {
     _autoFreezeY = value;
   }
+
+  TableLinesOneDirection horizontalLines;
+  TableLinesOneDirection verticalLines;
+
+  ///
+  ///
+  ///
+  ///
+  ///
 
   bool get autoFreezeY => _autoFreezeY ?? autoFreezeAreasY.isNotEmpty;
 
@@ -1155,10 +1168,6 @@ abstract class AbstractFtModel<C extends AbstractCell> {
       {required int column,
       int columns = 1,
       required Function(AbstractFtModel<C> model) updateModel}) {
-    throw UnimplementedError();
-  }
-
-  int? obtainNewRow(int index) {
     throw UnimplementedError();
   }
 

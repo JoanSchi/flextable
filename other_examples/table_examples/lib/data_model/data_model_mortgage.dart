@@ -13,7 +13,7 @@ import 'package:flextable/flextable.dart';
 class MortgageTableModel {
   MortgageTableModel({this.verticalTables = 6, this.horizontalTables = 5})
       : flexTableModel =
-            FtModel<Cell>(defaultHeightCell: 25.0, defaultWidthCell: 75.0) {
+            BasicFtModel(defaultHeightCell: 25.0, defaultWidthCell: 75.0) {
     int lengthColors = _tableColors.length;
     int swiftColors = 2;
 
@@ -40,7 +40,7 @@ class MortgageTableModel {
     }
   }
 
-  final FtModel<Cell> flexTableModel;
+  final BasicFtModel flexTableModel;
   var df = DateFormat('dd-MM-yyyy');
   var nf = NumberFormat('###', 'nl_NL');
   final years = 30;
@@ -112,46 +112,56 @@ class MortgageTableModel {
       },
     );
 
-    flexTableModel.updateCell(
+    flexTableModel.insertCell(
         ftIndex: FtIndex(row: row, column: columnStart + 2),
         columns: 2,
-        cell: Cell(value: 'Per maand', attr: {CellAttr.background: bc2}));
+        cell: TextCell(
+            value: 'Per maand', style: TextCellStyle(background: bc2)));
 
     var rowColor = row % 2 == 0 ? bc2 : bc1;
 
     row++;
 
-    flexTableModel.updateCell(
+    flexTableModel.insertCell(
         ftIndex: FtIndex(row: row, column: column++),
-        cell: Cell(value: 'Datum', attr: {CellAttr.background: rowColor}));
+        cell: TextCell(
+            value: 'Datum', style: TextCellStyle(background: rowColor)));
 
-    flexTableModel.updateCell(
+    flexTableModel.insertCell(
       ftIndex: FtIndex(row: row, column: column++),
-      cell: Cell(value: 'Lening', attr: {CellAttr.background: rowColor}),
+      cell:
+          TextCell(value: 'Lening', style: TextCellStyle(background: rowColor)),
     );
 
-    flexTableModel.updateCell(
+    flexTableModel.insertCell(
         ftIndex: FtIndex(row: row, column: column++),
-        cell: Cell(value: 'Rente', attr: {CellAttr.background: rowColor}));
+        cell: TextCell(
+            value: 'Rente', style: TextCellStyle(background: rowColor)));
 
-    flexTableModel.updateCell(
+    flexTableModel.insertCell(
         ftIndex: FtIndex(row: row, column: column++),
-        cell: Cell(value: 'Aflossen', attr: {CellAttr.background: rowColor}));
-    flexTableModel.updateCell(
+        cell: TextCell(
+            value: 'Aflossen', style: TextCellStyle(background: rowColor)));
+    flexTableModel.insertCell(
         ftIndex: FtIndex(row: row, column: column++),
-        cell: Cell(value: 'Totaal', attr: {CellAttr.background: rowColor}));
-    flexTableModel.updateCell(
+        cell: TextCell(
+            value: 'Totaal', style: TextCellStyle(background: rowColor)));
+    flexTableModel.insertCell(
         ftIndex: FtIndex(row: row, column: column++),
-        cell: Cell(value: 'Rente', attr: {CellAttr.background: rowColor}));
-    flexTableModel.updateCell(
+        cell: TextCell(
+            value: 'Rente', style: TextCellStyle(background: rowColor)));
+    flexTableModel.insertCell(
         ftIndex: FtIndex(row: row, column: column++),
-        cell: Cell(value: 'Teruggave', attr: {CellAttr.background: rowColor}));
-    flexTableModel.updateCell(
+        cell: TextCell(
+            value: 'Teruggave', style: TextCellStyle(background: rowColor)));
+    flexTableModel.insertCell(
         ftIndex: FtIndex(row: row, column: column++),
-        cell: Cell(value: 'Netto', attr: {CellAttr.background: rowColor}));
-    flexTableModel.updateCell(
+        cell: TextCell(
+            value: 'Netto', style: TextCellStyle(background: rowColor)));
+    flexTableModel.insertCell(
         ftIndex: FtIndex(row: row, column: column++),
-        cell: Cell(value: 'N. e/m', attr: {CellAttr.background: rowColor}));
+        cell: TextCell(
+            value: 'N. e/m', style: TextCellStyle(background: rowColor)));
 
     for (int i = 0; i < years; i++) {
       double interestYear = 0;
@@ -171,26 +181,26 @@ class MortgageTableModel {
         repayYear += repay;
 
         column = columnStart;
-        flexTableModel.updateCell(
+        flexTableModel.insertCell(
             ftIndex: FtIndex(row: row, column: column++),
-            cell: Cell(
+            cell: TextCell(
                 value: df.format(DateTime(currentYear, month + 1)),
-                attr: {CellAttr.background: rowColor}));
-        flexTableModel.updateCell(
+                style: TextCellStyle(background: rowColor)));
+        flexTableModel.insertCell(
             ftIndex: FtIndex(row: row, column: column++),
-            cell: Cell(
+            cell: TextCell(
                 value: nf.format(morgage),
-                attr: {CellAttr.background: rowColor}));
-        flexTableModel.updateCell(
+                style: TextCellStyle(background: rowColor)));
+        flexTableModel.insertCell(
             ftIndex: FtIndex(row: row, column: column++),
-            cell: Cell(
+            cell: TextCell(
                 value: nf.format(monthlyInterest),
-                attr: {CellAttr.background: rowColor}));
-        flexTableModel.updateCell(
+                style: TextCellStyle(background: rowColor)));
+        flexTableModel.insertCell(
             ftIndex: FtIndex(row: row, column: column++),
-            cell: Cell(
+            cell: TextCell(
                 value: nf.format(repay),
-                attr: {CellAttr.background: rowColor}));
+                style: TextCellStyle(background: rowColor)));
 
         if (month == 0) {
           h.addLineRange(
@@ -206,37 +216,37 @@ class MortgageTableModel {
 
           final total = interestYear + repayYear;
           final back = interestYear * 0.42;
-          flexTableModel.updateCell(
+          flexTableModel.insertCell(
               ftIndex: FtIndex(row: row - 11, column: column++),
               rows: 12,
-              cell: Cell(
+              cell: TextCell(
                   value: nf.format(interestYear + repay),
-                  attr: {CellAttr.background: yearColorBlock}));
-          flexTableModel.updateCell(
+                  style: TextCellStyle(background: yearColorBlock)));
+          flexTableModel.insertCell(
               ftIndex: FtIndex(row: row - 11, column: column++),
               rows: 12,
-              cell: Cell(
+              cell: TextCell(
                   value: nf.format(interestYear),
-                  attr: {CellAttr.background: yearColorBlockNext}));
-          flexTableModel.updateCell(
+                  style: TextCellStyle(background: yearColorBlockNext)));
+          flexTableModel.insertCell(
               ftIndex: FtIndex(row: row - 11, column: column++),
               rows: 12,
-              cell: Cell(
+              cell: TextCell(
                   value: nf.format(back),
-                  attr: {CellAttr.background: yearColorBlock}));
-          flexTableModel.updateCell(
+                  style: TextCellStyle(background: yearColorBlock)));
+          flexTableModel.insertCell(
               ftIndex: FtIndex(row: row - 11, column: column++),
               rows: 12,
-              cell: Cell(
+              cell: TextCell(
                   value: nf.format(total - back),
-                  attr: {CellAttr.background: yearColorBlockNext}));
-          flexTableModel.updateCell(
+                  style: TextCellStyle(background: yearColorBlockNext)));
+          flexTableModel.insertCell(
               ftIndex: FtIndex(row: row - 11, column: column++),
               rows: 12,
-              cell: Cell(
+              cell: TextCell(
                   value:
                       'T: ${nf.format(total / 12.0)}\nB: ${nf.format(back / 12.0)}\nN: ${nf.format((total - back) / 12.0)}',
-                  attr: {CellAttr.background: yearColorBlock}));
+                  style: TextCellStyle(background: yearColorBlock)));
         }
 
         morgage -= repay;
@@ -283,7 +293,7 @@ class MortgageTableModel {
     if (columnEndTable < column) columnEndTable = column;
   }
 
-  FtModel<Cell> makeTable({
+  BasicFtModel makeTable({
     TargetPlatform? platform,
     scrollUnlockX = false,
     scrollUnlockY = false,
@@ -337,31 +347,31 @@ class MortgageTableModel {
   }
 }
 
-class MortgageTableBuilder extends DefaultTableBuilder {
-  MortgageTableBuilder(
-      {super.headerBackgroundColor = const Color.fromARGB(255, 244, 246, 248)});
+// class MortgageTableBuilder extends DefaultTableBuilder<AbstractFtModel<Cell>, Cell> {
+//   MortgageTableBuilder(
+//       {super.headerBackgroundColor = const Color.fromARGB(255, 244, 246, 248)});
 
-  @override
-  Widget? cellBuilder(
-    BuildContext context,
-    FtViewModel<FtModel<Cell>, Cell> viewModel,
-    double tableScale,
-    Cell cell,
-    LayoutPanelIndex layoutPanelIndex,
-    FtIndex tableCellIndex,
-    CellStatus cellStatus,
-  ) {
-    //RepaintBoundary for canvas layer
+//   @override
+//   Widget? cellBuilder(
+//     BuildContext context,
+//     FtViewModel<AbstractFtModel<Cell>, Cell> viewModel,
+//     double tableScale,
+//     Cell cell,
+//     LayoutPanelIndex layoutPanelIndex,
+//     FtIndex tableCellIndex,
+//     CellStatus cellStatus,
+//   ) {
+//     //RepaintBoundary for canvas layer
 
-    return Container(
-        color: cell.attr[CellAttr.background] ?? Colors.white,
-        child: Center(
-            child: Text(
-          '${cell.value}',
-          textScaler: TextScaler.linear(tableScale),
-        )));
-  }
-}
+//     return Container(
+//         color: cell.attr[CellAttr.background] ?? Colors.white,
+//         child: Center(
+//             child: Text(
+//           '${cell.value}',
+//           textScaler: TextScaler.linear(tableScale),
+//         )));
+//   }
+// }
 
 List<Map<String, Color>> _tableColors = <Map<String, Color>>[
   {'bc1': Colors.lime[100]!, 'bc2': Colors.white, 'line': Colors.lime[300]!},

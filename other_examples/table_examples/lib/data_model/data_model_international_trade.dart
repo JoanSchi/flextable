@@ -28,29 +28,30 @@ class DataModelInternationalTrade {
     int row = 0;
     int column = 0;
 
-    ftModel.updateCell(
+    ftModel.insertCell(
         ftIndex: const FtIndex(row: 0, column: 0),
         columns: 8 * 3,
-        cell: const Cell(
+        cell: const TextCell(
             value:
                 'Internationale handel; invoer en uitvoer van diensten naar land, kwartaal (mln euro)',
-            attr: {
-              CellAttr.alignment: Alignment.centerLeft,
-              CellAttr.textStyle:
-                  TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold),
-            }));
+            style: TextCellStyle(
+              alignment: Alignment.centerLeft,
+              textStyle: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold),
+            )));
 
     int tempColumn = column;
     row++;
 
     for (var element in _columnHeader1) {
-      ftModel.updateCell(
+      ftModel.insertCell(
           ftIndex: FtIndex(row: 1, column: tempColumn),
           columns: tempColumn == column ? 1 : 3,
-          cell: Cell(value: element, attr: {
-            CellAttr.background: Colors.blue[200]!,
-            if (tempColumn == 0) CellAttr.alignment: Alignment.centerLeft,
-          }));
+          cell: TextCell(
+              value: element,
+              style: TextCellStyle(
+                background: Colors.blue[200]!,
+                alignment: (tempColumn == 0) ? Alignment.centerLeft : null,
+              )));
       tempColumn += tempColumn == column ? 1 : 3;
     }
 
@@ -60,27 +61,23 @@ class DataModelInternationalTrade {
       tempColumn = column;
 
       for (var value in columns) {
-        Map attr;
+        TextCellStyle textCellStyle;
 
         if (row == 2) {
-          attr = {
-            CellAttr.background: Colors.blue[100]!,
-          };
+          textCellStyle = TextCellStyle(background: Colors.blue[100]!);
         } else {
-          attr = {
-            if ((row.isEven))
-              CellAttr.background: const Color.fromARGB(255, 209, 227, 242),
-          };
+          textCellStyle = row.isEven
+              ? const TextCellStyle(
+                  background: Color.fromARGB(255, 209, 227, 242))
+              : const TextCellStyle();
         }
         if (tempColumn <= 1) {
-          attr.addAll({
-            CellAttr.alignment: Alignment.centerLeft,
-            CellAttr.textAlign: TextAlign.left
-          });
+          textCellStyle = textCellStyle.copyWith(
+              alignment: Alignment.centerLeft, textAlign: TextAlign.left);
         }
-        ftModel.updateCell(
+        ftModel.insertCell(
             ftIndex: FtIndex(row: row, column: tempColumn),
-            cell: Cell(value: value, attr: attr));
+            cell: TextCell(value: '$value', style: textCellStyle));
         tempColumn++;
       }
 

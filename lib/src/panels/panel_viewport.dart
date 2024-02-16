@@ -3,10 +3,8 @@
 // license that can be found in the LICENSE file.
 
 import 'dart:collection';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-
 import '../builders/abstract_table_builder.dart';
 import '../builders/cells.dart';
 import '../model/model.dart';
@@ -15,18 +13,18 @@ import '../panels/table_multi_panel_viewport.dart';
 import 'keyed_cell.dart';
 import 'table_layout_iterations.dart';
 
-typedef CellBuilder<T extends AbstractFtModel<C>, C extends AbstractCell>
+typedef CellBuilder<C extends AbstractCell, M extends AbstractFtModel<C>>
     = Widget? Function(
   BuildContext context,
-  T model,
+  M model,
   FtIndex tableCellIndex,
 );
 
-class TablePanel<T extends AbstractFtModel<C>, C extends AbstractCell>
+class TablePanel<C extends AbstractCell, M extends AbstractFtModel<C>>
     extends StatelessWidget {
-  final FtViewModel<T, C> viewModel;
+  final FtViewModel<C, M> viewModel;
   final int panelIndex;
-  final AbstractTableBuilder<T, C> tableBuilder;
+  final AbstractTableBuilder<C, M> tableBuilder;
   final double tableScale;
 
   const TablePanel(
@@ -40,7 +38,7 @@ class TablePanel<T extends AbstractFtModel<C>, C extends AbstractCell>
   Widget build(BuildContext context) {
     // return tableBuilder.testCellBuilder(context);
 
-    return TablePanelViewport<T, C>(
+    return TablePanelViewport<C, M>(
       viewModel: viewModel,
       panelIndex: panelIndex,
       tableBuilder: tableBuilder,
@@ -49,7 +47,7 @@ class TablePanel<T extends AbstractFtModel<C>, C extends AbstractCell>
   }
 }
 
-class TablePanelViewport<T extends AbstractFtModel<C>, C extends AbstractCell>
+class TablePanelViewport<C extends AbstractCell, M extends AbstractFtModel<C>>
     extends RenderObjectWidget {
   const TablePanelViewport({
     super.key,
@@ -59,13 +57,13 @@ class TablePanelViewport<T extends AbstractFtModel<C>, C extends AbstractCell>
     required this.tableScale,
   });
 
-  final FtViewModel<T, C> viewModel;
+  final FtViewModel<C, M> viewModel;
   final int panelIndex;
-  final AbstractTableBuilder<T, C> tableBuilder;
+  final AbstractTableBuilder<C, M> tableBuilder;
   final double tableScale;
 
   @override
-  TablePanelChildRenderObjectElement<T, C> createElement() =>
+  TablePanelChildRenderObjectElement<C, M> createElement() =>
       TablePanelChildRenderObjectElement(this);
 
   @override
@@ -78,7 +76,7 @@ class TablePanelViewport<T extends AbstractFtModel<C>, C extends AbstractCell>
   }
 
   @override
-  TablePanelRenderViewport<T, C> createRenderObject(BuildContext context) {
+  TablePanelRenderViewport<C, M> createRenderObject(BuildContext context) {
     final TablePanelRenderChildManager element =
         context as TablePanelRenderChildManager;
 
@@ -95,8 +93,8 @@ class TablePanelViewport<T extends AbstractFtModel<C>, C extends AbstractCell>
       viewModel.layoutPanelIndex(panelIndex);
 }
 
-class TablePanelChildRenderObjectElement<T extends AbstractFtModel<C>,
-        C extends AbstractCell> extends RenderObjectElement
+class TablePanelChildRenderObjectElement<C extends AbstractCell,
+        M extends AbstractFtModel<C>> extends RenderObjectElement
     implements TablePanelRenderChildManager<C> {
   TablePanelChildRenderObjectElement(super.widget);
 
@@ -113,12 +111,12 @@ class TablePanelChildRenderObjectElement<T extends AbstractFtModel<C>,
   CellStatus? _currentUpdatingCellStatus;
 
   @override
-  TablePanelViewport<T, C> get widget =>
-      super.widget as TablePanelViewport<T, C>;
+  TablePanelViewport<C, M> get widget =>
+      super.widget as TablePanelViewport<C, M>;
 
   @override
-  TablePanelRenderViewport<T, C> get renderObject =>
-      super.renderObject as TablePanelRenderViewport<T, C>;
+  TablePanelRenderViewport<C, M> get renderObject =>
+      super.renderObject as TablePanelRenderViewport<C, M>;
 
   @protected
   @visibleForTesting
@@ -247,7 +245,7 @@ class TablePanelChildRenderObjectElement<T extends AbstractFtModel<C>,
   }
 
   @override
-  void update(TablePanelViewport<T, C> newWidget) {
+  void update(TablePanelViewport<C, M> newWidget) {
     super.update(newWidget);
     // final TablePanelViewport<T, C> oldWidget = widget;
 
@@ -509,6 +507,17 @@ class TablePanelChildRenderObjectElement<T extends AbstractFtModel<C>,
 
     statusOfCells[cellIndex] = cellStatus;
 
+    ///
+    ///
+    ///
+
+    ValueKey? valueKey;
+
+    if (widget.viewModel.model.immutableFtIndex(cellIndex)
+        case FtIndex ftIndex) {
+      valueKey = ValueKey<FtIndex>(ftIndex);
+    }
+
     return _childWidgets.putIfAbsent(cellIndex, () {
       final child = widget.tableBuilder.cellBuilder(
           this,
@@ -517,11 +526,11 @@ class TablePanelChildRenderObjectElement<T extends AbstractFtModel<C>,
           cell,
           layoutPanelIndex,
           cellIndex,
-          cellStatus);
+          cellStatus,
+          valueKey);
 
       if (child case Widget c) {
-        return KeyedCell.wrap(
-            widget.viewModel.model.immutableFtIndex(cellIndex), c);
+        return KeyedCell.wrap(valueKey, c);
       }
       return child;
     });
@@ -555,18 +564,18 @@ abstract class TablePanelRenderChildManager<C extends AbstractCell> {
   CellStatus cellStatusOf(FtIndex tableCellIndex);
 }
 
-class TablePanelRenderViewport<T extends AbstractFtModel<C>,
-        C extends AbstractCell> extends RenderBox
+class TablePanelRenderViewport<C extends AbstractCell,
+        M extends AbstractFtModel<C>> extends RenderBox
     with
         ContainerRenderObjectMixin<RenderBox, TableCellParentData>,
         RenderBoxContainerDefaultsMixin<RenderBox, TableCellParentData> {
   TablePanelRenderViewport({
-    required FtViewModel<T, C> viewModel,
+    required FtViewModel<C, M> viewModel,
     ScrollPosition? sliverPosition,
     required this.childManager,
     required this.panelIndex,
     required double tableScale,
-    required AbstractTableBuilder<T, C> tableBuilder,
+    required AbstractTableBuilder<C, M> tableBuilder,
   })  : _viewModel = viewModel,
         _tableScale = tableScale,
         _tableBuilder = tableBuilder {
@@ -580,18 +589,18 @@ class TablePanelRenderViewport<T extends AbstractFtModel<C>,
   TablePanelRenderChildManager childManager;
   int panelIndex;
   late LayoutPanelIndex tpli;
-  late TableInterator<T, C> iterator;
+  late TableInterator<C, M> iterator;
   late double xScroll, yScroll;
   double _tableScale;
   late double leftMargin, topMargin, rightMargin, bottomMargin;
-  FtViewModel<T, C> _viewModel;
+  FtViewModel<C, M> _viewModel;
   int garbageCollectRowsFrom = -1;
   int garbageCollectColumnsFrom = -1;
   final Map<FtIndex, RenderBox> _keepAliveBucket = <FtIndex, RenderBox>{};
 
-  FtViewModel<T, C> get viewModel => _viewModel;
+  FtViewModel<C, M> get viewModel => _viewModel;
 
-  set viewModel(FtViewModel<T, C> value) {
+  set viewModel(FtViewModel<C, M> value) {
     // assert(value != null);
     if (value == _viewModel) return;
     if (attached) _viewModel.removeListener(markNeedsLayout);
@@ -615,11 +624,11 @@ class TablePanelRenderViewport<T extends AbstractFtModel<C>,
     markNeedsLayout();
   }
 
-  AbstractTableBuilder<T, C> _tableBuilder;
+  AbstractTableBuilder<C, M> _tableBuilder;
 
-  AbstractTableBuilder<T, C> get tableBuilder => _tableBuilder;
+  AbstractTableBuilder<C, M> get tableBuilder => _tableBuilder;
 
-  set tableBuilder(AbstractTableBuilder<T, C> value) {
+  set tableBuilder(AbstractTableBuilder<C, M> value) {
     if (value == _tableBuilder) return;
 
     _tableBuilder = value;
@@ -1209,10 +1218,6 @@ class TablePanelRenderViewport<T extends AbstractFtModel<C>,
           assert(childManager.containsElement(tableCellIndex),
               'Element bestaat niet $tableCellIndex');
 
-          if (!childManager.containsElement(tableCellIndex)) {
-            print('gek $tableCellIndex');
-          }
-
           _destroyOrCacheChild(childToRemove);
         } else if (editCellIndex == tableCellIndex &&
             parentData.cellStatus != editCellStatus) {
@@ -1503,6 +1508,9 @@ class PanelCellIndex extends FtIndex {
 
   bool sameIndex(FtIndex index) => index.row == row && index.column == column;
 
+  bool samePanel(LayoutPanelIndex index) =>
+      index.xIndex == panelIndexX && index.yIndex == panelIndexY;
+
   @override
   int get hashCode => column.hashCode ^ row.hashCode;
 
@@ -1510,15 +1518,20 @@ class PanelCellIndex extends FtIndex {
   PanelCellIndex copyWith(
       {int? panelIndexX,
       int? panelIndexY,
+      FtIndex? index,
       int? column,
       int? row,
       int? columns,
       int? rows}) {
+    assert(!(index != null && row != null),
+        'To set row, choice between index or row, not both!');
+    assert(!(index != null && column != null),
+        'To set column, choice between index or column, not both!');
     return PanelCellIndex(
       panelIndexX: panelIndexX ?? this.panelIndexX,
       panelIndexY: panelIndexY ?? this.panelIndexY,
-      column: column ?? this.column,
-      row: row ?? this.row,
+      column: column ?? index?.column ?? this.column,
+      row: row ?? index?.row ?? this.row,
       columns: columns ?? this.columns,
       rows: rows ?? this.rows,
     );

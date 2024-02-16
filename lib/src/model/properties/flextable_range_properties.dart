@@ -47,13 +47,3 @@ class RangeProperties extends FtRange {
   bool hidden = false;
   double? size;
 }
-
-class ChangeRange extends FtRange {
-  ChangeRange({
-    required super.start,
-    super.last,
-    required this.insert,
-  });
-
-  bool insert;
-}

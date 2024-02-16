@@ -1,8 +1,7 @@
 import 'dart:collection';
 import 'package:flextable/flextable.dart';
 
-abstract class AreaInitializer<T extends AbstractFtModel<C>,
-    C extends AbstractCell> {
+abstract class AreaInitializer<I> {
   /// At a tag to initiated if the area is initialized
   /// This will prevent loops when get cell hit a empty cell!!!!
   ///
@@ -14,8 +13,8 @@ abstract class AreaInitializer<T extends AbstractFtModel<C>,
 
   FtIndex get leftTopIndex;
 
-  List<DefinedTableArea<T, C>> definedTableAreas;
-  FtController<T, C> tableController;
+  List<DefinedTableArea<I>> definedTableAreas;
+  FtController<Cell, AsyncAreaModel> tableController;
   Set<String> initiated = HashSet<String>();
 
   bool cell(

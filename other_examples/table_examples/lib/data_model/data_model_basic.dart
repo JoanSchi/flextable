@@ -43,14 +43,16 @@ class DataModelBasic {
 
     for (int r = 0; r < rows; r++) {
       for (int c = 0; c < columns; c++) {
-        Map attr = {
-          CellAttr.background: (r % 2 + c % 2) % 2 == 0
+        final style = TextCellStyle(
+          padding: const EdgeInsets.all(2.0),
+          background: (r % 2 + c % 2) % 2 == 0
               ? const Color.fromARGB(255, 140, 191, 237)
               : Colors.white10,
-        };
-        ftModel.updateCell(
+        );
+
+        ftModel.insertCell(
             ftIndex: FtIndex(row: r, column: c),
-            cell: Cell(value: '${numberToCharacter(c)}$r', attr: attr));
+            cell: TextCell(value: '${numberToCharacter(c)}$r', style: style));
       }
     }
 
@@ -72,25 +74,25 @@ class DataModelBasic {
   }
 }
 
-class BasicTableBuilder extends DefaultTableBuilder {
-  @override
-  Widget backgroundPanel(BuildContext context, int panelIndex, Widget? child) {
-    if (panelIndex == 5 ||
-        panelIndex == 6 ||
-        panelIndex == 9 ||
-        panelIndex == 10) {
-      return Container(color: Colors.white, child: child);
-    } else {
-      return Container(
-          color: const Color.fromARGB(255, 193, 225, 240), child: child);
-    }
-  }
+// class BasicTableBuilder extends BasicTableBuilder {
+//   @override
+//   Widget backgroundPanel(BuildContext context, int panelIndex, Widget? child) {
+//     if (panelIndex == 5 ||
+//         panelIndex == 6 ||
+//         panelIndex == 9 ||
+//         panelIndex == 10) {
+//       return Container(color: Colors.white, child: child);
+//     } else {
+//       return Container(
+//           color: const Color.fromARGB(255, 193, 225, 240), child: child);
+//     }
+//   }
 
-  @override
-  LineHeader lineHeader(
-    FtViewModel viewModel,
-    int panelIndex,
-  ) {
-    return LineHeader(color: const Color.fromARGB(255, 38, 77, 95));
-  }
-}
+//   @override
+//   LineHeader lineHeader(
+//     FtViewModel viewModel,
+//     int panelIndex,
+//   ) {
+//     return LineHeader(color: const Color.fromARGB(255, 38, 77, 95));
+//   }
+// }

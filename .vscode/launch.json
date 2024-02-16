@@ -53,17 +53,17 @@
             "program": "lib/main.dart"
         },
         {
-            "name": "row_change_example",
+            "name": "advanced_cell_example",
             "type": "dart",
             "request": "launch",
-            "cwd": "other_examples/row_change_example",
+            "cwd": "other_examples/advanced_cell_example",
             "program": "lib/main.dart"
         },
         {
-            "name": "row_change_example (profile mode)",
+            "name": "advanced_cell_example (profile mode)",
             "type": "dart",
             "request": "launch",
-            "cwd": "other_examples/row_change_example",
+            "cwd": "other_examples/advanced_cell_example",
             "program": "lib/main.dart",
             "flutterMode": "profile"
         },

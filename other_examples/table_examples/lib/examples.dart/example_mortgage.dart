@@ -60,7 +60,7 @@ class _ExampleMortgageState extends State<ExampleMortgage>
       controller: _ftController,
       backgroundColor: Colors.white,
       model: ftModel,
-      tableBuilder: MortgageTableBuilder(),
+      tableBuilder: BasicTableBuilder(),
     );
 
     if (scaleSlider) {

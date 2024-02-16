@@ -44,14 +44,14 @@ ScrollDirection _userScrollDirectionX = ScrollDirection.idle;
 
 // TableDragDecision dragDecision;
 
-class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
+class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
     extends ChangeNotifier
     with TableScrollMetrics
     implements TableScrollActivityDelegate {
   FtViewModel({
     required this.physics,
     required this.context,
-    FtViewModel<T, C>? oldPosition,
+    FtViewModel<C, M>? oldPosition,
     required this.model,
     required this.tableBuilder,
     String? debugLabel,
@@ -156,7 +156,7 @@ class FtViewModel<T extends AbstractFtModel<C>, C extends AbstractCell>
   late AdjustScroll _adjustScroll;
   final ScrollContext context;
   final TableScrollPhysics physics;
-  final T model;
+  final M model;
   final AbstractTableBuilder tableBuilder;
   final ValueNotifier<bool> isScrollingNotifier = ValueNotifier<bool>(false);
   bool gridIndexAvailable = false;

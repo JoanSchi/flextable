@@ -1,25 +1,28 @@
 import 'dart:collection';
-import 'package:flextable/flextable.dart';
 import 'package:flutter/material.dart';
 
-class SharedTextControllersByIndex {
-  HashMap<FtIndex, SharedTextEditController> map =
-      HashMap<FtIndex, SharedTextEditController>();
+import 'remove_immutable_id.dart';
 
-  TextEditingController obtainFromIndex(FtIndex index, String? text) {
+class SharedTextControllersByIndex {
+  HashMap<ValueKey, SharedTextEditController> map =
+      HashMap<ValueKey, SharedTextEditController>();
+
+  TextEditingController obtainFromIndex(ValueKey valuekey, String? text) {
     /// If a cell are removed with a delay, the map can contain multiple items (2 maybe 3),
     /// nevertheless after the schudeled removal it should be 1 again.
     ///
 
     assert(map.length <= 8,
         'obtainFromIndex: SharedTextControllersByIndex has 8 SharedTextEditController, dispose/removing is not performed as espected!, does removeSharedTextEditController implement: viewModel.sharedTextControllersByIndex.removeIndex(tableCellIndex, viewModel.editCell), or is the garbage collection as expected?');
-    return map.putIfAbsent(index, () => SharedTextEditController(text)).add();
+    return map
+        .putIfAbsent(valuekey, () => SharedTextEditController(text))
+        .add();
   }
 
-  void removeIndex(FtIndex index) {
-    final shared = map[index];
+  void removeIndex(ValueKey valueKey) {
+    final shared = map[valueKey];
     assert(shared != null,
-        'removeIndex is ask to remove index: $index, but SharedTextControllersByIndex does not contain the index.');
+        'removeIndex is ask to remove index: $valueKey, but SharedTextControllersByIndex does not contain the index.');
 
     if (shared != null) {
       shared.removeCount();
@@ -29,9 +32,9 @@ class SharedTextControllersByIndex {
     /// Give the the other panel time to connect to textEditController before we dispose the textEditController with the text.
     ///
     ///
-    Set<FtIndex> indexes = Set.from(map.keys);
+    Set<ValueKey> valueKeys = Set.from(map.keys);
 
-    for (FtIndex i in indexes) {
+    for (ValueKey i in valueKeys) {
       if (map[i] case SharedTextEditController s) {
         if (s.isEmpty) {
           map.remove(i);

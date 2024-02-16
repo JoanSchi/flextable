@@ -7,7 +7,8 @@ typedef UnfocusCallback = Function(UnfocusDisposition disposition);
 
 enum FtTextEditInputType { digits, decimal, text }
 
-typedef ObtainSharedTextEditController = TextEditingController Function();
+typedef ObtainSharedTextEditController = TextEditingController Function(
+    String text);
 typedef RemoveSharedTextEditController = Function();
 
 class FtEditText extends StatefulWidget {
@@ -51,7 +52,7 @@ class FtEditText extends StatefulWidget {
 
 class _FtEditTextState extends State<FtEditText> {
   bool hasFocus = false;
-  late String text;
+
   late TextEditingController tec;
   late final SkipFocusNode focusNode = SkipFocusNode(
     requestNextFocusCallback:
@@ -64,12 +65,11 @@ class _FtEditTextState extends State<FtEditText> {
 
   @override
   void initState() {
-    text = widget.text;
     obtainSharedTextEditController = widget.obtainSharedTextEditController;
     removeSharedTextEditController = widget.removeSharedTextEditController;
 
-    tec = obtainSharedTextEditController?.call() ??
-        TextEditingController(text: text);
+    tec = obtainSharedTextEditController?.call(widget.text) ??
+        TextEditingController(text: widget.text);
 
     focusNode.addListener(() {
       if (focusNode.hasFocus && !hasFocus) {
@@ -88,9 +88,7 @@ class _FtEditTextState extends State<FtEditText> {
     if (widget.requestNextFocusCallback != oldWidget.requestNextFocusCallback) {
       focusNode.requestNextFocusCallback = widget.requestNextFocusCallback;
     }
-    if (widget.requestFocus) {
-      scheduleRequestFocus();
-    }
+
     super.didUpdateWidget(oldWidget);
   }
 
@@ -142,10 +140,7 @@ class _FtEditTextState extends State<FtEditText> {
       textInputAction:
           widget.requestNextFocus ? TextInputAction.next : TextInputAction.done,
       onSubmitted: (String value) {
-        if (text != tec.text) {
-          text = tec.text;
-          widget.onValueChanged?.call(text);
-        }
+        widget.onValueChanged?.call(value);
       },
     );
   }

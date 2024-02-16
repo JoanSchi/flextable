@@ -19,9 +19,7 @@ import 'panels/table_view_scrollable.dart';
 import 'panels/hit_test_stack.dart';
 import 'panels/table_scrollbar.dart';
 
-typedef DefaultFlexTable = FlexTable<FtModel<Cell>, Cell>;
-
-class FlexTable<T extends AbstractFtModel<C>, C extends AbstractCell>
+class FlexTable<C extends AbstractCell, M extends AbstractFtModel<C>>
     extends StatefulWidget {
   FlexTable({
     super.key,
@@ -37,32 +35,32 @@ class FlexTable<T extends AbstractFtModel<C>, C extends AbstractCell>
     List<TableChangeNotifier>? tableChangeNotifiers,
   }) : tableChangeNotifiers = tableChangeNotifiers ?? [];
 
-  final T model;
-  final FtController<T, C>? controller;
+  final M model;
+  final FtController<C, M>? controller;
   final FtProperties properties;
-  final AbstractTableBuilder<T, C> tableBuilder;
+  final AbstractTableBuilder<C, M> tableBuilder;
   final Color? backgroundColor;
   final ChangeNotifier? rebuildNotifier;
   final List<TableChangeNotifier> tableChangeNotifiers;
 
   @override
-  State<StatefulWidget> createState() => FlexTableState<T, C>();
+  State<StatefulWidget> createState() => FlexTableState<C, M>();
 
-  static FtViewModel<T, C>?
-      viewModelOf<T extends AbstractFtModel<C>, C extends AbstractCell>(
+  static FtViewModel<C, M>?
+      viewModelOf<I, C extends AbstractCell, M extends AbstractFtModel<C>>(
           BuildContext context) {
-    final TableViewScrollableState<T, C>? result =
-        context.findAncestorStateOfType<TableViewScrollableState<T, C>>();
+    final TableViewScrollableState<C, M>? result =
+        context.findAncestorStateOfType<TableViewScrollableState<C, M>>();
 
     return result?.viewModel;
   }
 }
 
-class FlexTableState<T extends AbstractFtModel<C>, C extends AbstractCell>
-    extends State<FlexTable<T, C>> {
-  FtController<T, C>? _ftController;
+class FlexTableState<C extends AbstractCell, M extends AbstractFtModel<C>>
+    extends State<FlexTable<C, M>> {
+  FtController<C, M>? _ftController;
 
-  FtController<T, C> get ftController => _ftController ??= FtController();
+  FtController<C, M> get ftController => _ftController ??= FtController();
 
   final InnerScrollChangeNotifier _innerScrollChangeNotifier =
       InnerScrollChangeNotifier();
@@ -90,7 +88,7 @@ class FlexTableState<T extends AbstractFtModel<C>, C extends AbstractCell>
   }
 
   @override
-  void didUpdateWidget(FlexTable<T, C> oldWidget) {
+  void didUpdateWidget(FlexTable<C, M> oldWidget) {
     if (widget.controller != null) {
       _ftController?.dispose();
       _ftController = null;
@@ -120,7 +118,7 @@ class FlexTableState<T extends AbstractFtModel<C>, C extends AbstractCell>
 
   @override
   Widget build(BuildContext context) {
-    Widget table = TableViewScrollable<T, C>(
+    Widget table = TableViewScrollable<C, M>(
         model: widget.model,
         properties: widget.properties,
         tableBuilder: widget.tableBuilder,
@@ -129,7 +127,7 @@ class FlexTableState<T extends AbstractFtModel<C>, C extends AbstractCell>
         innerScaleChangeNotifier: _innerScaleChangeNotifier,
         tableChangeNotifiers: widget.tableChangeNotifiers,
         rebuildNotifier: widget.rebuildNotifier,
-        viewportBuilder: (BuildContext context, FtViewModel<T, C> viewModel) {
+        viewportBuilder: (BuildContext context, FtViewModel<C, M> viewModel) {
           final theme = Theme.of(context);
 
           Widget tableZoom;
@@ -157,7 +155,7 @@ class FlexTableState<T extends AbstractFtModel<C>, C extends AbstractCell>
 
           return MultiHitStack(children: [
             SelectCell(viewModel: viewModel),
-            TableMultiPanel<T, C>(
+            TableMultiPanel<C, M>(
               viewModel: viewModel,
               tableBuilder: widget.tableBuilder,
               tableScale: viewModel.tableScale,
@@ -183,12 +181,14 @@ class FlexTableState<T extends AbstractFtModel<C>, C extends AbstractCell>
           ]);
         });
 
-    if (_combiKeyNotification != null) {
-      table = CombiKey(
-        combiKeyNotification: combiKeyNotification,
-        child: table,
-      );
-    }
+    // TODO CombiKey builds everything from the ground instead of a performrebuild
+
+    // if (_combiKeyNotification != null) {
+    //   table = CombiKey(
+    //     combiKeyNotification: combiKeyNotification,
+    //     child: table,
+    //   );
+    // }
 
     return widget.backgroundColor == null
         ? table

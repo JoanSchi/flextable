@@ -1,7 +1,7 @@
 import 'dart:collection';
 import 'package:flextable/flextable.dart';
 
-class AsyncAreaModel extends FtModel<Cell> {
+class AsyncAreaModel extends BasicFtModel<Cell> {
   AsyncAreaModel(
       {super.tableColumns,
       super.tableRows,
@@ -26,7 +26,6 @@ class AsyncAreaModel extends FtModel<Cell> {
       super.autoFreezeY,
 
       //Default
-      super.autoTableRange = true,
       super.horizontalLines,
       super.verticalLines,
       super.mergedColumns,
@@ -124,7 +123,7 @@ class AsyncAreaModel extends FtModel<Cell> {
 
   @override
   FtIndex isCellEditable(FtIndex cellIndex) {
-    return (cell(row: cellIndex.row, column: cellIndex.column)?.isEditable ??
+    return (cell(row: cellIndex.row, column: cellIndex.column)?.editable ??
             false)
         ? cellIndex
         : const FtIndex();
@@ -173,7 +172,6 @@ class AsyncAreaModel extends FtModel<Cell> {
       double? minSplitSpaceFromSide,
       double? hitScrollBarThickness,
       //Default
-      bool? autoTableRange,
       TableLinesOneDirection? horizontalLines,
       TableLinesOneDirection? verticalLines,
       Map<int, MergedColumns>? mergedColumns,
@@ -202,7 +200,6 @@ class AsyncAreaModel extends FtModel<Cell> {
       autoFreezeAreasY: autoFreezeAreasY ?? this.autoFreezeAreasY,
       autoFreezeY: autoFreezeY ?? this.autoFreezeY,
       //Default
-      autoTableRange: autoTableRange ?? this.autoTableRange,
       horizontalLines: horizontalLines ?? this.horizontalLines,
       verticalLines: verticalLines ?? this.verticalLines,
       mergedColumns: mergedColumns ?? this.mergedColumns,

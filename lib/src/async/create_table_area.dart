@@ -1,7 +1,6 @@
 import 'package:flextable/flextable.dart';
 
-abstract class DefinedTableArea<T extends AbstractFtModel<C>,
-    C extends AbstractCell> {
+abstract class DefinedTableArea<I> {
   const DefinedTableArea({
     required this.minimalHeaderRows,
     required this.columns,
@@ -12,10 +11,10 @@ abstract class DefinedTableArea<T extends AbstractFtModel<C>,
   final int columns;
   final String tableName;
 
-  CreateTableArea<T, C>? create({
+  CreateTableArea<I>? create({
     required int minimalHeaderRows,
     required AsyncAreaModel model,
-    required FtController<T, C> tableController,
+    required FtController<Cell, AsyncAreaModel> tableController,
     required FtCellGroupState cellGroupState,
     required DateTime firstDay,
     required DateTime startWeekDate,
@@ -25,10 +24,9 @@ abstract class DefinedTableArea<T extends AbstractFtModel<C>,
   });
 }
 
-abstract class CreateTableArea<T extends AbstractFtModel<C>,
-    C extends AbstractCell> {
-  T model;
-  FtController<T, C> tableController;
+abstract class CreateTableArea<I> {
+  AsyncAreaModel model;
+  FtController<Cell, AsyncAreaModel> tableController;
   FtCellGroupState cellGroupState;
 
   CreateTableArea({

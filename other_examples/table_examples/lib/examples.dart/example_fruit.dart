@@ -67,7 +67,7 @@ class _ExampleFruitState extends State<ExampleFruit> with SettingsBottomSheet {
       tableChangeNotifiers: [scaleChangeNotifier],
       backgroundColor: Colors.grey[50],
       model: ftModel,
-      tableBuilder: DefaultTableBuilder(
+      tableBuilder: BasicTableBuilder(
           headerBackgroundColor: const Color.fromARGB(255, 240, 240, 231),
           headerLineColor: const Color.fromARGB(255, 48, 67, 3),
           headerTextStyle:
