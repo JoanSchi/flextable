@@ -256,6 +256,12 @@ abstract class AbstractFtModel<C extends AbstractCell> {
       stateSplitY == SplitState.split ||
       stateSplitY == SplitState.autoFreezeSplit;
 
+  bool get anyNoAutoFreezeX =>
+      stateSplitX == SplitState.freezeSplit || stateSplitX == SplitState.split;
+
+  bool get anyNoAutoFreezeY =>
+      stateSplitY == SplitState.freezeSplit || stateSplitY == SplitState.split;
+
   bool get anyFreezeSplitX =>
       stateSplitX == SplitState.freezeSplit ||
       stateSplitX == SplitState.autoFreezeSplit;

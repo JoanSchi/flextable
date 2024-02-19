@@ -58,7 +58,8 @@ class BasicTableBuilder<C extends AbstractCell, M extends AbstractFtModel<C>, A>
       FormatCellNumber? formatCellNumber,
       this.useCellAccent,
       this.cellWidgetBuilder,
-      this.translation})
+      this.translation,
+      this.showSplitLines = true})
       : formatCellDate = formatCellDate ?? _cellDateFormat,
         formatCellNumber = formatCellNumber ?? _formNumber,
         actionCallBack = actionCallBack ?? _noAction<C, M, A>;
@@ -77,6 +78,7 @@ class BasicTableBuilder<C extends AbstractCell, M extends AbstractFtModel<C>, A>
   CellWidgetBuilder<C, M>? cellWidgetBuilder;
   UseCellAccent<C, M>? useCellAccent;
   final FtTranslation? translation;
+  final bool showSplitLines;
 
   @override
   Widget? cellBuilder(
@@ -229,6 +231,9 @@ class BasicTableBuilder<C extends AbstractCell, M extends AbstractFtModel<C>, A>
   @override
   void finalPaintMainPanel(FtViewModel<C, M> viewModel, PaintingContext context,
       Offset offset, Size size) {
+    if (showSplitLines) {
+      return;
+    }
     if (viewModel.model.anySplitX || viewModel.model.anySplitY) {
       defaultDrawPaintSplit(
           viewModel: viewModel,

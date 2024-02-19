@@ -25,7 +25,8 @@ export 'src/templates/cells/advanced_cells.dart'
         BooleanCell,
         SelectionCell,
         DateTimeCell,
-        ActionCell;
+        ActionCell,
+        ActionCellItem;
 export 'src/model/mergable_lines.dart'
     show
         TableLinesOneDirection,
@@ -120,3 +121,5 @@ export 'src/templates/cells/cell_styles.dart'
 ///
 ///
 export 'src/templates/cell_widgets/cell_action.dart' show ActionCallBack;
+
+export 'src/model/change/model_change.dart' show ChangeRange;

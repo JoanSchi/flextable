@@ -262,15 +262,29 @@ class SelectionCell<T, I> extends Cell<T, I, TextCellStyle> {
   }
 }
 
+class ActionCellItem<A> {
+  final A action;
+  final String? text;
+  final Widget? widget;
+  final bool isImage;
+  const ActionCellItem({
+    required this.action,
+    this.text,
+    this.widget,
+    this.isImage = false,
+  });
+}
+
 class ActionCell<T, I> extends Cell<T, I, TextCellStyle> {
-  const ActionCell(
-      {super.style,
-      super.value,
-      this.text,
-      super.merged,
-      this.translate = false,
-      super.groupState,
-      super.identifier});
+  const ActionCell({
+    super.style,
+    super.value,
+    this.text,
+    super.merged,
+    this.translate = false,
+    super.groupState,
+    super.identifier,
+  });
 
   final bool translate;
   final String? text;
@@ -279,15 +293,15 @@ class ActionCell<T, I> extends Cell<T, I, TextCellStyle> {
   bool get editable => false;
 
   @override
-  ActionCell<T, I> copyWith(
-      {TextCellStyle? style,
-      T? value,
-      bool? translate,
-      FtCellGroupState? groupState,
-      Merged? merged,
-      I? identifier,
-      String? text,
-      Widget? icon}) {
+  ActionCell<T, I> copyWith({
+    TextCellStyle? style,
+    T? value,
+    bool? translate,
+    FtCellGroupState? groupState,
+    Merged? merged,
+    I? identifier,
+    String? text,
+  }) {
     return ActionCell(
       style: style ?? this.style,
       value: value ?? this.value,

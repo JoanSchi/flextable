@@ -88,6 +88,9 @@ class _RowChangeExampleState extends State<TextEditExample>
         defaultHeightCell: 50.0,
         tableColumns: tableColumns,
         tableRows: tableRows,
+        autoFreezeAreasX: [
+          AutoFreezeArea(startIndex: 0, freezeIndex: 1, endIndex: 10000)
+        ],
         autoFreezeAreasY: [
           AutoFreezeArea(startIndex: 0, freezeIndex: 1, endIndex: 10000)
         ]);
@@ -203,7 +206,13 @@ class _RowChangeExampleState extends State<TextEditExample>
     for (int r = 1; r < 3; r++) {
       model.insertCell(
         ftIndex: FtIndex(row: r, column: column),
-        cell: ActionCell(value: 'button $r', style: style, text: 'Action :)'),
+        cell: const ActionCell(
+            value: ActionCellItem(
+              action: 'actie blub',
+              widget: Icon(Icons.delete_outline),
+            ),
+            style: style,
+            text: 'Action :)'),
       );
     }
 

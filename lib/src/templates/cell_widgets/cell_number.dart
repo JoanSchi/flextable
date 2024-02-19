@@ -6,8 +6,6 @@ import 'package:flextable/flextable.dart';
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 
-import '../../builders/remove_immutable_id.dart';
-
 typedef FormatCellNumber = String Function(
     {dynamic identifier, String? format, num? value, bool? dif});
 

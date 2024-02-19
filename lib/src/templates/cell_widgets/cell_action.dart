@@ -4,6 +4,7 @@
 
 import 'package:flextable/flextable.dart';
 import 'package:flextable/src/templates/cell_widgets/shared/text_drawer.dart';
+import 'package:flextable/src/templates/cells/advanced_cells.dart';
 import 'package:flutter/material.dart';
 
 import '../builders/basic_table_builder.dart';
@@ -54,7 +55,21 @@ class CellActionWidget<C extends AbstractCell, M extends AbstractFtModel<C>, A>
 
   @override
   Widget build(BuildContext context) {
-    return switch ((cell.value, cell.text)) {
+    return switch ((
+      cell.value,
+      cell.text,
+    )) {
+      (ActionCellItem<A> item, String? _) => BackgroundDrawer(
+          style: cell.style,
+          tableScale: tableScale,
+          useAccent: useAccent,
+          child: SizedBox.expand(
+              child: IconButton(
+            onPressed: () {
+              actionCallBack(viewModel, cell, tableCellIndex, item.action);
+            },
+            icon: item.widget!,
+          ))),
       (List<A> list, String? text) => PopupMenuButton<A>(
           tooltip: '',
 
