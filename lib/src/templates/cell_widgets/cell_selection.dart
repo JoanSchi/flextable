@@ -3,9 +3,7 @@
 // license that can be found in the LICENSE file.
 
 import 'package:flextable/flextable.dart';
-import 'package:flextable/src/model/view_model.dart';
 import 'package:flutter/material.dart';
-import '../builders/basic_table_builder.dart';
 import 'shared/text_drawer.dart';
 
 class CellSelectionWidget<C extends AbstractCell, M extends AbstractFtModel<C>>
@@ -71,30 +69,34 @@ class _CellSelectionWidgetState extends State<CellSelectionWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return PopupMenuButton<Object>(
-      tooltip: '',
-      initialValue: cell.value,
-      // Callback that sets the selected popup menu item.
-      onSelected: (value) {
-        widget.viewModel
-          ..model.updateCell(
-              previousCell: widget.cell,
-              cell: cell.copyWith(value: value),
-              ftIndex: widget.tableCellIndex)
-          ..cellsToRemove.add(widget.tableCellIndex)
-          ..markNeedsLayout();
-      },
-      itemBuilder: (BuildContext context) =>
-          widget.cell.values.map<PopupMenuEntry<Object>>((value) {
-        return PopupMenuItem<Object>(
-            value: value, child: Text(translateItem(value)));
-      }).toList(),
-      child: TextDrawer(
-        cell: cell,
-        tableScale: widget.tableScale,
-        useAccent: widget.useAccent,
-        formatedValue: translateItem(cell.value),
-      ),
-    );
+    return !cell.editable
+        ? TextDrawer(
+            cell: cell,
+            tableScale: widget.tableScale,
+            useAccent: widget.useAccent,
+            formatedValue: translateItem(cell.value),
+          )
+        : PopupMenuButton<Object>(
+            tooltip: '',
+            initialValue: cell.value,
+            // Callback that sets the selected popup menu item.
+            onSelected: (value) {
+              widget.viewModel.updateCell(
+                  previousCell: widget.cell,
+                  cell: cell.copyWith(value: value),
+                  ftIndex: widget.tableCellIndex);
+            },
+            itemBuilder: (BuildContext context) =>
+                widget.cell.values.map<PopupMenuEntry<Object>>((value) {
+              return PopupMenuItem<Object>(
+                  value: value, child: Text(translateItem(value)));
+            }).toList(),
+            child: TextDrawer(
+              cell: cell,
+              tableScale: widget.tableScale,
+              useAccent: widget.useAccent,
+              formatedValue: translateItem(cell.value),
+            ),
+          );
   }
 }

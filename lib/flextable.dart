@@ -7,6 +7,12 @@ library flextable;
 //Model
 export 'src/model/model.dart' show AbstractFtModel, SplitState;
 export 'src/templates/model/basic_model.dart' show BasicFtModel, RowRibbon;
+export 'src/templates/model/record_model.dart'
+    show RecordFtModel, RecordRowRibbon;
+export 'src/templates/model/validation.dart'
+    show ModelValidation, CellValidation;
+export 'src/templates/model/cell_identifier.dart'
+    show FtCellIdentifier, CellIdentifier;
 
 export 'src/model/grid_ribbon.dart'
     show MergedRibbon, MergedColumns, MergedRows;
@@ -26,7 +32,9 @@ export 'src/templates/cells/advanced_cells.dart'
         SelectionCell,
         DateTimeCell,
         ActionCell,
-        ActionCellItem;
+        ActionCellItem,
+        FtCalculationFunction,
+        CalculationCell;
 export 'src/model/mergable_lines.dart'
     show
         TableLinesOneDirection,
@@ -51,6 +59,7 @@ export 'src/listeners/flextable_change_notifier.dart'
         TableChangeNotifier,
         ScaleChangeNotifier,
         ScrollChangeNotifier,
+        LastEditIndexNotifier,
         RebuildNotifier;
 
 export 'src/function_listeners/scroll_change_notifier.dart'
@@ -113,13 +122,22 @@ export 'src/templates/default_combinations.dart'
         DefaultFtModel,
         DefaultFtViewModel,
         DefaultTableBuilder,
-        DefaultFlexTable;
+        DefaultFlexTable,
+        DefaultRecordFlexTable,
+        DefaultRecordFtModel,
+        DefaultRecordFtViewModel,
+        DefaultRecordFtController,
+        DefaultRecordTableBuilder;
 
 export 'src/templates/cells/cell_styles.dart'
-    show CellStyle, TextCellStyle, NumberCellStyle;
+    show CellStyle, TextCellStyle, NumberCellStyle, ValidationCellStyle;
 
 ///
 ///
 export 'src/templates/cell_widgets/cell_action.dart' show ActionCallBack;
 
 export 'src/model/change/model_change.dart' show ChangeRange;
+
+/// Keys
+///
+export 'src/keys/escape.dart' show EscapeIntent;

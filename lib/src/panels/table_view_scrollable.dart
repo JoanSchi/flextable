@@ -3,7 +3,6 @@
 // license that can be found in the LICENSE file.
 
 import 'dart:async';
-import 'package:flextable/src/properties.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -551,11 +550,11 @@ class TableViewScrollableState<C extends AbstractCell,
       // }
 
       if (_viewModel!.tableScrollDirection != TableScrollDirection.horizontal) {
-        final double delta = _pointerSignalEventDelta(event);
+        final Offset delta = _pointerSignalEventDelta(event);
         // final double targetScrollOffset = _targetScrollOffsetForPointerScroll(delta);
         // Only express interest in the event if it would actually result in a scroll.
 
-        if (delta != 0.0) {
+        if (delta != Offset.zero) {
           GestureBinding.instance.pointerSignalResolver
               .register(event, _handlePointerScroll);
         }
@@ -565,7 +564,7 @@ class TableViewScrollableState<C extends AbstractCell,
 
   void _handlePointerScroll(PointerEvent event) {
     assert(event is PointerScrollEvent);
-    final double delta = _pointerSignalEventDelta(event as PointerScrollEvent);
+    final Offset delta = _pointerSignalEventDelta(event as PointerScrollEvent);
 
     LayoutPanelIndex si = viewModel.findScrollIndex(event.localPosition);
 
@@ -574,48 +573,44 @@ class TableViewScrollableState<C extends AbstractCell,
     final scrollIndexY =
         viewModel.stateSplitY == SplitState.freezeSplit ? 1 : si.yIndex;
 
-    final double targetScrollOffset =
+    final Offset targetScrollOffset =
         _targetScrollOffsetForPointerScroll(delta, scrollIndexX, scrollIndexY);
 
-    viewModel.setPixelsY(
-        scrollIndexX,
-        scrollIndexY,
-        viewModel.getScrollScaledY(scrollIndexX, scrollIndexY,
-                scrollActivity: true) +
-            delta);
-
-    final pixelsY = viewModel.getScrollScaledY(scrollIndexX, scrollIndexY,
-        scrollActivity: true);
-
-    if (delta != 0.0 && targetScrollOffset != pixelsY) {
-      viewModel.setPixelsY(
-          scrollIndexX,
-          scrollIndexY,
-          _viewModel!.getScrollScaledY(scrollIndexX, scrollIndexY,
-                  scrollActivity: true) +
-              delta);
+    if (delta != Offset.zero) {
+      viewModel.setPixels(scrollIndexX, scrollIndexY, targetScrollOffset);
     }
   }
 
-  double _pointerSignalEventDelta(PointerScrollEvent event) {
+  Offset _pointerSignalEventDelta(PointerScrollEvent event) {
     // double delta = false ? event.scrollDelta.dx : event.scrollDelta.dy;
 
     // if (axisDirectionIsReversed(widget.axisDirection)) {
     //   delta *= -1;
     // }
-    return event.scrollDelta.dy;
+    return event.scrollDelta;
   }
 
-  double _targetScrollOffsetForPointerScroll(
-      double delta, int scrollIndexX, int scrollIndexY) {
-    return math.min(
+  Offset _targetScrollOffsetForPointerScroll(
+      Offset delta, int scrollIndexX, int scrollIndexY) {
+    final x = math.min(
+      math.max(
+          viewModel.getScrollScaledX(scrollIndexX, scrollIndexY,
+                  scrollActivity: true) +
+              delta.dx,
+          viewModel.minScrollExtentX(scrollIndexX)),
+      viewModel.maxScrollExtentX(scrollIndexX),
+    );
+
+    final y = math.min(
       math.max(
           viewModel.getScrollScaledY(scrollIndexX, scrollIndexY,
                   scrollActivity: true) +
-              delta,
+              delta.dy,
           viewModel.minScrollExtentY(scrollIndexY)),
       viewModel.maxScrollExtentY(scrollIndexY),
     );
+
+    return Offset(x, y);
   }
 
   void rebuildTable() {

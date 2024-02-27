@@ -6,7 +6,6 @@ import 'dart:collection';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flextable/flextable.dart';
-import '../../model/change/model_change.dart';
 
 class BasicFtModel<C extends AbstractCell> extends AbstractFtModel<C> {
   BasicFtModel({
@@ -69,13 +68,14 @@ class BasicFtModel<C extends AbstractCell> extends AbstractFtModel<C> {
       : ++lastImutableIndex;
 
   @override
-  void updateCell(
+  Set<FtIndex>? updateCell(
       {required FtIndex ftIndex,
       int rows = 1,
       int columns = 1,
       required C? cell,
       C? previousCell,
-      checkPreviousCell = false}) {
+      checkPreviousCell = false,
+      bool user = false}) {
     assert((previousCell != null && !checkPreviousCell) || !checkPreviousCell,
         'If checkPreviousCell is true, the function will find the previousCell. PreviousCell is expected to be null');
 
@@ -140,6 +140,8 @@ class BasicFtModel<C extends AbstractCell> extends AbstractFtModel<C> {
       tableColumns = ftIndex.column + columns;
     }
     _placeCell(ftIndex, cell);
+
+    return null;
   }
 
   _placeCell(FtIndex ftIndex, C? cell) {
@@ -324,21 +326,25 @@ class BasicFtModel<C extends AbstractCell> extends AbstractFtModel<C> {
   }
 
   @override
-  FtIndex? immutableFtIndex(FtIndex index) {
+  FtIndex? indexToImmutableIndex(FtIndex index) {
     return index.copyWith(row: rowRibbon[index.row].immutableRowIndex);
   }
 
-  void sortRow(Function(BasicFtModel) sortModel) {
-    assert(rearrange is NoRearrangeCells,
-        'Process the previous RearrangeCells object before adding another range');
+  void reIndexUniqueRowNumber() {
+    // TODO: implement calculateCell
+    throw UnimplementedError();
+  }
 
-    if (rearrange is! NoRearrangeCells) {
-      return;
-    }
-    editCell = const PanelCellIndex();
+  @override
+  void calculateCell({AbstractCell? cell, FtIndex? index, FtIndex? imIndex}) {
+    // TODO: implement calculateCell
+    throw UnimplementedError();
+  }
 
-    rearrange = const SortRows();
-    sortModel(this);
+  @override
+  num? numberValue({FtIndex? index, required FtIndex? imIndex}) {
+    // TODO: implement numberValue
+    throw UnimplementedError();
   }
 }
 

@@ -4,11 +4,10 @@
 
 import 'dart:async';
 import 'package:flextable/flextable.dart';
-import 'package:flextable/src/model/view_model.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../builders/edit_text.dart';
-import '../cells/cell_styles.dart';
 import 'shared/text_drawer.dart';
 
 typedef FormatCellDate = String Function(String format, DateTime dateTime);
@@ -177,11 +176,27 @@ class _CellDateEditorState extends State<_CellDateEditor> {
                   return false;
                 }
               },
-              unFocus: (UnfocusDisposition disposition) {
-                if (disposition == UnfocusDisposition.scope) {
-                  viewModel
-                    ..clearEditCell(widget.tableCellIndex)
-                    ..markNeedsLayout();
+              unFocus: (UnfocusDisposition disposition, DateTime? dateTime,
+                  bool escape) {
+                if (kIsWeb) {
+                  if (!escape) {
+                    onDateChange(dateTime);
+                  }
+                  if (disposition == UnfocusDisposition.scope) {
+                    viewModel
+                      ..clearEditCell(widget.tableCellIndex)
+                      ..markNeedsLayout();
+                  }
+                } else {
+                  if (!escape &&
+                      !viewModel.editCell.sameIndex(widget.tableCellIndex)) {
+                    onDateChange(dateTime);
+                  }
+                  if (disposition == UnfocusDisposition.scope) {
+                    viewModel
+                      ..clearEditCell(widget.tableCellIndex)
+                      ..markNeedsLayout();
+                  }
                 }
               },
               focus: () {
@@ -203,14 +218,10 @@ class _CellDateEditorState extends State<_CellDateEditor> {
       return;
     }
 
-    viewModel.model.updateCell(
+    viewModel.updateCell(
         previousCell: widget.cell,
         cell: widget.cell.copyWith(value: dateTime, valueCanBeNull: true),
         ftIndex: widget.tableCellIndex);
-
-    viewModel
-      ..clearEditCell(widget.tableCellIndex)
-      ..markNeedsLayout();
   }
 }
 
@@ -313,7 +324,7 @@ class _DateInputPicker extends StatefulWidget {
   final bool formatWithUnfocus;
   final RequestNextFocusCallback? requestNextFocusCallback;
   final bool requestNextFocus;
-  final UnfocusCallback unFocus;
+  final UnfocusCallback<DateTime?> unFocus;
   final bool requestFocus;
   final VoidCallback focus;
   final FormatCellDate formatCellDate;
@@ -325,7 +336,7 @@ class _DateInputPicker extends StatefulWidget {
       required this.date,
       required this.firstDate,
       required this.lastDate,
-      required this.changeDate,
+      this.changeDate,
       this.saveDate,
       this.textInputType,
       this.additionalDividers,
@@ -405,10 +416,13 @@ class _DateInputPickerState extends State<_DateInputPicker> {
   }
 
   late final SkipFocusNode focusNode = SkipFocusNode(
-    requestNextFocusCallback:
-        widget.requestNextFocus ? widget.requestNextFocusCallback : null,
-    unfocusCallback: widget.unFocus,
-  );
+      requestNextFocusCallback:
+          widget.requestNextFocus ? widget.requestNextFocusCallback : null,
+      unfocusCallback: (UnfocusDisposition unfocusDisposition, bool escape) {
+        DateTime? date = validateDate(_dateController.text).date;
+
+        widget.unFocus(unfocusDisposition, date, escape);
+      });
 
   @override
   void didChangeDependencies() {

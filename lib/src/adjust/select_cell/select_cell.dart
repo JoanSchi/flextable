@@ -7,8 +7,10 @@ import '../../../flextable.dart';
 
 class SelectCell extends StatefulWidget {
   final FtViewModel viewModel;
-
-  const SelectCell({super.key, required this.viewModel});
+  const SelectCell({
+    super.key,
+    required this.viewModel,
+  });
 
   @override
   State<SelectCell> createState() => _SelectCellState();
@@ -20,19 +22,20 @@ class _SelectCellState extends State<SelectCell> {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      behavior: HitTestBehavior.opaque,
+      behavior: HitTestBehavior.translucent,
       onTapDown: (TapDownDetails details) {
         localPosition = details.localPosition;
       },
       onTap: () {
-        final v = widget.viewModel;
-        final f = v.findCell(localPosition);
+        final viewModel = widget.viewModel;
+        final foundPanelCellIndex = viewModel.findCell(localPosition);
 
-        if (!v.editCell.sameIndex(f)) {
-          final editable = v.model.isCellEditable(f).isIndex;
+        if (!viewModel.editCell.sameIndex(foundPanelCellIndex)) {
+          final editable =
+              viewModel.model.isCellEditable(foundPanelCellIndex).isIndex;
 
           widget.viewModel
-            ..editCell = editable ? f : const PanelCellIndex()
+            ..editCell = editable ? foundPanelCellIndex : const PanelCellIndex()
             ..markNeedsLayout();
         }
       },

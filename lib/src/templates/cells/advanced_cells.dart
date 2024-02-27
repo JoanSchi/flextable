@@ -2,23 +2,20 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-import 'dart:convert';
-
-import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
-
 import '../../../flextable.dart';
 
 class TextCell<I> extends Cell<String, I, TextCellStyle> {
-  const TextCell({
-    super.style,
-    super.value,
-    super.merged,
-    super.identifier,
-    super.groupState,
-    this.editable = true,
-    this.translate,
-  });
+  TextCell(
+      {super.style,
+      super.value,
+      super.merged,
+      super.identifier,
+      super.groupState,
+      this.editable = true,
+      this.translate,
+      super.noBlank,
+      super.validate = ''});
 
   @override
   final bool editable;
@@ -26,15 +23,18 @@ class TextCell<I> extends Cell<String, I, TextCellStyle> {
   final bool? translate;
 
   @override
-  TextCell<I> copyWith(
-      {TextCellStyle? style,
-      bool valueCanBeNull = false,
-      String? value,
-      I? identifier,
-      FtCellGroupState? groupState,
-      Merged? merged,
-      bool? editable,
-      bool? translate}) {
+  TextCell<I> copyWith({
+    TextCellStyle? style,
+    bool valueCanBeNull = false,
+    String? value,
+    I? identifier,
+    FtCellGroupState? groupState,
+    Merged? merged,
+    bool? editable,
+    bool? translate,
+    bool? noBlank,
+    String? validate,
+  }) {
     return TextCell(
         style: style ?? this.style,
         value: valueCanBeNull ? value : (value ?? this.value),
@@ -42,25 +42,32 @@ class TextCell<I> extends Cell<String, I, TextCellStyle> {
         groupState: groupState ?? this.groupState,
         merged: merged ?? this.merged,
         editable: editable ?? this.editable,
-        translate: translate ?? this.translate);
+        translate: translate ?? this.translate,
+        noBlank: noBlank ?? this.noBlank,
+        validate: validate ?? this.validate);
   }
 }
 
 class DigitCell<I> extends Cell<int, I, NumberCellStyle> {
-  const DigitCell(
-      {super.style,
-      super.value,
-      this.min,
-      this.max,
-      super.merged,
-      super.identifier,
-      super.groupState,
-      this.editable = true});
+  DigitCell({
+    super.style,
+    super.value,
+    this.min,
+    this.max,
+    super.merged,
+    super.identifier,
+    super.groupState,
+    this.editable = true,
+    super.noBlank,
+    super.validate = '',
+    Set<FtIndex>? ref,
+  }) : ref = ref ?? {};
 
   final int? min;
   final int? max;
   @override
   final bool editable;
+  final Set<FtIndex> ref;
 
   int? get exceeded {
     return switch ((min, max, value)) {
@@ -81,22 +88,27 @@ class DigitCell<I> extends Cell<int, I, NumberCellStyle> {
     int? min,
     int? max,
     bool? editable,
+    bool? noBlank,
+    String? validate,
+    Set<FtIndex>? ref,
   }) {
     return DigitCell(
-      style: style ?? this.style,
-      value: valueCanBeNull ? value : (value ?? this.value),
-      identifier: identifier ?? this.identifier,
-      groupState: groupState ?? this.groupState,
-      merged: merged ?? this.merged,
-      min: min ?? this.min,
-      max: max ?? this.min,
-      editable: editable ?? this.editable,
-    );
+        style: style ?? this.style,
+        value: valueCanBeNull ? value : (value ?? this.value),
+        identifier: identifier ?? this.identifier,
+        groupState: groupState ?? this.groupState,
+        merged: merged ?? this.merged,
+        min: min ?? this.min,
+        max: max ?? this.min,
+        editable: editable ?? this.editable,
+        noBlank: noBlank ?? this.noBlank,
+        validate: validate ?? this.validate,
+        ref: ref ?? this.ref);
   }
 }
 
 class DecimalCell<I> extends Cell<double, I, NumberCellStyle> {
-  const DecimalCell(
+  DecimalCell(
       {super.style,
       super.value,
       this.min,
@@ -105,13 +117,18 @@ class DecimalCell<I> extends Cell<double, I, NumberCellStyle> {
       super.identifier,
       super.groupState,
       this.format = '#0.0#',
-      this.editable = true});
+      this.editable = true,
+      super.noBlank,
+      Set<FtIndex>? ref,
+      super.validate = ''})
+      : ref = ref ?? {};
 
   final double? min;
   final double? max;
   final String format;
   @override
   final bool editable;
+  final Set<FtIndex> ref;
 
   double? get exceeded {
     return switch ((min, max, value)) {
@@ -122,17 +139,21 @@ class DecimalCell<I> extends Cell<double, I, NumberCellStyle> {
   }
 
   @override
-  DecimalCell<I> copyWith(
-      {NumberCellStyle? style,
-      bool valueCanBeNull = false,
-      double? value,
-      FtCellGroupState? groupState,
-      Merged? merged,
-      double? min,
-      double? max,
-      String? format,
-      I? identifier,
-      bool? editable}) {
+  DecimalCell<I> copyWith({
+    NumberCellStyle? style,
+    bool valueCanBeNull = false,
+    double? value,
+    FtCellGroupState? groupState,
+    Merged? merged,
+    double? min,
+    double? max,
+    String? format,
+    I? identifier,
+    bool? editable,
+    bool? noBlank,
+    String? validate,
+    Set<FtIndex>? ref,
+  }) {
     return DecimalCell(
         style: style ?? this.style,
         value: valueCanBeNull ? value : (value ?? this.value),
@@ -142,43 +163,107 @@ class DecimalCell<I> extends Cell<double, I, NumberCellStyle> {
         min: min ?? this.min,
         max: max ?? this.min,
         format: format ?? this.format,
-        editable: editable ?? this.editable);
+        editable: editable ?? this.editable,
+        noBlank: noBlank ?? this.noBlank,
+        validate: validate ?? this.validate,
+        ref: ref ?? this.ref);
+  }
+}
+
+typedef FtCalculationFunction = num Function(List<num> list);
+
+class CalculationCell<I> extends Cell<num, I, NumberCellStyle> {
+  CalculationCell(
+      {super.style,
+      super.value,
+      super.merged,
+      super.identifier,
+      super.groupState,
+      this.format = '#0.0#',
+      super.noBlank = false,
+      required this.calculationSyntax,
+      required this.imRefIndex,
+      super.validate = '',
+      this.linked = false,
+      this.evaluted = false});
+
+  final String format;
+  final List<FtIndex> imRefIndex;
+  bool evaluted;
+  final FtCalculationFunction calculationSyntax;
+  bool linked;
+
+  @override
+  CalculationCell<I> copyWith({
+    NumberCellStyle? style,
+    num? value,
+    bool valueCanBeNull = false,
+    FtCellGroupState? groupState,
+    Merged? merged,
+    String? format,
+    I? identifier,
+    String? validate,
+    bool? noBlank,
+    FtCalculationFunction? calculationSyntax,
+    bool? evaluted,
+    List<FtIndex>? imRefIndex,
+    bool? linked,
+  }) {
+    return CalculationCell(
+        style: style ?? this.style,
+        value: valueCanBeNull ? value : (value ?? this.value),
+        identifier: identifier ?? this.identifier,
+        groupState: groupState ?? this.groupState,
+        merged: merged ?? this.merged,
+        format: format ?? this.format,
+        noBlank: noBlank ?? this.noBlank,
+        validate: validate ?? this.validate,
+        evaluted: evaluted ?? this.evaluted,
+        linked: linked ?? this.linked,
+        imRefIndex: imRefIndex ?? this.imRefIndex,
+        calculationSyntax: calculationSyntax ?? this.calculationSyntax);
   }
 }
 
 class BooleanCell<I> extends Cell<bool, I, CellStyle> {
-  const BooleanCell(
+  BooleanCell(
       {super.style,
       super.value,
       super.merged,
       super.groupState,
       super.identifier,
-      this.editable = true});
+      this.editable = true,
+      super.noBlank,
+      super.validate = ''});
 
   @override
   final bool editable;
 
   @override
-  BooleanCell<I> copyWith(
-      {CellStyle? style,
-      bool? value,
-      FtCellGroupState? groupState,
-      Merged? merged,
-      I? identifier,
-      bool? editable}) {
+  BooleanCell<I> copyWith({
+    CellStyle? style,
+    bool? value,
+    FtCellGroupState? groupState,
+    Merged? merged,
+    I? identifier,
+    bool? editable,
+    bool? noBlank,
+    String? validate,
+  }) {
     return BooleanCell(
-      style: style ?? this.style,
-      value: value ?? this.value,
-      merged: merged ?? this.merged,
-      groupState: groupState ?? this.groupState,
-      identifier: identifier ?? this.identifier,
-      editable: editable ?? this.editable,
-    );
+        style: style ?? this.style,
+        value: value ?? this.value,
+        merged: merged ?? this.merged,
+        groupState: groupState ?? this.groupState,
+        identifier: identifier ?? this.identifier,
+        editable: editable ?? this.editable,
+        noBlank: noBlank ?? this.noBlank,
+        validate: validate ?? this.validate);
   }
 }
 
 class DateTimeCell<I> extends Cell<DateTime, I, TextCellStyle> {
-  const DateTimeCell(
+  DateTimeCell(
       {super.style,
       super.value,
       this.minDate,
@@ -188,7 +273,9 @@ class DateTimeCell<I> extends Cell<DateTime, I, TextCellStyle> {
       this.includeTime = false,
       super.groupState,
       super.identifier,
-      this.editable = true});
+      this.editable = true,
+      super.noBlank,
+      super.validate = ''});
 
   final DateTime? minDate;
   final DateTime? maxDate;
@@ -198,58 +285,68 @@ class DateTimeCell<I> extends Cell<DateTime, I, TextCellStyle> {
   final bool editable;
 
   @override
-  DateTimeCell<I> copyWith(
-      {TextCellStyle? style,
-      DateTime? value,
-      bool valueCanBeNull = false,
-      DateTime? minDate,
-      DateTime? maxDate,
-      bool? includeTime,
-      bool? isUtc,
-      FtCellGroupState? groupState,
-      Merged? merged,
-      I? identifier,
-      bool? editable}) {
+  DateTimeCell<I> copyWith({
+    TextCellStyle? style,
+    DateTime? value,
+    bool valueCanBeNull = false,
+    DateTime? minDate,
+    DateTime? maxDate,
+    bool? includeTime,
+    bool? isUtc,
+    FtCellGroupState? groupState,
+    Merged? merged,
+    I? identifier,
+    bool? editable,
+    bool? noBlank,
+    String? validate,
+  }) {
     return DateTimeCell(
-      style: style ?? this.style,
-      value: valueCanBeNull ? value : (value ?? this.value),
-      minDate: minDate ?? this.minDate,
-      maxDate: maxDate ?? this.maxDate,
-      isUtc: isUtc ?? this.isUtc,
-      includeTime: includeTime ?? this.includeTime,
-      merged: merged ?? this.merged,
-      groupState: groupState ?? this.groupState,
-      identifier: identifier ?? this.identifier,
-      editable: editable ?? this.editable,
-    );
+        style: style ?? this.style,
+        value: valueCanBeNull ? value : (value ?? this.value),
+        minDate: minDate ?? this.minDate,
+        maxDate: maxDate ?? this.maxDate,
+        isUtc: isUtc ?? this.isUtc,
+        includeTime: includeTime ?? this.includeTime,
+        merged: merged ?? this.merged,
+        groupState: groupState ?? this.groupState,
+        identifier: identifier ?? this.identifier,
+        editable: editable ?? this.editable,
+        noBlank: noBlank ?? this.noBlank,
+        validate: validate ?? this.validate);
   }
 }
 
 class SelectionCell<T, I> extends Cell<T, I, TextCellStyle> {
-  const SelectionCell(
+  SelectionCell(
       {super.style,
       super.value,
       required this.values,
       super.merged,
       this.translate = false,
       super.groupState,
-      super.identifier});
+      super.identifier,
+      super.noBlank,
+      super.validate = '',
+      this.editable = true});
 
   final bool translate;
   final List<T> values;
+  @override
+  final bool editable;
 
   @override
-  bool get editable => true;
-
-  @override
-  SelectionCell<T, I> copyWith(
-      {TextCellStyle? style,
-      T? value,
-      List<T>? values,
-      bool? translate,
-      FtCellGroupState? groupState,
-      Merged? merged,
-      I? identifier}) {
+  SelectionCell<T, I> copyWith({
+    TextCellStyle? style,
+    T? value,
+    List<T>? values,
+    bool? translate,
+    FtCellGroupState? groupState,
+    Merged? merged,
+    I? identifier,
+    bool? noBlank,
+    String? validate,
+    bool? editable,
+  }) {
     return SelectionCell(
       style: style ?? this.style,
       value: value ?? this.value,
@@ -258,6 +355,9 @@ class SelectionCell<T, I> extends Cell<T, I, TextCellStyle> {
       merged: merged ?? this.merged,
       groupState: groupState ?? this.groupState,
       identifier: identifier ?? this.identifier,
+      noBlank: noBlank ?? this.noBlank,
+      validate: validate ?? this.validate,
+      editable: editable ?? this.editable,
     );
   }
 }
@@ -276,15 +376,16 @@ class ActionCellItem<A> {
 }
 
 class ActionCell<T, I> extends Cell<T, I, TextCellStyle> {
-  const ActionCell({
-    super.style,
-    super.value,
-    this.text,
-    super.merged,
-    this.translate = false,
-    super.groupState,
-    super.identifier,
-  });
+  ActionCell(
+      {super.style,
+      super.value,
+      this.text,
+      super.merged,
+      this.translate = false,
+      super.groupState,
+      super.identifier,
+      super.noBlank,
+      super.validate = ''});
 
   final bool translate;
   final String? text;
@@ -301,6 +402,8 @@ class ActionCell<T, I> extends Cell<T, I, TextCellStyle> {
     Merged? merged,
     I? identifier,
     String? text,
+    bool? noBlank,
+    String? validate,
   }) {
     return ActionCell(
       style: style ?? this.style,
@@ -310,6 +413,8 @@ class ActionCell<T, I> extends Cell<T, I, TextCellStyle> {
       groupState: groupState ?? this.groupState,
       identifier: identifier ?? this.identifier,
       text: text ?? this.text,
+      noBlank: noBlank ?? this.noBlank,
+      validate: validate ?? this.validate,
     );
   }
 }

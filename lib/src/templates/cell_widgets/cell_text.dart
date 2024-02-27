@@ -3,6 +3,7 @@
 // license that can be found in the LICENSE file.
 
 import 'package:flextable/flextable.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'shared/text_drawer.dart';
 
@@ -174,11 +175,26 @@ class _CellTextEditorState extends State<CellTextEditor> {
         focus: () {
           viewModel.updateCellPanel(widget.layoutPanelIndex);
         },
-        unFocus: (UnfocusDisposition disposition) {
-          if (disposition == UnfocusDisposition.scope) {
-            viewModel
-              ..clearEditCell(widget.tableCellIndex)
-              ..markNeedsLayout();
+        unFocus: (UnfocusDisposition disposition, String value, bool escape) {
+          if (kIsWeb) {
+            if (!escape) {
+              onValueChange(value);
+            }
+            if (disposition == UnfocusDisposition.scope) {
+              viewModel
+                ..clearEditCell(widget.tableCellIndex)
+                ..markNeedsLayout();
+            }
+          } else {
+            if (!escape &&
+                !viewModel.editCell.sameIndex(widget.tableCellIndex)) {
+              onValueChange(value);
+            }
+            if (disposition == UnfocusDisposition.scope) {
+              viewModel
+                ..clearEditCell(widget.tableCellIndex)
+                ..markNeedsLayout();
+            }
           }
         },
         onValueChanged: onValueChange,
@@ -191,6 +207,7 @@ class _CellTextEditorState extends State<CellTextEditor> {
         child: child);
 
     return AutomaticKeepAlive(child: SelectionKeepAlive(child: child));
+    // return KeepAlive(keepAlive: true, child: child);
   }
 
   void onValueChange(String text) {
@@ -203,7 +220,7 @@ class _CellTextEditorState extends State<CellTextEditor> {
     switch (widget.cell) {
       case (TextCell v):
         {
-          viewModel.model.updateCell(
+          viewModel.updateCell(
               previousCell: widget.cell,
               cell: v.copyWith(value: text, valueCanBeNull: true),
               ftIndex: widget.tableCellIndex);
@@ -211,10 +228,6 @@ class _CellTextEditorState extends State<CellTextEditor> {
         }
       default:
         {}
-
-        viewModel
-          ..clearEditCell(widget.tableCellIndex)
-          ..markNeedsLayout();
     }
   }
 }

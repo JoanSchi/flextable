@@ -4,10 +4,7 @@
 
 import 'package:flextable/flextable.dart';
 import 'package:flextable/src/templates/cell_widgets/shared/text_drawer.dart';
-import 'package:flextable/src/templates/cells/advanced_cells.dart';
 import 'package:flutter/material.dart';
-
-import '../builders/basic_table_builder.dart';
 import 'shared/background_drawer.dart';
 
 typedef ActionCallBack<C extends AbstractCell, M extends AbstractFtModel<C>, A>
@@ -65,6 +62,7 @@ class CellActionWidget<C extends AbstractCell, M extends AbstractFtModel<C>, A>
           useAccent: useAccent,
           child: SizedBox.expand(
               child: IconButton(
+            iconSize: 24.0 * tableScale,
             onPressed: () {
               actionCallBack(viewModel, cell, tableCellIndex, item.action);
             },
@@ -74,7 +72,9 @@ class CellActionWidget<C extends AbstractCell, M extends AbstractFtModel<C>, A>
           tooltip: '',
 
           // Callback that sets the selected popup menu item.
-          onSelected: (a) => actionCallBack(viewModel, cell, tableCellIndex, a),
+          onSelected: (a) {
+            actionCallBack(viewModel, cell, tableCellIndex, a);
+          },
           itemBuilder: (BuildContext context) => list.map<PopupMenuEntry<A>>(
                 (A value) {
                   return PopupMenuItem<A>(

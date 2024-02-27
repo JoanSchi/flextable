@@ -57,7 +57,10 @@ class _TextEditExampleState extends State<TextEditExample>
 
         model.updateCell(
             ftIndex: FtIndex(row: r, column: c),
-            cell: TextCell(value: '${numberToCharacter(c)}$r', style: style),
+            cell: TextCell(
+                value: '${numberToCharacter(c)}$r',
+                style: style,
+                editable: true),
             rows: rows);
       }
     }

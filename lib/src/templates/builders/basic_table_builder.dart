@@ -3,6 +3,7 @@
 // license that can be found in the LICENSE file.
 
 import 'package:flextable/flextable.dart';
+import 'package:flextable/src/templates/cell_widgets/cell_calculation.dart';
 import 'package:flextable/src/templates/cell_widgets/shared/text_drawer.dart';
 import 'package:flutter/material.dart';
 import '../cell_widgets/cell_date.dart';
@@ -159,6 +160,14 @@ class BasicTableBuilder<C extends AbstractCell, M extends AbstractFtModel<C>, A>
           useAccent: useAccent,
           translate: translation,
         ),
+      (CalculationCell c) => CellCalculation(
+          tableScale: tableScale,
+          cell: c,
+          layoutPanelIndex: layoutPanelIndex,
+          tableCellIndex: tableCellIndex,
+          formatCellNumber: formatCellNumber,
+          useAccent: useAccent,
+          viewModel: viewModel),
       (AbstractCell c) => cellWidgetBuilder?.call(
             cell: c,
             viewModel: viewModel,
@@ -231,7 +240,7 @@ class BasicTableBuilder<C extends AbstractCell, M extends AbstractFtModel<C>, A>
   @override
   void finalPaintMainPanel(FtViewModel<C, M> viewModel, PaintingContext context,
       Offset offset, Size size) {
-    if (showSplitLines) {
+    if (!showSplitLines) {
       return;
     }
     if (viewModel.model.anySplitX || viewModel.model.anySplitY) {

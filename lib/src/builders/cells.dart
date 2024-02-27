@@ -24,34 +24,42 @@ class FtCellGroupState {
 }
 
 class Cell<T, I, S extends CellStyle> extends AbstractCell<I> {
-  const Cell({
-    this.value,
-    this.style,
-    super.merged,
-    this.groupState,
-    super.identifier,
-  });
+  Cell(
+      {this.value,
+      this.style,
+      super.merged,
+      this.groupState,
+      super.identifier,
+      this.noBlank = false,
+      this.validate = ''});
 
   final S? style;
-  final T? value;
+  T? value;
   final FtCellGroupState? groupState;
   FtCellState get cellState => groupState?.state ?? FtCellState.ready;
+  final bool noBlank;
+  String validate;
 
   bool get editable => false;
 
   @override
-  Cell<T, I, S> copyWith(
-      {S? style,
-      T? value,
-      Merged? merged,
-      FtCellGroupState? groupState,
-      I? identifier}) {
+  Cell<T, I, S> copyWith({
+    S? style,
+    T? value,
+    Merged? merged,
+    FtCellGroupState? groupState,
+    I? identifier,
+    bool? noBlank,
+    String? validate,
+  }) {
     return Cell(
         groupState: groupState ?? this.groupState,
         style: style ?? this.style,
         value: value ?? this.value,
         merged: merged ?? this.merged,
-        identifier: identifier ?? this.identifier);
+        identifier: identifier ?? this.identifier,
+        noBlank: noBlank ?? this.noBlank,
+        validate: validate ?? this.validate);
   }
 }
 

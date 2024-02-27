@@ -31,10 +31,10 @@ class DataModelInternationalTrade {
     ftModel.insertCell(
         ftIndex: const FtIndex(row: 0, column: 0),
         columns: 8 * 3,
-        cell: const TextCell(
+        cell: TextCell(
             value:
                 'Internationale handel; invoer en uitvoer van diensten naar land, kwartaal (mln euro)',
-            style: TextCellStyle(
+            style: const TextCellStyle(
               alignment: Alignment.centerLeft,
               textStyle: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold),
             )));

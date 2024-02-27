@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 typedef RequestNextFocusCallback = bool Function();
-typedef UnfocusCallback = Function(UnfocusDisposition disposition);
+typedef UnfocusCallback<T> = Function(
+    UnfocusDisposition disposition, T value, bool escape);
 
 enum FtTextEditInputType { digits, decimal, text }
 
@@ -37,7 +38,7 @@ class FtEditText extends StatefulWidget {
   final RequestNextFocusCallback? requestNextFocusCallback;
   final bool requestNextFocus;
   final VoidCallback focus;
-  final UnfocusCallback unFocus;
+  final UnfocusCallback<String> unFocus;
   final TextStyle? textStyle;
   final String text;
   final TextAlign textAlign;
@@ -55,10 +56,11 @@ class _FtEditTextState extends State<FtEditText> {
 
   late TextEditingController tec;
   late final SkipFocusNode focusNode = SkipFocusNode(
-    requestNextFocusCallback:
-        widget.requestNextFocus ? widget.requestNextFocusCallback : null,
-    unfocusCallback: widget.unFocus,
-  );
+      requestNextFocusCallback:
+          widget.requestNextFocus ? widget.requestNextFocusCallback : null,
+      unfocusCallback: (UnfocusDisposition unfocusDisposition, bool escape) {
+        widget.unFocus(unfocusDisposition, tec.text, escape);
+      });
 
   ObtainSharedTextEditController? obtainSharedTextEditController;
   RemoveSharedTextEditController? removeSharedTextEditController;
@@ -77,9 +79,11 @@ class _FtEditTextState extends State<FtEditText> {
       }
       hasFocus = focusNode.hasFocus;
     });
-    if (widget.requestFocus) {
-      scheduleRequestFocus();
-    }
+
+    /// If the request is scheduled then the keyboard is to fast and widget is lost before focus
+    ///
+    ///
+    focusNode.requestFocus();
     super.initState();
   }
 
@@ -88,7 +92,9 @@ class _FtEditTextState extends State<FtEditText> {
     if (widget.requestNextFocusCallback != oldWidget.requestNextFocusCallback) {
       focusNode.requestNextFocusCallback = widget.requestNextFocusCallback;
     }
-
+    // scheduleRequestFocus();
+    // focusNode.requestFocus();
+    focusNode.safetyStop = false;
     super.didUpdateWidget(oldWidget);
   }
 
@@ -148,9 +154,11 @@ class _FtEditTextState extends State<FtEditText> {
 
 class SkipFocusNode extends FocusNode {
   RequestNextFocusCallback? requestNextFocusCallback;
-  UnfocusCallback unfocusCallback;
+  Function(UnfocusDisposition disposition, bool escape) unfocusCallback;
 
   bool skipUnfocusCallback = false;
+  bool escape = false;
+  bool safetyStop = false;
 
   SkipFocusNode(
       {required this.requestNextFocusCallback, required this.unfocusCallback});
@@ -183,7 +191,8 @@ class SkipFocusNode extends FocusNode {
     if (skipUnfocusCallback) {
       skipUnfocusCallback = false;
     } else {
-      unfocusCallback(disposition);
+      unfocusCallback(disposition, escape || safetyStop);
+      escape = false;
     }
   }
 }

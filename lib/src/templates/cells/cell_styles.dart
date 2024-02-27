@@ -6,14 +6,15 @@ class CellStyle {
   final Color? foreground;
   final EdgeInsets? padding;
   final AlignmentGeometry? alignment;
+  final ValidationCellStyle? validationCellStyle;
 
-  const CellStyle({
-    this.background,
-    this.backgroundAccent,
-    this.foreground,
-    this.padding,
-    this.alignment,
-  });
+  const CellStyle(
+      {this.background,
+      this.backgroundAccent,
+      this.foreground,
+      this.padding,
+      this.alignment,
+      this.validationCellStyle});
 }
 
 class TextCellStyle extends CellStyle {
@@ -35,6 +36,7 @@ class TextCellStyle extends CellStyle {
     this.rotation,
     this.textAlign,
     super.alignment,
+    super.validationCellStyle,
   })  : paddingEdit = padding,
         textStyleEdit = textStyle;
 
@@ -81,5 +83,22 @@ class NumberCellStyle extends TextCellStyle {
       this.format = '#0.###',
       super.rotation,
       super.textAlign,
-      super.alignment});
+      super.alignment,
+      super.validationCellStyle});
+}
+
+class ValidationCellStyle {
+  Color? validationColor;
+
+  ValidationCellStyle({
+    this.validationColor,
+  });
+
+  ValidationCellStyle copyWith({
+    Color? validationColor,
+  }) {
+    return ValidationCellStyle(
+      validationColor: validationColor ?? this.validationColor,
+    );
+  }
 }

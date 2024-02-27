@@ -572,6 +572,7 @@ class TableMultiPanelRenderViewport<C extends AbstractCell,
 
     // Clean the for the viewPanels the refresh.
     viewModel.cellsToRemove.clear();
+    viewModel.cellsToUpdate.clear();
   }
 
   // RenderBox findOrInsert({required RenderBox child, required int index, required bool forward}) {

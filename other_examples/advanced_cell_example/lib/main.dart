@@ -1,5 +1,6 @@
 import 'package:flextable/flextable.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
 void main() {
@@ -24,9 +25,9 @@ class TextEditExample extends StatefulWidget {
 class _RowChangeExampleState extends State<TextEditExample>
     with TableSettingsBottomSheet {
   final GlobalKey _globalKey = GlobalKey();
-  final DefaultFtController _ftController = DefaultFtController();
+  final DefaultRecordFtController _ftController = DefaultRecordFtController();
   final rebuildNotifier = RebuildNotifier();
-  late BasicFtModel model;
+  late RecordFtModel model;
 
   @override
   void initState() {
@@ -54,21 +55,29 @@ class _RowChangeExampleState extends State<TextEditExample>
           ),
         ],
       ),
-      body: DefaultFlexTable(
-          rebuildNotifier: rebuildNotifier,
-          backgroundColor: Colors.white,
-          controller: _ftController,
-          model: model,
-          tableBuilder: DefaultTableBuilder<dynamic, String>(
-              formatCellDate: (format, date) {
-            return DateFormat(format).format(date);
-          }, actionCallBack: (v, i, c, String a) {
-            debugPrint('Specific action: $a');
-            return true;
-          })),
+      body: Shortcuts(
+        shortcuts: <LogicalKeySet, Intent>{
+          LogicalKeySet(LogicalKeyboardKey.escape): const EscapeIntent(),
+        },
+        child: DefaultRecordFlexTable(
+            rebuildNotifier: rebuildNotifier,
+            backgroundColor: Colors.white,
+            controller: _ftController,
+            model: model,
+            tableBuilder: DefaultRecordTableBuilder<dynamic, String>(
+                formatCellDate: (format, date) {
+              return DateFormat(format).format(date);
+            }, actionCallBack: (v, i, c, String a) {
+              debugPrint('Specific action: $a');
+              return true;
+            })),
+      ),
       floatingActionButton: FloatingActionButton(onPressed: () {
         setState(() {
-          model.insertRowRange(startRow: 3, endRow: 4);
+          _ftController.lastViewModel().removeRows(
+                keepEdit: true,
+                startRow: 2,
+              );
         });
 
         // _ftController.lastViewModel().removeRows(
@@ -81,7 +90,7 @@ class _RowChangeExampleState extends State<TextEditExample>
   }
 
   makeModel({required int tableRows, required int tableColumns}) {
-    final model = DefaultFtModel(
+    final model = DefaultRecordFtModel(
         columnHeader: true,
         rowHeader: true,
         defaultWidthCell: 120.0,
@@ -120,7 +129,7 @@ class _RowChangeExampleState extends State<TextEditExample>
     ///
     model.insertCell(
       ftIndex: FtIndex(row: 0, column: column),
-      cell: const TextCell(value: 'Select', style: style, editable: false),
+      cell: TextCell(value: 'Select', style: style, editable: false),
     );
 
     const values = ['pig', 'chicken', 'cow', 'dog'];
@@ -140,7 +149,7 @@ class _RowChangeExampleState extends State<TextEditExample>
 
     model.insertCell(
       ftIndex: FtIndex(row: 0, column: column),
-      cell: const TextCell(value: 'Date', style: style, editable: false),
+      cell: TextCell(value: 'Date', style: style, editable: false),
     );
 
     for (int r = 1; r < tableRows; r++) {
@@ -157,8 +166,8 @@ class _RowChangeExampleState extends State<TextEditExample>
 
     model.insertCell(
       ftIndex: FtIndex(row: 0, column: column),
-      cell: const TextCell(
-        value: 'Number',
+      cell: TextCell(
+        value: 'Num. A',
         style: style,
         editable: false,
       ),
@@ -167,7 +176,7 @@ class _RowChangeExampleState extends State<TextEditExample>
     for (int r = 1; r < tableRows; r++) {
       model.insertCell(
         ftIndex: FtIndex(row: r, column: column),
-        cell: const DecimalCell(
+        cell: DecimalCell(
           value: 1.0,
           style: styleNumber,
         ),
@@ -178,8 +187,8 @@ class _RowChangeExampleState extends State<TextEditExample>
 
     model.insertCell(
       ftIndex: FtIndex(row: 0, column: column),
-      cell: const TextCell(
-        value: 'Text',
+      cell: TextCell(
+        value: 'Num. B',
         style: style,
         editable: false,
       ),
@@ -188,7 +197,10 @@ class _RowChangeExampleState extends State<TextEditExample>
     for (int r = 1; r < tableRows; r++) {
       model.insertCell(
         ftIndex: FtIndex(row: r, column: column),
-        cell: const TextCell(value: 'text', style: style, editable: true),
+        cell: DecimalCell(
+          value: 1.0,
+          style: styleNumber,
+        ),
       );
     }
 
@@ -196,7 +208,54 @@ class _RowChangeExampleState extends State<TextEditExample>
 
     model.insertCell(
       ftIndex: FtIndex(row: 0, column: column),
-      cell: const TextCell(
+      cell: TextCell(
+        value: 'Calc',
+        style: style,
+        editable: false,
+      ),
+    );
+
+    for (int r = 1; r < tableRows; r++) {
+      model.insertCell(
+        ftIndex: FtIndex(row: r, column: column),
+        cell: CalculationCell(
+          style: styleNumber,
+          calculationSyntax: (List<num> list) {
+            var [a, b] = list;
+            return a * b;
+          },
+          imRefIndex: [
+            FtIndex(row: -2, column: column - 2),
+            FtIndex(row: -2, column: column - 1)
+          ],
+        ),
+      );
+    }
+
+    column++;
+
+    model.insertCell(
+      ftIndex: FtIndex(row: 0, column: column),
+      cell: TextCell(
+          value: 'Text',
+          style: style,
+          editable: true,
+          noBlank: true,
+          validate: "r"),
+    );
+
+    for (int r = 1; r < tableRows; r++) {
+      model.insertCell(
+        ftIndex: FtIndex(row: r, column: column),
+        cell: TextCell(value: 'text', style: style, editable: true),
+      );
+    }
+
+    column++;
+
+    model.insertCell(
+      ftIndex: FtIndex(row: 0, column: column),
+      cell: TextCell(
         value: 'Options',
         style: style,
         editable: false,
@@ -206,8 +265,8 @@ class _RowChangeExampleState extends State<TextEditExample>
     for (int r = 1; r < 3; r++) {
       model.insertCell(
         ftIndex: FtIndex(row: r, column: column),
-        cell: const ActionCell(
-            value: ActionCellItem(
+        cell: ActionCell(
+            value: const ActionCellItem(
               action: 'actie blub',
               widget: Icon(Icons.delete_outline),
             ),
@@ -216,10 +275,11 @@ class _RowChangeExampleState extends State<TextEditExample>
       );
     }
 
+    column++;
     for (int r = 3; r < tableRows; r++) {
       model.insertCell(
         ftIndex: FtIndex(row: r, column: column),
-        cell: const ActionCell(
+        cell: ActionCell(
           value: [
             'Insert',
             'Delete',
@@ -231,4 +291,8 @@ class _RowChangeExampleState extends State<TextEditExample>
     }
     return model;
   }
+}
+
+class ClearIntent {
+  const ClearIntent();
 }

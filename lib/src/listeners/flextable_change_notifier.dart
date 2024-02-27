@@ -61,3 +61,26 @@ class RebuildNotifier extends ChangeNotifier {
     notifyListeners();
   }
 }
+
+class LastEditIndexNotifier extends ChangeNotifier with TableChangeNotifier {
+  LastEditIndexNotifier({this.index = const FtIndex()});
+
+  FtIndex index;
+
+  @override
+  void change(FtViewModel viewModel) {
+    if (viewModel.lastEditIndex != index) {
+      index = viewModel.lastEditIndex;
+      notifyListeners();
+    }
+  }
+
+  @override
+  void dispose() {
+    _mounted = false;
+    super.dispose();
+  }
+
+  bool _mounted = true;
+  bool get mounted => _mounted;
+}

@@ -21,7 +21,6 @@ import '../gesture_scroll/table_drag_details.dart';
 import '../gesture_scroll/table_scroll_activity.dart';
 import '../gesture_scroll/table_scroll_physics.dart';
 import '../listeners/inner_change_notifiers.dart';
-import '../properties.dart';
 import 'properties/flextable_freeze_change.dart';
 import 'properties/flextable_grid_layout.dart';
 import 'properties/flextable_header_properties.dart';
@@ -165,10 +164,13 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
   bool scrolling = false;
 
   HashSet<FtIndex> cellsToRemove = HashSet<FtIndex>();
+  HashSet<FtIndex> cellsToUpdate = HashSet<FtIndex>();
 
   DateTime? previousCellTime;
 
   PanelCellIndex previousEditCell = const PanelCellIndex();
+
+  FtIndex lastEditIndex = const FtIndex();
 
   set editCell(PanelCellIndex value) {
     if (model.editCell == value) {
@@ -474,17 +476,35 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
   }
 
   void didOverscrollBy(Offset value) {
-    assert(activity!.isScrolling);
+    assert(() {
+      if (!activity!.isScrolling) {
+        debugPrint(
+            'didOverscrollBy: Activity is not scrolling: value: $value activity: $activity');
+      }
+      return true;
+    }());
     //activity.dispatchOverscrollNotification(copyWith(), context.notificationContext, value);
   }
 
   void didOverscrollByX(double value) {
-    assert(activity!.isScrolling);
+    assert(() {
+      if (!activity!.isScrolling) {
+        debugPrint(
+            'didOverscrollByX: Activity is not scrolling: value: $value activity: $activity');
+      }
+      return true;
+    }());
     //activity.dispatchOverscrollNotification(copyWith(), context.notificationContext, value);
   }
 
   void didOverscrollByY(double value) {
-    assert(activity!.isScrolling);
+    assert(() {
+      if (!activity!.isScrolling) {
+        debugPrint(
+            'didOverscrollByY: Activity is not scrolling: value: $value activity: $activity');
+      }
+      return true;
+    }());
     //activity.dispatchOverscrollNotification(copyWith(), context.notificationContext, value);
   }
 
@@ -1059,7 +1079,7 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
       ySimulation(0, 0);
     }
 
-    if (model.anySplitY) {
+    if (model.anyNoAutoFreezeY) {
       if (outOfRangeY(0, 1)) ySimulation(0, 1);
 
       if (model.stateSplitY == SplitState.split && protectedScrollUnlockX) {
@@ -1071,7 +1091,7 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
       }
     }
 
-    if (model.anySplitX) {
+    if (model.anyFreezeSplitX) {
       if (outOfRangeX(1, 0)) xSimulation(1, 0);
 
       if (model.stateSplitX == SplitState.split && protectedScrollUnlockY) {
@@ -1217,7 +1237,14 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
 
   double get tableScale => model.tableScale;
 
-  set tableScale(double value) {
+  /// Unfocus:
+  /// Unfocus the textEditor if the adjust widget like a slider can take te focus, because if the textEditor becomes inside the screen
+  /// the texEditor will take the focus from the slider and so on.
+  ///
+  setTableScale(double value, {bool unfocus = true}) {
+    if (unfocus && editCell.isIndex) {
+      editCell = const PanelCellIndex();
+    }
     value =
         clampDouble(value, properties.minTableScale, properties.maxTableScale);
     if (value != tableScale) {
@@ -1312,6 +1339,9 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
           (element) => element.constains(mainScrollX),
           orElse: () => autoFreezeNoRange);
     }
+
+    // print(
+    //     'mainScrollX: $mainScrollX  ${autoFreezeAreaX.freeze} ${model.stateSplitX}');
 
     if (_isSplitInWindowX(width, SplitState.autoFreezeSplit)) {
       if (autoFreezeAreaX.freeze) {
@@ -2156,11 +2186,6 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
     final maxHeightNoSplit = computeMaxIntrinsicHeightNoSplit(width);
     final maxWidthNoSplit = computeMaxIntrinsicWidthNoSplit(height);
 
-    if (maxHeightNoSplit <= height && maxWidthNoSplit <= width) {
-      stateSplitX = SplitState.noSplit;
-      stateSplitY = SplitState.noSplit;
-    }
-
     _layoutY(
         maxHeightNoSplit:
             maxHeightNoSplit + sizeScrollBarBottom + bottomHeaderLayoutLength,
@@ -2195,7 +2220,11 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
     double yOffset = 0.0;
 
     if (maxHeightNoSplit < height) {
-      stateSplitY = SplitState.noSplit;
+      /// Skip autoFreeze otherwise the noSplit will trigger SwitchX
+      ///
+      if (model.anyNoAutoFreezeY) {
+        stateSplitY = SplitState.noSplit;
+      }
 
       final centerY = (height - maxHeightNoSplit) / 2.0;
 
@@ -2247,7 +2276,11 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
     double xOffset = 0.0;
 
     if (maxWidthNoSplit < width) {
-      stateSplitX = SplitState.noSplit;
+      /// Skip autoFreeze otherwise the noSplit will trigger SwitchX
+      ///
+      if (model.anyNoAutoFreezeX) {
+        stateSplitX = SplitState.noSplit;
+      }
       final centerX = (width - maxWidthNoSplit) / 2.0;
       xOffset = centerX + centerX * properties.alignment.x;
       width = maxWidthNoSplit;
@@ -3124,9 +3157,6 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
     if (mounted) {
       notifyListeners();
       _notifyChange();
-      scheduleMicrotask(() {
-        //cellsToRefresh.clear();
-      });
     } else {
       debugPrint(
           'Try to notifyListeners will viewModel is unMounted already (disposed)');
@@ -3752,11 +3782,13 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
         correctY / tableScale +
             getScrollY(panelIndexX <= 1 ? 0 : 1, panelIndexY <= 1 ? 0 : 1)));
 
-    return PanelCellIndex.from(
-        panelIndexX: panelIndexX,
-        panelIndexY: panelIndexY,
-        ftIndex: cellIndex,
-        cell: model.cell(row: cellIndex.row, column: cellIndex.column));
+    return cellIndex.isIndex
+        ? PanelCellIndex.from(
+            panelIndexX: panelIndexX,
+            panelIndexY: panelIndexY,
+            ftIndex: cellIndex,
+            cell: model.cell(row: cellIndex.row, column: cellIndex.column))
+        : const PanelCellIndex();
   }
 
   ///
@@ -4010,18 +4042,89 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
     }
   }
 
-  insertRows({
-    required int startRow,
-    int? endRow,
-  }) {
-    model.insertRowRange(startRow: startRow, endRow: endRow);
+  sortRow({required Function(M model) sort, required bool keepEdit}) {
+    _changeOrder(
+        keepEdit: keepEdit,
+        change: () {
+          sort(model);
+          model.reIndexUniqueRowNumber();
+        });
   }
 
-  removeRows({
-    required int startRow,
-    int? endRow,
+  insertRows({required int startRow, int? endRow, required bool keepEdit}) {
+    _changeOrder(
+        keepEdit: keepEdit,
+        change: () {
+          model.insertRowRange(startRow: startRow, endRow: endRow);
+        });
+  }
+
+  removeRows({required int startRow, int? endRow, required bool keepEdit}) {
+    _changeOrder(
+        keepEdit: keepEdit,
+        change: () {
+          model.removeRowRange(startRow: startRow, lastRow: endRow);
+        });
+  }
+
+  _changeOrder({required bool keepEdit, required VoidCallback change}) {
+    FocusNode? focusChild = FocusScope.of(context.storageContext).focusedChild;
+
+    if (focusChild case SkipFocusNode node) {
+      node.safetyStop = true;
+    }
+
+    if (!keepEdit) {
+      change();
+      editCell = const PanelCellIndex();
+      return;
+    }
+
+    FtIndex? immRowIndex = model.indexToImmutableIndex(editCell);
+
+    change();
+
+    if (immRowIndex case FtIndex index) {
+      editCell = editCell.copyWith(index: model.immutableIndexToIndex(index));
+    } else {
+      editCell = const PanelCellIndex();
+    }
+  }
+
+  updateCell({
+    required FtIndex ftIndex,
+    int rows = 1,
+    int columns = 1,
+    required C? cell,
+    C? previousCell,
   }) {
-    model.removeRowRange(startRow: startRow, lastRow: endRow);
+    Set<FtIndex>? set = model.updateCell(
+        ftIndex: ftIndex,
+        cell: cell,
+        rows: rows,
+        columns: columns,
+        previousCell: previousCell,
+        user: true);
+
+    lastEditIndex = ftIndex;
+
+    if (set != null) {
+      cellsToUpdate.addAll(set);
+    }
+    cellsToUpdate.add(ftIndex);
+    clearEditCell(ftIndex);
+    markNeedsLayout();
+  }
+
+  /// Unfocus:
+  /// For scaling for example with slider which take te focus from textEditor, if textEditor is inside screen
+  /// the texEditor will take the focus from the slider and so on.
+  ///
+  stopEditing() {
+    if (editCell.isIndex) {
+      editCell = const PanelCellIndex();
+      markNeedsLayout();
+    }
   }
 }
 

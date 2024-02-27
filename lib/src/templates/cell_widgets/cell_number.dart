@@ -3,8 +3,11 @@
 // license that can be found in the LICENSE file.
 
 import 'package:flextable/flextable.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
+
+import 'shared/validate_drawer.dart';
 
 typedef FormatCellNumber = String Function(
     {dynamic identifier, String? format, num? value, bool? dif});
@@ -122,9 +125,25 @@ class _CellNumberEditorState extends State<_CellNumberEditor> {
         .isIndex;
 
     NumberCellStyle? numberCellStyle;
+    FtTextEditInputType textEditInputType;
 
-    if (cell.style case NumberCellStyle style) {
-      numberCellStyle = style;
+    switch (cell) {
+      case (DigitCell c):
+        {
+          numberCellStyle = c.style;
+          textEditInputType = FtTextEditInputType.digits;
+          break;
+        }
+      case (DecimalCell c):
+        {
+          numberCellStyle = c.style;
+          textEditInputType = FtTextEditInputType.decimal;
+          break;
+        }
+      default:
+        {
+          textEditInputType = FtTextEditInputType.text;
+        }
     }
 
     final valueKey = widget.valueKey;
@@ -178,14 +197,29 @@ class _CellNumberEditorState extends State<_CellNumberEditor> {
         focus: () {
           viewModel.updateCellPanel(widget.layoutPanelIndex);
         },
-        unFocus: (UnfocusDisposition disposition) {
-          if (disposition == UnfocusDisposition.scope) {
-            viewModel
-              ..clearEditCell(widget.tableCellIndex)
-              ..markNeedsLayout();
+        unFocus: (UnfocusDisposition disposition, String value, bool escape) {
+          if (kIsWeb) {
+            if (!escape) {
+              onValueChange(value);
+            }
+            if (disposition == UnfocusDisposition.scope) {
+              viewModel
+                ..clearEditCell(widget.tableCellIndex)
+                ..markNeedsLayout();
+            }
+          } else {
+            if (!escape &&
+                !viewModel.editCell.sameIndex(widget.tableCellIndex)) {
+              onValueChange(value);
+            }
+            if (disposition == UnfocusDisposition.scope) {
+              viewModel
+                ..clearEditCell(widget.tableCellIndex)
+                ..markNeedsLayout();
+            }
           }
         },
-        onValueChanged: (String text) => onValueChange(viewModel, text),
+        onValueChanged: onValueChange,
       ),
     ));
     child = Container(
@@ -197,15 +231,16 @@ class _CellNumberEditorState extends State<_CellNumberEditor> {
     return AutomaticKeepAlive(child: SelectionKeepAlive(child: child));
   }
 
-  void onValueChange(FtViewModel? viewModel, String text) {
-    if (viewModel == null || !viewModel.mounted) {
+  void onValueChange(String text) {
+    final viewModel = widget.viewModel;
+    if (!widget.viewModel.mounted) {
       return;
     }
 
     switch (widget.cell) {
       case (DecimalCell v):
         {
-          viewModel.model.updateCell(
+          viewModel.updateCell(
               previousCell: widget.cell,
               cell: v.copyWith(
                   value: double.tryParse(text), valueCanBeNull: true),
@@ -214,7 +249,7 @@ class _CellNumberEditorState extends State<_CellNumberEditor> {
         }
       case (DigitCell v):
         {
-          viewModel.model.updateCell(
+          viewModel.updateCell(
               previousCell: widget.cell,
               cell: v.copyWith(value: int.tryParse(text), valueCanBeNull: true),
               ftIndex: widget.tableCellIndex);
@@ -223,10 +258,6 @@ class _CellNumberEditorState extends State<_CellNumberEditor> {
 
       default:
         {}
-
-        viewModel
-          ..clearEditCell(widget.tableCellIndex)
-          ..markNeedsLayout();
     }
   }
 }
@@ -342,6 +373,10 @@ class _CellNumber extends StatelessWidget {
       );
     }
 
-    return child;
+    return ValidationDrawer(
+      cell: cell,
+      tableScale: tableScale,
+      child: child,
+    );
   }
 }

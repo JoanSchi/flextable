@@ -105,7 +105,7 @@ class TableScaleSliderState extends State<TableScaleSlider> {
         max: max,
         onChanged: (double value) {
           final newScale = (value < 1.0) ? 1.0 / (2.0 - value) : value;
-          widget.controller.lastViewModel().tableScale = newScale;
+          widget.controller.lastViewModel().setTableScale(newScale);
         },
         onChangeEnd: (double value) {
           widget.controller.lastViewModel().correctOffScroll(0, 0);

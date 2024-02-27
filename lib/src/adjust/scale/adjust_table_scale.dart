@@ -88,7 +88,8 @@ class TableScaleTouchState extends State<TableScaleTouch> {
   }
 
   void _onScaleUpdate(ScaleUpdateDetails scaleUpdateDetails) {
-    widget.viewModel.tableScale = scaleUpdateDetails.scale * tableScale;
+    widget.viewModel
+        .setTableScale(scaleUpdateDetails.scale * tableScale, unfocus: false);
   }
 
   void _onScaleEnd(ScaleEndDetails details) {
@@ -202,7 +203,8 @@ class TableScaleMouseState extends State<TableScaleMouse> {
 
   onUpdate(TableDragUpdateDetails details) {
     _tableScaleMouseNotifier.position = details.localPosition;
-    widget.viewModel.tableScale = _tableScaleMouseNotifier.scale;
+    widget.viewModel
+        .setTableScale(_tableScaleMouseNotifier.scale, unfocus: false);
   }
 
   onEnd(TableDragEndDetails details) {

@@ -3,17 +3,16 @@
 // license that can be found in the LICENSE file.
 
 import 'package:flextable/flextable.dart';
+import 'package:flextable/src/keys/escape.dart';
 import 'package:flutter/material.dart';
 import 'adjust/select_cell/select_cell.dart';
 import 'adjust/split/adjust_table_split.dart';
 import 'adjust/freeze/adjust_table_freeze.dart';
 import 'adjust/freeze/adjust_table_move_freeze.dart';
 import 'adjust/freeze/adjust_freeze_properties.dart';
-import 'adjust/split/adjust_split_properties.dart';
 import 'adjust/scale/adjust_table_scale.dart';
 import 'adjust/scale/combi_key.dart';
 import 'listeners/inner_change_notifiers.dart';
-import 'properties.dart';
 import 'panels/table_multi_panel_viewport.dart';
 import 'panels/table_view_scrollable.dart';
 import 'panels/hit_test_stack.dart';
@@ -153,8 +152,10 @@ class FlexTableState<C extends AbstractCell, M extends AbstractFtModel<C>>
           final fo = widget.properties.adjustFreeze;
           final so = widget.properties.adjustSplit;
 
-          return MultiHitStack(children: [
-            SelectCell(viewModel: viewModel),
+          Widget m = MultiHitStack(children: [
+            SelectCell(
+              viewModel: viewModel,
+            ),
             TableMultiPanel<C, M>(
               viewModel: viewModel,
               tableBuilder: widget.tableBuilder,
@@ -179,6 +180,15 @@ class FlexTableState<C extends AbstractCell, M extends AbstractFtModel<C>>
                 properties: so,
               ),
           ]);
+
+          m = Actions(
+              dispatcher: const ActionDispatcher(),
+              actions: <Type, Action<Intent>>{
+                EscapeIntent: EscapeAction(viewModel),
+              },
+              child: m);
+
+          return m;
         });
 
     // TODO CombiKey builds everything from the ground instead of a performrebuild

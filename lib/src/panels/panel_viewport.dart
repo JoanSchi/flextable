@@ -513,7 +513,7 @@ class TablePanelChildRenderObjectElement<C extends AbstractCell,
 
     ValueKey? valueKey;
 
-    if (widget.viewModel.model.immutableFtIndex(cellIndex)
+    if (widget.viewModel.model.indexToImmutableIndex(cellIndex)
         case FtIndex ftIndex) {
       valueKey = ValueKey<FtIndex>(ftIndex);
     }
@@ -742,7 +742,7 @@ class TablePanelRenderViewport<C extends AbstractCell,
         assert(
             iterator.editCellIndex == tableCellIndex ||
                 find(tableCellIndex) == null,
-            'Renderbox should be removed, but not yet implemented! IndexCellIndex: $tableCellIndex');
+            'Renderbox should be removed, but not yet implemented! EditCellIndex  ${iterator.editCellIndex} IndexCellIndex: $tableCellIndex  find(tableCellIndex) ${find(tableCellIndex)}');
       }
     }
 
@@ -1178,7 +1178,8 @@ class TablePanelRenderViewport<C extends AbstractCell,
 
       for (var MapEntry<FtIndex, RenderBox>(key: index, value: child)
           in Map<FtIndex, RenderBox>.from(_keepAliveBucket).entries) {
-        if (viewModel.cellsToRemove.contains(index)) {
+        if (viewModel.cellsToRemove.contains(index) ||
+            viewModel.cellsToUpdate.contains(index)) {
           _destroyChild(child);
         }
 
@@ -1207,18 +1208,24 @@ class TablePanelRenderViewport<C extends AbstractCell,
           column: tableCellIndex.column,
         ))) {
           _destroyChild(childToRemove);
-        } else if ((garbageCollectRowsFrom != -1 &&
-                garbageCollectRowsFrom <= tableCellIndex.row) ||
-            (garbageCollectColumnsFrom != -1 &&
-                garbageCollectColumnsFrom <= tableCellIndex.column) ||
+        } else if (
+            //(
+            // garbageCollectRowsFrom != -1 &&
+            //       garbageCollectRowsFrom <= tableCellIndex.row) ||
+            //   (garbageCollectColumnsFrom != -1 &&
+            //       garbageCollectColumnsFrom <= tableCellIndex.column) ||
             firstRowIndex > tableCellIndex.row + rows ||
-            lastRowIndex < tableCellIndex.row ||
-            firstColumnIndex > tableCellIndex.column + columns ||
-            lastColumnIndex < tableCellIndex.column) {
+                lastRowIndex < tableCellIndex.row ||
+                firstColumnIndex > tableCellIndex.column + columns ||
+                lastColumnIndex < tableCellIndex.column) {
           assert(childManager.containsElement(tableCellIndex),
               'Element bestaat niet $tableCellIndex');
 
-          _destroyOrCacheChild(childToRemove);
+          if (parentData.cellStatus.edit && editCellIndex != tableCellIndex) {
+            _destroyChild(childToRemove);
+          } else {
+            _destroyOrCacheChild(childToRemove);
+          }
         } else if (editCellIndex == tableCellIndex &&
             parentData.cellStatus != editCellStatus) {
           childManager.updateFromTableCellIndex(
@@ -1229,6 +1236,23 @@ class TablePanelRenderViewport<C extends AbstractCell,
         } else if (parentData.cellStatus.edit &&
             editCellIndex != tableCellIndex) {
           _destroyChild(childToRemove);
+        } else if (viewModel.cellsToUpdate.contains(FtIndex(
+          row: tableCellIndex.row,
+          column: tableCellIndex.column,
+        ))) {
+          if (viewModel.model
+                  .cell(row: tableCellIndex.row, column: tableCellIndex.column)
+              case C cell) {
+            childManager.updateFromTableCellIndex(
+                cell,
+                FtIndex(
+                  row: tableCellIndex.row,
+                  column: tableCellIndex.column,
+                ),
+                parentData.cellStatus);
+          } else {
+            _destroyChild(childToRemove);
+          }
         }
       }
 

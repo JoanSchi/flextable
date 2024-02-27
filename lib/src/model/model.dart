@@ -1053,12 +1053,14 @@ abstract class AbstractFtModel<C extends AbstractCell> {
     }
   }
 
-  void updateCell(
-      {required FtIndex ftIndex,
-      int rows = 1,
-      int columns = 1,
-      required C? cell,
-      C? previousCell});
+  Set<FtIndex>? updateCell({
+    required FtIndex ftIndex,
+    int rows = 1,
+    int columns = 1,
+    required C? cell,
+    C? previousCell,
+    bool user = false,
+  });
 
   void didFinishLayout() {}
 
@@ -1170,6 +1172,10 @@ abstract class AbstractFtModel<C extends AbstractCell> {
     throw UnimplementedError();
   }
 
+  void reIndexUniqueRowNumber() {
+    throw UnimplementedError();
+  }
+
   insertColumns(
       {required int column,
       int columns = 1,
@@ -1177,5 +1183,13 @@ abstract class AbstractFtModel<C extends AbstractCell> {
     throw UnimplementedError();
   }
 
-  FtIndex? immutableFtIndex(FtIndex index) => null;
+  FtIndex? indexToImmutableIndex(FtIndex index) => null;
+
+  FtIndex immutableIndexToIndex(FtIndex imIndex) {
+    throw UnimplementedError();
+  }
+
+  num? numberValue({FtIndex? index, required FtIndex? imIndex});
+
+  void calculateCell({AbstractCell? cell, FtIndex? index, FtIndex? imIndex});
 }

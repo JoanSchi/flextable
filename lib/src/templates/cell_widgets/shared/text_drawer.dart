@@ -3,6 +3,7 @@
 // license that can be found in the LICENSE file.
 
 import 'package:flextable/flextable.dart';
+import 'package:flextable/src/templates/cell_widgets/shared/validate_drawer.dart';
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 
@@ -48,6 +49,14 @@ class TextDrawer extends StatelessWidget {
             : textCellStyle?.background,
         child: text);
 
-    return child;
+    if (cell.noBlank) {
+      child = ValidationDrawer(
+        cell: cell,
+        tableScale: tableScale,
+        child: child,
+      );
+    }
+
+    return ValidationDrawer(cell: cell, tableScale: tableScale, child: child);
   }
 }
