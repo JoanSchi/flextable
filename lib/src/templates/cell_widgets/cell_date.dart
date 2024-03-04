@@ -150,8 +150,8 @@ class _CellDateEditorState extends State<_CellDateEditor> {
               lastDate: cell.maxDate,
               requestFocus:
                   viewModel.editCell.samePanel(widget.layoutPanelIndex),
-              requestNextFocus: nextFocus,
-              requestNextFocusCallback: () {
+              requestNextFocus: true,
+              requestNextFocusCallback: (DateTime? date) {
                 ///
                 /// ViewModel can be rebuild and the old viewbuild is disposed!
                 /// Get the latest viewModel and do again checks.
@@ -168,6 +168,8 @@ class _CellDateEditorState extends State<_CellDateEditor> {
                         panelIndexY: widget.layoutPanelIndex.yIndex,
                         ftIndex: t)
                     ..markNeedsLayout();
+
+                  onDateChange(date);
                   return true;
                 } else {
                   viewModel
@@ -268,42 +270,42 @@ class _DateCellState extends State<_DateCell> {
           formatedValue: value,
           useAccent: widget.useAccent,
         ),
-        Positioned(
-          right: 2.0,
-          top: 2.0,
-          bottom: 2.0,
-          child: AspectRatio(
-            aspectRatio: 1.0,
-            child: Material(
-              type: MaterialType.transparency,
-              clipBehavior: Clip.antiAlias,
-              shape: RoundedRectangleBorder(
-                  borderRadius: (BorderRadius.circular(8.0))),
-              child: InkWell(
-                hoverColor: theme.primaryColor.withOpacity(0.3),
-                onTap: () {
-                  showDatePicker(
-                          context: context,
-                          currentDate: widget.cell.value,
-                          firstDate:
-                              widget.cell.minDate ?? DateTime(2000, 1, 1),
-                          lastDate:
-                              widget.cell.maxDate ?? DateTime(2049, 12, 31),
-                          initialEntryMode: DatePickerEntryMode.calendarOnly)
-                      .then((value) {
-                    widget.viewModel
-                      ..model.updateCell(
-                          previousCell: widget.cell,
-                          cell: widget.cell.copyWith(value: value),
-                          ftIndex: widget.tableCellIndex)
-                      ..cellsToRemove.add(widget.tableCellIndex)
-                      ..markNeedsLayout();
-                  });
-                },
-              ),
-            ),
-          ),
-        ),
+        // Positioned(
+        //   right: 2.0,
+        //   top: 2.0,
+        //   bottom: 2.0,
+        //   child: AspectRatio(
+        //     aspectRatio: 1.0,
+        //     child: Material(
+        //       type: MaterialType.transparency,
+        //       clipBehavior: Clip.antiAlias,
+        //       shape: RoundedRectangleBorder(
+        //           borderRadius: (BorderRadius.circular(8.0))),
+        //       child: InkWell(
+        //         hoverColor: theme.primaryColor.withOpacity(0.3),
+        //         onTap: () {
+        //           showDatePicker(
+        //                   context: context,
+        //                   currentDate: widget.cell.value,
+        //                   firstDate:
+        //                       widget.cell.minDate ?? DateTime(2000, 1, 1),
+        //                   lastDate:
+        //                       widget.cell.maxDate ?? DateTime(2049, 12, 31),
+        //                   initialEntryMode: DatePickerEntryMode.calendarOnly)
+        //               .then((value) {
+        //             widget.viewModel
+        //               ..model.updateCell(
+        //                   previousCell: widget.cell,
+        //                   cell: widget.cell.copyWith(value: value),
+        //                   ftIndex: widget.tableCellIndex)
+        //               ..cellsToRemove.add(widget.tableCellIndex)
+        //               ..markNeedsLayout();
+        //           });
+        //         },
+        //       ),
+        //     ),
+        //   ),
+        // ),
       ],
     );
   }
@@ -314,7 +316,6 @@ class _DateInputPicker extends StatefulWidget {
   final DateTime? lastDate;
   final DateTime? date;
   final ValueChanged<DateTime?>? changeDate;
-  final ValueChanged<DateTime?>? saveDate;
   final TextInputType? textInputType;
   final List<String>? additionalDividers;
   final String labelText;
@@ -322,7 +323,7 @@ class _DateInputPicker extends StatefulWidget {
   final TextInputAction textInputAction;
   final String format;
   final bool formatWithUnfocus;
-  final RequestNextFocusCallback? requestNextFocusCallback;
+  final bool Function(DateTime? date)? requestNextFocusCallback;
   final bool requestNextFocus;
   final UnfocusCallback<DateTime?> unFocus;
   final bool requestFocus;
@@ -337,7 +338,6 @@ class _DateInputPicker extends StatefulWidget {
       required this.firstDate,
       required this.lastDate,
       this.changeDate,
-      this.saveDate,
       this.textInputType,
       this.additionalDividers,
       this.textInputAction = TextInputAction.done,
@@ -415,14 +415,15 @@ class _DateInputPickerState extends State<_DateInputPicker> {
     super.initState();
   }
 
-  late final SkipFocusNode focusNode = SkipFocusNode(
-      requestNextFocusCallback:
-          widget.requestNextFocus ? widget.requestNextFocusCallback : null,
-      unfocusCallback: (UnfocusDisposition unfocusDisposition, bool escape) {
-        DateTime? date = validateDate(_dateController.text).date;
+  late final SkipFocusNode focusNode =
+      SkipFocusNode(requestNextFocusCallback: () {
+    DateTime? date = validateDate(_dateController.text).date;
+    return widget.requestNextFocusCallback?.call(date) ?? false;
+  }, unfocusCallback: (UnfocusDisposition unfocusDisposition, bool escape) {
+    DateTime? date = validateDate(_dateController.text).date;
 
-        widget.unFocus(unfocusDisposition, date, escape);
-      });
+    widget.unFocus(unfocusDisposition, date, escape);
+  });
 
   @override
   void didChangeDependencies() {
@@ -455,6 +456,19 @@ class _DateInputPickerState extends State<_DateInputPicker> {
         focusNode.requestFocus();
       });
     }
+  }
+
+  @override
+  void dispose() {
+    focusNode.dispose();
+    if (removeSharedTextEditController
+        case RemoveSharedTextEditController removeSharedTextEditor) {
+      removeSharedTextEditor();
+    } else {
+      _dateController.dispose();
+    }
+
+    super.dispose();
   }
 
   void setFormat() {
@@ -518,21 +532,8 @@ class _DateInputPickerState extends State<_DateInputPicker> {
   }
 
   @override
-  void dispose() {
-    focusNode.dispose();
-    if (removeSharedTextEditController
-        case RemoveSharedTextEditController removeSharedTextEditor) {
-      removeSharedTextEditor();
-    } else {
-      _dateController.dispose();
-    }
-
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return TextFormField(
+    return TextField(
       focusNode: focusNode,
       controller: _dateController,
       keyboardType: widget.textInputType ?? TextInputType.datetime,
@@ -544,14 +545,14 @@ class _DateInputPickerState extends State<_DateInputPicker> {
         // helperText: monthYearText
       ),
       textAlign: TextAlign.center,
-      validator: (String? value) {
-        return validateDate(value).error;
-      },
-      onSaved: (String? value) {
-        DateTime? date = validateDate(value).date;
-        if (date != null) widget.saveDate?.call(date);
-      },
-      onFieldSubmitted: (String text) {
+      // validator: (String? value) {
+      //   return validateDate(value).error;
+      // },
+      // onSaved: (String? value) {
+      //   DateTime? date = validateDate(value).date;
+      //   if (date != null) widget.saveDate?.call(date);
+      // },
+      onSubmitted: (String text) {
         setDateFromTextField(text);
       },
     );
@@ -574,119 +575,118 @@ class _DateInputPickerState extends State<_DateInputPicker> {
   }
 
   DateValidated validateDate(String? value) {
+    final dateNow = DateUtils.dateOnly(DateTime.now());
     if (value == null || value.isEmpty) {
       return DateValidated();
     } else if (value.length == 1) {
       if (format.contains(value)) {
-        return DateValidated(date: DateTime.now());
+        return DateValidated(date: dateNow);
       }
       if (widget.additionalDividers case List<String> dividers) {
         for (String divider in dividers) {
           if (divider == value) {
-            return DateValidated(date: DateTime.now());
+            return DateValidated(date: dateNow);
           }
-        }
-      }
-    } else {
-      previousValidation = value;
-
-      final List<String?> numbers = splitDateRegExp
-          .allMatches(value)
-          .map<String?>((e) => e.group(0))
-          .where((e) => (e != ''))
-          .toList();
-      final List<String?> order = orderRegExp
-          .allMatches(format)
-          .map<String?>((e) => e.group(0))
-          .where((e) => (e != ''))
-          .toList();
-
-      int day = -1;
-      int month = -1;
-      int year = -1;
-
-      int toInt(String? value) {
-        return value == null ? 0 : int.parse(value);
-      }
-
-      int missing = order.length - numbers.length;
-
-      bool yearMissing = missing >= 1;
-      bool monthMissing = missing >= 2;
-      bool dayMissing = missing == 3;
-
-      if (missing < 0) {
-        return DateValidated(error: 'To many Arguments');
-      }
-
-      int j = 0;
-      for (int i = 0; i < order.length; i++) {
-        String? o = order[i];
-
-        if (o == null) {
-          return DateValidated(error: '?');
-        } else if ((o == 'd' || o == 'dd') && dayMissing) {
-          day = DateTime.now().day;
-          continue;
-        } else if (o == 'yyyy' || o == 'yy' && yearMissing) {
-          year = DateTime.now().year;
-          continue;
-        } else if ((o == 'M' || o == 'MM') && monthMissing) {
-          month = DateTime.now().month;
-          continue;
-        }
-
-        String? n = j < numbers.length ? numbers[j++] : null;
-
-        if (n == null) {
-          return DateValidated(error: '?');
-        } else if (o == 'yy' || o == 'yyyy') {
-          if (n.length == 2) {
-            year = 2000 + toInt(n);
-          } else if (n.length == 4) {
-            year = toInt(n);
-          }
-        } else if (o == 'M' || o == 'MM') {
-          month = toInt(n);
-        } else if (o == 'd' || o == 'dd') {
-          day = toInt(n);
-        }
-      }
-
-      debugPrint('day: $day, month: $month, year; $year');
-
-      if (day == -1 || month == -1 || year == -1) {
-        return DateValidated(error: widget.formatHint);
-      } else if (month > 12) {
-        return DateValidated(error: 'M: 1..12');
-      } else if (day < 1) {
-        return DateValidated(error: 'd: 1..');
-      } else if (day > daysInMonth(month: month, years: year)) {
-        return DateValidated(
-            error: 'd: 1..${daysInMonth(month: month, years: year)}');
-      } else {
-        DateTime dateFromInput = DateTime(year, month, day);
-
-        debugPrint('dateFromInput to string $dateFromInput');
-
-        if ((widget.firstDate != null &&
-                DateUtils.monthDelta(widget.firstDate!, dateFromInput) < 0) ||
-            (widget.lastDate != null &&
-                DateUtils.monthDelta(widget.lastDate!, dateFromInput) > 0)) {
-          return DateValidated(
-              error:
-                  '${dateToText(widget.firstDate)}..${dateToText(widget.lastDate)}');
-        } else {
-          final formated = dateToText(dateFromInput);
-          if (formated != value) {
-            _dateController.text = previousValidation = formated;
-          }
-
-          return DateValidated(date: dateFromInput);
         }
       }
     }
-    return DateValidated(error: widget.formatHint);
+    previousValidation = value;
+
+    final List<String?> numbers = splitDateRegExp
+        .allMatches(value)
+        .map<String?>((e) => e.group(0))
+        .where((e) => (e != ''))
+        .toList();
+    final List<String?> order = orderRegExp
+        .allMatches(format)
+        .map<String?>((e) => e.group(0))
+        .where((e) => (e != ''))
+        .toList();
+
+    int day = -1;
+    int month = -1;
+    int year = -1;
+
+    int toInt(String? value) {
+      return value == null ? 0 : int.parse(value);
+    }
+
+    int missing = order.length - numbers.length;
+
+    bool yearMissing = missing >= 1;
+    bool monthMissing = missing >= 2;
+    bool dayMissing = missing == 3;
+
+    if (missing < 0) {
+      return DateValidated(error: 'To many Arguments');
+    }
+
+    int j = 0;
+    for (int i = 0; i < order.length; i++) {
+      String? o = order[i];
+
+      if (o == null) {
+        return DateValidated(error: '?');
+      } else if ((o == 'd' || o == 'dd') && dayMissing) {
+        day = dateNow.day;
+        continue;
+      } else if (o == 'yyyy' || o == 'yy' && yearMissing) {
+        year = dateNow.year;
+        continue;
+      } else if ((o == 'M' || o == 'MM') && monthMissing) {
+        month = dateNow.month;
+        continue;
+      }
+
+      String? n = j < numbers.length ? numbers[j++] : null;
+
+      if (n == null) {
+        return DateValidated(error: '?');
+      } else if (o == 'yy' || o == 'yyyy') {
+        if (n.length == 2) {
+          year = 2000 + toInt(n);
+        } else if (n.length == 4) {
+          year = toInt(n);
+        }
+      } else if (o == 'M' || o == 'MM') {
+        month = toInt(n);
+      } else if (o == 'd' || o == 'dd') {
+        day = toInt(n);
+      }
+    }
+
+    debugPrint('day: $day, month: $month, year; $year');
+
+    if (day == -1 || month == -1 || year == -1) {
+      return DateValidated(error: widget.formatHint);
+    } else if (month > 12) {
+      return DateValidated(error: 'M: 1..12');
+    } else if (day < 1) {
+      return DateValidated(error: 'd: 1..');
+    } else if (day > daysInMonth(month: month, years: year)) {
+      return DateValidated(
+          error: 'd: 1..${daysInMonth(month: month, years: year)}');
+    } else {
+      DateTime dateFromInput = DateTime(year, month, day);
+
+      debugPrint('dateFromInput to string $dateFromInput');
+
+      if ((widget.firstDate != null &&
+              DateUtils.monthDelta(widget.firstDate!, dateFromInput) < 0) ||
+          (widget.lastDate != null &&
+              DateUtils.monthDelta(widget.lastDate!, dateFromInput) > 0)) {
+        return DateValidated(
+            error:
+                '${dateToText(widget.firstDate)}..${dateToText(widget.lastDate)}');
+      } else {
+        final formated = dateToText(dateFromInput);
+        if (formated != value) {
+          _dateController.text = previousValidation = formated;
+        }
+
+        return DateValidated(date: dateFromInput);
+      }
+    }
   }
 }
 

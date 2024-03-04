@@ -13,14 +13,14 @@ class TextCell<I> extends Cell<String, I, TextCellStyle> {
       super.identifier,
       super.groupState,
       this.editable = true,
-      this.translate,
+      this.translate = false,
       super.noBlank,
       super.validate = ''});
 
   @override
   final bool editable;
 
-  final bool? translate;
+  final bool translate;
 
   @override
   TextCell<I> copyWith({
@@ -170,7 +170,7 @@ class DecimalCell<I> extends Cell<double, I, NumberCellStyle> {
   }
 }
 
-typedef FtCalculationFunction = num Function(List<num> list);
+typedef FtCalculationFunction = num? Function(List<Object> list);
 
 class CalculationCell<I> extends Cell<num, I, NumberCellStyle> {
   CalculationCell(
@@ -317,48 +317,54 @@ class DateTimeCell<I> extends Cell<DateTime, I, TextCellStyle> {
 }
 
 class SelectionCell<T, I> extends Cell<T, I, TextCellStyle> {
-  SelectionCell(
-      {super.style,
-      super.value,
-      required this.values,
-      super.merged,
-      this.translate = false,
-      super.groupState,
-      super.identifier,
-      super.noBlank,
-      super.validate = '',
-      this.editable = true});
+  SelectionCell({
+    super.style,
+    super.value,
+    required this.values,
+    super.merged,
+    this.translate = false,
+    super.groupState,
+    super.identifier,
+    super.noBlank,
+    super.validate = '',
+    this.editable = true,
+    Set<FtIndex>? ref,
+    this.translation,
+  }) : ref = ref ?? {};
 
   final bool translate;
   final List<T> values;
   @override
   final bool editable;
+  final Set<FtIndex> ref;
+  String? translation;
 
   @override
-  SelectionCell<T, I> copyWith({
-    TextCellStyle? style,
-    T? value,
-    List<T>? values,
-    bool? translate,
-    FtCellGroupState? groupState,
-    Merged? merged,
-    I? identifier,
-    bool? noBlank,
-    String? validate,
-    bool? editable,
-  }) {
+  SelectionCell<T, I> copyWith(
+      {TextCellStyle? style,
+      T? value,
+      List<T>? values,
+      bool? translate,
+      FtCellGroupState? groupState,
+      Merged? merged,
+      I? identifier,
+      bool? noBlank,
+      String? validate,
+      bool? editable,
+      Set<FtIndex>? ref}) {
     return SelectionCell(
-      style: style ?? this.style,
-      value: value ?? this.value,
-      values: values ?? this.values,
-      translate: translate ?? this.translate,
-      merged: merged ?? this.merged,
-      groupState: groupState ?? this.groupState,
-      identifier: identifier ?? this.identifier,
-      noBlank: noBlank ?? this.noBlank,
-      validate: validate ?? this.validate,
-      editable: editable ?? this.editable,
-    );
+        style: style ?? this.style,
+        value: value ?? this.value,
+        values: values ?? this.values,
+        translate: translate ?? this.translate,
+        merged: merged ?? this.merged,
+        groupState: groupState ?? this.groupState,
+        identifier: identifier ?? this.identifier,
+        noBlank: noBlank ?? this.noBlank,
+        validate: validate ?? this.validate,
+        editable: editable ?? this.editable,
+        translation: null,
+        ref: ref ?? this.ref);
   }
 }
 

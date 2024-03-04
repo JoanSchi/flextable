@@ -148,8 +148,8 @@ class _CellTextEditorState extends State<CellTextEditor> {
         text: value,
         requestFocus: viewModel.editCell.samePanel(widget.layoutPanelIndex),
         textAlign: TextAlign.center,
-        requestNextFocus: nextFocus,
-        requestNextFocusCallback: () {
+        requestNextFocus: true,
+        requestNextFocusCallback: (String text) {
           ///
           /// ViewModel can be rebuild and the old viewbuild is disposed!
           /// Get the latest viewModel and do again checks.
@@ -164,6 +164,8 @@ class _CellTextEditorState extends State<CellTextEditor> {
                   ftIndex: viewModel.nextCell(PanelCellIndex.from(
                       ftIndex: widget.tableCellIndex, cell: cell)))
               ..markNeedsLayout();
+
+            onValueChange(text);
             return true;
           } else {
             viewModel

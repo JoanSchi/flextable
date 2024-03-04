@@ -129,7 +129,7 @@ class FlexTableState<C extends AbstractCell, M extends AbstractFtModel<C>>
         viewportBuilder: (BuildContext context, FtViewModel<C, M> viewModel) {
           final theme = Theme.of(context);
 
-          Widget tableZoom;
+          Widget? tableZoom;
           switch (theme.platform) {
             case TargetPlatform.iOS:
             case TargetPlatform.android:
@@ -142,11 +142,11 @@ class FlexTableState<C extends AbstractCell, M extends AbstractFtModel<C>>
             case TargetPlatform.macOS:
             case TargetPlatform.linux:
             case TargetPlatform.windows:
-              tableZoom = TableScaleMouse(
-                combiKeyNotification: combiKeyNotification,
-                properties: TableMouseScaleProperties(),
-                viewModel: viewModel,
-              );
+            // tableZoom = TableScaleMouse(
+            //   combiKeyNotification: combiKeyNotification,
+            //   properties: TableMouseScaleProperties(),
+            //   viewModel: viewModel,
+            // );
           }
 
           final fo = widget.properties.adjustFreeze;
@@ -169,11 +169,11 @@ class FlexTableState<C extends AbstractCell, M extends AbstractFtModel<C>>
               TableFreeze(
                 viewModel: viewModel,
               ),
-            tableZoom,
-            TableScrollbar(
-              scrollChangeNotifier: _innerScrollChangeNotifier,
-              viewModel: viewModel,
-            ),
+            if (tableZoom != null) tableZoom,
+            // TableScrollbar(
+            //   scrollChangeNotifier: _innerScrollChangeNotifier,
+            //   viewModel: viewModel,
+            // ),
             if (so != null)
               AdjustTableSplit(
                 viewModel: viewModel,

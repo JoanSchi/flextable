@@ -53,17 +53,58 @@ class _CellSelectionWidgetState extends State<CellSelectionWidget> {
     super.didUpdateWidget(oldWidget);
   }
 
+  /// Translate Value saves the translation
+  ///
+  ///
+  String translateValue() {
+    String text;
+
+    switch ((cell.value, cell.translate, cell.translation, widget.translate)) {
+      case (Object v, true, null, FtTranslation t):
+        {
+          text = cell.translation = t('$v');
+          break;
+        }
+      case (_, true, String translation, _):
+        {
+          text = translation;
+          break;
+        }
+      case (Object v, false, _, _):
+        {
+          text = '$v';
+          break;
+        }
+      default:
+        {
+          text = '';
+        }
+    }
+
+    return text;
+  }
+
   String translateItem(Object? object) {
     String text;
-    if (object case Object v) {
-      if ((cell.translate, widget.translate) case (true, FtTranslation t)) {
-        text = t('$v');
-      } else {
-        text = '$v';
-      }
-    } else {
-      text = '';
+
+    switch ((object, cell.translate, widget.translate)) {
+      case (Object object, true, FtTranslation t):
+        {
+          text = cell.translation = t('$object');
+          break;
+        }
+
+      case (Object object, false, _):
+        {
+          text = '$object';
+          break;
+        }
+      default:
+        {
+          text = '';
+        }
     }
+
     return text;
   }
 
@@ -74,7 +115,7 @@ class _CellSelectionWidgetState extends State<CellSelectionWidget> {
             cell: cell,
             tableScale: widget.tableScale,
             useAccent: widget.useAccent,
-            formatedValue: translateItem(cell.value),
+            formatedValue: translateValue(),
           )
         : PopupMenuButton<Object>(
             tooltip: '',
@@ -95,7 +136,7 @@ class _CellSelectionWidgetState extends State<CellSelectionWidget> {
               cell: cell,
               tableScale: widget.tableScale,
               useAccent: widget.useAccent,
-              formatedValue: translateItem(cell.value),
+              formatedValue: translateValue(),
             ),
           );
   }

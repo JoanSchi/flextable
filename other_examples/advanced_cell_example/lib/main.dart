@@ -149,23 +149,6 @@ class _RowChangeExampleState extends State<TextEditExample>
 
     model.insertCell(
       ftIndex: FtIndex(row: 0, column: column),
-      cell: TextCell(value: 'Date', style: style, editable: false),
-    );
-
-    for (int r = 1; r < tableRows; r++) {
-      model.insertCell(
-        ftIndex: FtIndex(row: r, column: column),
-        cell: DateTimeCell(
-            value: DateTime.utc(2024, 1, 1).add(Duration(days: r)),
-            style: style,
-            isUtc: true),
-      );
-    }
-
-    column++;
-
-    model.insertCell(
-      ftIndex: FtIndex(row: 0, column: column),
       cell: TextCell(
         value: 'Num. A',
         style: style,
@@ -180,6 +163,23 @@ class _RowChangeExampleState extends State<TextEditExample>
           value: 1.0,
           style: styleNumber,
         ),
+      );
+    }
+
+    column++;
+
+    model.insertCell(
+      ftIndex: FtIndex(row: 0, column: column),
+      cell: TextCell(value: 'Date', style: style, editable: false),
+    );
+
+    for (int r = 1; r < tableRows; r++) {
+      model.insertCell(
+        ftIndex: FtIndex(row: r, column: column),
+        cell: DateTimeCell(
+            value: DateTime.utc(2024, 1, 1).add(Duration(days: r)),
+            style: style,
+            isUtc: true),
       );
     }
 
@@ -220,8 +220,8 @@ class _RowChangeExampleState extends State<TextEditExample>
         ftIndex: FtIndex(row: r, column: column),
         cell: CalculationCell(
           style: styleNumber,
-          calculationSyntax: (List<num> list) {
-            var [a, b] = list;
+          calculationSyntax: (List<Object> list) {
+            var [a, b] = list.whereType<num>().toList();
             return a * b;
           },
           imRefIndex: [

@@ -1191,5 +1191,7 @@ abstract class AbstractFtModel<C extends AbstractCell> {
 
   num? numberValue({FtIndex? index, required FtIndex? imIndex});
 
+  Object? valueFromIndex({FtIndex? index, required FtIndex? imIndex});
+
   void calculateCell({AbstractCell? cell, FtIndex? index, FtIndex? imIndex});
 }

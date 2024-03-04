@@ -346,6 +346,12 @@ class BasicFtModel<C extends AbstractCell> extends AbstractFtModel<C> {
     // TODO: implement numberValue
     throw UnimplementedError();
   }
+
+  @override
+  Object? valueFromIndex({FtIndex? index, required FtIndex? imIndex}) {
+    // TODO: implement valueFromIndex
+    throw UnimplementedError();
+  }
 }
 
 class RowRibbon<C extends AbstractCell> {

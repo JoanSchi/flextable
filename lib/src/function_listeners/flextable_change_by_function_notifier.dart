@@ -220,7 +220,7 @@ class ChangeByFunctionNotifier<T> {
       return true;
     }());
     if (kFlutterMemoryAllocationsEnabled && _creationDispatched) {
-      MemoryAllocations.instance.dispatchObjectDisposed(object: this);
+      FlutterMemoryAllocations.instance.dispatchObjectDisposed(object: this);
     }
     _listeners = const [];
     _count = 0;

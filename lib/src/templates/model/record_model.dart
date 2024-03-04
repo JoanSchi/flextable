@@ -3,9 +3,12 @@
 // license that can be found in the LICENSE file.
 
 import 'dart:collection';
-import 'package:flextable/flextable.dart';
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
+
+import 'package:flextable/flextable.dart';
 
 class RecordFtModel<C extends AbstractCell> extends AbstractFtModel<C> {
   RecordFtModel({
@@ -41,11 +44,12 @@ class RecordFtModel<C extends AbstractCell> extends AbstractFtModel<C> {
   })  : mergedColumns = mergedColumns ?? HashMap<int, MergedColumns>(),
         mergedRows = mergedRows ?? HashMap<int, MergedRows>(),
         //TODO with mutableNumber
-        rowRibbon = [];
+        linkedRowRibbons = LinkedRowRibbons<C>();
 
   final Map<int, MergedColumns> mergedColumns;
   final Map<int, MergedRows> mergedRows;
-  List<RecordRowRibbon<C>> rowRibbon;
+  LinkedRowRibbons<C> linkedRowRibbons;
+  LinkedRowRibbons<C>? _unFilteredLinkedRowRibbons;
   int lastImutableIndex = 0;
   List<int> unUsedImutableRowIndexes = [];
   // RearrangeCells rearrange = const NoRearrangeCells();
@@ -53,7 +57,7 @@ class RecordFtModel<C extends AbstractCell> extends AbstractFtModel<C> {
   Set<RecordRowRibbon> updateIdRow = {};
   Set<RecordRowRibbon> insertIdRow = {};
   Set<RecordRowRibbon> deletedIdRow = {};
-  HashMap<int, int> uniqueRowNumber = HashMap<int, int>();
+  // HashMap<int, int> uniqueRowNumber = HashMap<int, int>();
 
   void insertCell(
       {required FtIndex ftIndex,
@@ -66,6 +70,24 @@ class RecordFtModel<C extends AbstractCell> extends AbstractFtModel<C> {
       bool user = false}) {
     if (tableRows < ftIndex.row + rows) {
       tableRows = ftIndex.row + rows;
+    }
+
+    if (tableColumns < ftIndex.column + columns) {
+      tableColumns = ftIndex.column + columns;
+    }
+
+    assert(_unFilteredLinkedRowRibbons == null,
+        'UnfilteredRowRibbon is not null. If a filter is used add rows with insertRangeRow and update cell, and use insertCell only for initiation!');
+
+    if (linkedRowRibbons.length < tableRows) {
+      for (int i = linkedRowRibbons.length; i < tableRows; i++) {
+        int u = uniqueImmutableRowIndex;
+
+        linkedRowRibbons.insertRow(
+            i,
+            RecordRowRibbon<C>(
+                immutableRowIndex: u, rowId: ftIndex.row == i ? rowId : null));
+      }
     }
 
     updateCell(
@@ -149,26 +171,25 @@ class RecordFtModel<C extends AbstractCell> extends AbstractFtModel<C> {
       }
     }
 
-    if (tableRows < ftIndex.row + rows) {
-      tableRows = ftIndex.row + rows;
-    }
+    assert(ftIndex.row + rows - 1 < linkedRowRibbons.length,
+        'The length of rowRibbon ${linkedRowRibbons.length} is to sort to insert the cell at row from ${ftIndex.row}+to ${ftIndex.row + rows - 1}, use insert at initiation or add rows with insertRowRange first');
 
-    if (rowRibbon.length < tableRows) {
-      for (int i = rowRibbon.length; i < tableRows; i++) {
-        int u = uniqueImmutableRowIndex;
-        uniqueRowNumber[u] = i;
-        rowRibbon.insert(
-            i,
-            RecordRowRibbon<C>(
-                immutableRowIndex: u, rowId: ftIndex.row == i ? rowId : null));
-      }
-    }
+    // if (rowRibbons.length < tableRows) {
+    //   for (int i = rowRibbons.length; i < tableRows; i++) {
+    //     int u = uniqueImmutableRowIndex;
+
+    //     rowRibbons.insertRow(
+    //         i,
+    //         RecordRowRibbon<C>(
+    //             immutableRowIndex: u, rowId: ftIndex.row == i ? rowId : null));
+    //   }
+    // }
 
     /// Check RowId
     /// Check updateBackend
     ///
     ///
-    if (rowRibbon[ftIndex.row] case RecordRowRibbon rowRibbon) {
+    if (linkedRowRibbons.indexed[ftIndex.row] case RecordRowRibbon rowRibbon) {
       bool unKnownRowId = rowRibbon.rowId == null;
       String? rowIdFromCell;
 
@@ -202,10 +223,6 @@ class RecordFtModel<C extends AbstractCell> extends AbstractFtModel<C> {
       }
     }
 
-    if (tableColumns < ftIndex.column + columns) {
-      tableColumns = ftIndex.column + columns;
-    }
-
     _placeCell(ftIndex, cell);
 
     switch (cell) {
@@ -227,36 +244,60 @@ class RecordFtModel<C extends AbstractCell> extends AbstractFtModel<C> {
             return {for (FtIndex i in c.ref) immutableIndexToIndex(i)};
           }
         }
+      case (SelectionCell c):
+        {
+          if (c.ref.isNotEmpty) {
+            for (FtIndex imIndex in c.ref) {
+              reEvaluation(imIndex);
+            }
+            return {for (FtIndex i in c.ref) immutableIndexToIndex(i)};
+          }
+        }
     }
     return null;
   }
 
   _placeCell(FtIndex ftIndex, C? cell) {
     if (cell case C c) {
-      rowRibbon[ftIndex.row].column[ftIndex.column] = c;
+      linkedRowRibbons.insertCell(ftIndex, c);
     } else {
-      rowRibbon[ftIndex.row].column.remove(ftIndex.column);
+      linkedRowRibbons.removeCell(ftIndex);
+    }
+
+    if (_unFilteredLinkedRowRibbons case LinkedRowRibbons<C> unfiltered) {
+      int? index;
+      if (linkedRowRibbons.imRowIndex(ftIndex.row) case int imIndex) {
+        index = unfiltered.rowIndex(imIndex);
+      }
+      index ??= unfiltered.length - 1;
+      final unFilteredIndex = ftIndex.copyWith(row: index);
+
+      if (cell case C c) {
+        unfiltered.insertCell(unFilteredIndex, c);
+      } else {
+        unfiltered.removeCell(unFilteredIndex);
+      }
     }
   }
 
   C? _cell(FtIndex ftIndex) {
-    return rowRibbon.elementAtOrNull(ftIndex.row)?.column[ftIndex.column];
+    return linkedRowRibbons.cell(ftIndex);
   }
 
   C? _removeCell(FtIndex ftIndex) {
-    return rowRibbon[ftIndex.row].column.remove(ftIndex.column);
+    return linkedRowRibbons.removeCell(ftIndex);
   }
 
   @override
   C? cell({required int row, required int column}) {
-    return rowRibbon.elementAtOrNull(row)?.column[column];
+    return linkedRowRibbons.cell(FtIndex(row: row, column: column));
   }
 
   C? retrieveCell(FtIndex index) {
     if (!index.isIndex) {
       return null;
     }
-    return rowRibbon.elementAtOrNull(index.row)?.column[index.column];
+    return linkedRowRibbons.cell(index);
   }
 
   Merged? removeMergedCellFromGrid(
@@ -366,7 +407,7 @@ class RecordFtModel<C extends AbstractCell> extends AbstractFtModel<C> {
   @override
   FtIndex? findIndexByKey(FtIndex oldIndex, key) {
     if (key case ValueKey<FtIndex> v) {
-      if (uniqueRowNumber[v.value.row] case int row) {
+      if (linkedRowRibbons.rowIndex(v.value.row) case int row) {
         return FtIndex(row: row, column: v.value.column);
       }
     }
@@ -376,6 +417,9 @@ class RecordFtModel<C extends AbstractCell> extends AbstractFtModel<C> {
 
   @override
   FtIndex isCellEditable(FtIndex cellIndex) {
+    if (!cellIndex.isIndex) {
+      return const FtIndex();
+    }
     return switch (cell(row: cellIndex.row, column: cellIndex.column)) {
       (Cell c) when c.editable => cellIndex,
       (_) => const FtIndex()
@@ -400,14 +444,16 @@ class RecordFtModel<C extends AbstractCell> extends AbstractFtModel<C> {
     for (int i = startRow; i <= (endRow ?? startRow); i++) {
       final rb = RecordRowRibbon<C>(immutableRowIndex: uniqueImmutableRowIndex);
 
-      rowRibbon.insert(i, rb);
+      if (_unFilteredLinkedRowRibbons case LinkedRowRibbons<C> unFiltered) {
+        int? index;
+        if (linkedRowRibbons.imRowIndex(i) case int imIndex) {
+          index = unFiltered.rowIndex(imIndex);
+        }
+        unFiltered.insertRow(index ?? unFiltered.length, rb);
+      }
+      linkedRowRibbons.insertRow(i, rb);
       tableRows++;
       insertIdRow.add(rb);
-    }
-    uniqueRowNumber.clear();
-
-    for (int i = 0; i < rowRibbon.length; i++) {
-      uniqueRowNumber[rowRibbon[i].immutableRowIndex] = i;
     }
   }
 
@@ -427,19 +473,20 @@ class RecordFtModel<C extends AbstractCell> extends AbstractFtModel<C> {
     //   ChangeRange(start: startRow, last: lastRow, insert: false)
     // ]);
 
+    Set<int> removedImIdex = {};
     for (int i = startRow; i <= (lastRow ?? startRow); i++) {
-      final rb = rowRibbon.removeAt(i);
+      final rb = linkedRowRibbons.removeRow(i);
+
       unUsedImutableRowIndexes.add(rb.immutableRowIndex);
+      removedImIdex.add(rb.immutableRowIndex);
+
       deletedIdRow.add(rb);
       insertIdRow.remove(rb);
       updateIdRow.remove(rb);
       tableRows--;
     }
-
-    uniqueRowNumber.clear();
-
-    for (int i = 0; i < rowRibbon.length; i++) {
-      uniqueRowNumber[rowRibbon[i].immutableRowIndex] = i;
+    if (_unFilteredLinkedRowRibbons case LinkedRowRibbons<C> unfiltered) {
+      unfiltered.removeImIdexes(removedImIdex);
     }
 
     // editCell = const PanelCellIndex();
@@ -447,22 +494,20 @@ class RecordFtModel<C extends AbstractCell> extends AbstractFtModel<C> {
 
   @override
   FtIndex? indexToImmutableIndex(FtIndex index) {
-    return index.isIndex && index.row < rowRibbon.length
-        ? index.copyWith(row: rowRibbon[index.row].immutableRowIndex)
+    return index.isIndex && index.row < linkedRowRibbons.length
+        ? index.copyWith(row: linkedRowRibbons.imRowIndex(index.row))
         : null;
   }
 
   @override
   FtIndex immutableIndexToIndex(FtIndex imIndex) {
-    return imIndex.copyWith(row: uniqueRowNumber[imIndex.row] ?? -1);
+    return imIndex.copyWith(row: linkedRowRibbons.rowIndex(imIndex.row) ?? -1);
   }
 
   @override
   void reIndexUniqueRowNumber() {
-    uniqueRowNumber.clear();
-    for (int i = 0; i < rowRibbon.length; i++) {
-      uniqueRowNumber[rowRibbon[i].immutableRowIndex] = i;
-    }
+    _unFilteredLinkedRowRibbons?.reIndexUniqueRowNumer();
+    linkedRowRibbons.reIndexUniqueRowNumer();
   }
 
   ///
@@ -489,19 +534,19 @@ class RecordFtModel<C extends AbstractCell> extends AbstractFtModel<C> {
         'Select one identifier rowId, rowIndex or ImmutableIndex');
 
     if (rowId case String rowId) {
-      for (RecordRowRibbon r in rowRibbon) {
+      for (RecordRowRibbon r in linkedRowRibbons.indexed) {
         if (r.rowId == rowId) {
           return recordToMap(r.column, (_, __) => true);
         }
       }
     } else if (immutableIndex case int imIdex) {
-      for (RecordRowRibbon r in rowRibbon) {
+      for (RecordRowRibbon r in linkedRowRibbons.indexed) {
         if (r.immutableRowIndex == imIdex) {
           return recordToMap(r.column, (_, __) => true);
         }
       }
-    } else if (rowIndex case int rIndex when rIndex < rowRibbon.length) {
-      return recordToMap(rowRibbon[rIndex].column, (_, __) => true);
+    } else if (rowIndex case int rIndex when rIndex < linkedRowRibbons.length) {
+      return recordToMap(linkedRowRibbons.column(rIndex), (_, __) => true);
     }
     return {};
   }
@@ -663,7 +708,7 @@ class RecordFtModel<C extends AbstractCell> extends AbstractFtModel<C> {
       RecordRowRibbon<AbstractCell> rowRibbon,
       bool Function(int, FtCellIdentifier c) include,
       bool cellWarning) {
-    int rowIndex = uniqueRowNumber[rowRibbon.immutableRowIndex] ?? -1;
+    int rowIndex = linkedRowRibbons.rowIndex(rowRibbon.immutableRowIndex) ?? -1;
     List<CellValidation> problem = [];
 
     final columns = rowRibbon.column;
@@ -707,7 +752,8 @@ class RecordFtModel<C extends AbstractCell> extends AbstractFtModel<C> {
       required String validation}) {
     Set<FtIndex> updatedFtIndexes = {};
 
-    final rowIndex = uniqueRowNumber[rowRibbon.immutableRowIndex] ?? -1;
+    final rowIndex =
+        linkedRowRibbons.rowIndex(rowRibbon.immutableRowIndex) ?? -1;
 
     for (var MapEntry(key: column, value: cell) in rowRibbon.column.entries) {
       if ((cell, cell.identifier) case (Cell c, FtCellIdentifier ci)
@@ -735,9 +781,30 @@ class RecordFtModel<C extends AbstractCell> extends AbstractFtModel<C> {
       index = immutableIndexToIndex(imIndex);
     }
     if (index case FtIndex i) {
-      return switch (rowRibbon[i.row].column[i.column]) {
+      return switch (linkedRowRibbons.cell(i)) {
         (DigitCell c) => c.value,
         (DecimalCell c) => c.value,
+        (_) => null
+      };
+    }
+
+    return null;
+  }
+
+  @override
+  Object? valueFromIndex({FtIndex? index, required FtIndex? imIndex}) {
+    assert(index != null || imIndex != null,
+        'Both index and immutableIndex are null');
+    if (index == null && imIndex == null) {
+      return null;
+    } else if (imIndex != null) {
+      index = immutableIndexToIndex(imIndex);
+    }
+    if (index case FtIndex i) {
+      return switch (linkedRowRibbons.cell(i)) {
+        (DigitCell c) => c.value,
+        (DecimalCell c) => c.value,
+        (SelectionCell c) => c.value,
         (_) => null
       };
     }
@@ -796,12 +863,12 @@ class RecordFtModel<C extends AbstractCell> extends AbstractFtModel<C> {
           ///
           ///
           ///
-          List<num> values = [];
+          List<Object> values = [];
 
           bool missingValue = false;
 
           for (FtIndex i in c.imRefIndex) {
-            if (numberValue(imIndex: i) case num v) {
+            if (valueFromIndex(imIndex: i) case Object v) {
               values.add(v);
             } else {
               missingValue = true;
@@ -814,7 +881,7 @@ class RecordFtModel<C extends AbstractCell> extends AbstractFtModel<C> {
               ..evaluted = true;
           } else {
             try {
-              final num calculatedValue = c.calculationSyntax(values);
+              final num? calculatedValue = c.calculationSyntax(values);
               c
                 ..value = calculatedValue
                 ..evaluted = true;
@@ -833,14 +900,19 @@ class RecordFtModel<C extends AbstractCell> extends AbstractFtModel<C> {
 
   bool linkReference(
       {required FtIndex immutableIndex, required FtIndex immutableRef}) {
-    if (uniqueRowNumber[immutableRef.row] case int row) {
-      switch (rowRibbon[row].column[immutableRef.column]) {
+    if (linkedRowRibbons.rowIndex(immutableRef.row) case int row) {
+      switch (linkedRowRibbons.cell(immutableRef.copyWith(row: row))) {
         case (DigitCell c):
           {
             c.ref.add(immutableIndex);
             return true;
           }
         case (DecimalCell c):
+          {
+            c.ref.add(immutableIndex);
+            return true;
+          }
+        case (SelectionCell c):
           {
             c.ref.add(immutableIndex);
             return true;
@@ -856,6 +928,25 @@ class RecordFtModel<C extends AbstractCell> extends AbstractFtModel<C> {
       cell.evaluted = false;
     }
   }
+
+  setFilteredList(List<RecordRowRibbon<C>> filteredRibbon) {
+    _unFilteredLinkedRowRibbons ??= linkedRowRibbons;
+    linkedRowRibbons = LinkedRowRibbons(indexed: filteredRibbon);
+    tableRows = filteredRibbon.length;
+  }
+
+  undoFilter() {
+    if (_unFilteredLinkedRowRibbons case LinkedRowRibbons<C> unFiltered) {
+      linkedRowRibbons = unFiltered;
+      _unFilteredLinkedRowRibbons = null;
+      tableRows = linkedRowRibbons.length;
+    }
+  }
+
+  List<RecordRowRibbon<C>> get unFilteredRowRibbons =>
+      (_unFilteredLinkedRowRibbons ?? linkedRowRibbons).indexed;
+
+  bool get filterInUse => _unFilteredLinkedRowRibbons != null;
 }
 
 class RecordRowRibbon<C extends AbstractCell> {
@@ -876,6 +967,10 @@ class RecordRowRibbon<C extends AbstractCell> {
 
   @override
   int get hashCode => immutableRowIndex.hashCode;
+
+  @override
+  String toString() =>
+      'RecordRowRibbon(immutableRowIndex: $immutableRowIndex, rowId: $rowId column: $column)';
 }
 
 abstract class RearrangeCells {
@@ -984,3 +1079,67 @@ class NoRearrangeCells extends RearrangeCells {
 //   FtIndex obtainNewIndex(FtIndex index) => const FtIndex();
 // }
 
+class LinkedRowRibbons<C extends AbstractCell> {
+  List<RecordRowRibbon<C>> indexed;
+  HashMap<int, int> uniqueRowNumber = HashMap<int, int>();
+  bool reImIndex = false;
+
+  LinkedRowRibbons({List<RecordRowRibbon<C>>? indexed})
+      : indexed = indexed ?? [],
+        reImIndex = indexed?.isNotEmpty ?? false;
+
+  int get length => indexed.length;
+
+  insertCell(FtIndex ftIndex, C cell) {
+    indexed[ftIndex.row].column[ftIndex.column] = cell;
+  }
+
+  removeCell(FtIndex ftIndex) {
+    indexed[ftIndex.row].column.remove(ftIndex.column);
+  }
+
+  insertRow(int rowIndex, RecordRowRibbon<C> ribbon) {
+    if (!reImIndex) {
+      reImIndex = true;
+    }
+    indexed.insert(rowIndex, ribbon);
+  }
+
+  RecordRowRibbon<C> removeRow(int rowIndex) {
+    if (!reImIndex) {
+      reImIndex = true;
+    }
+    return indexed.removeAt(rowIndex);
+  }
+
+  C? cell(FtIndex ftIndex) {
+    return indexed.elementAtOrNull(ftIndex.row)?.column[ftIndex.column];
+  }
+
+  int? rowIndex(int imIndex) {
+    if (reImIndex) {
+      reIndexUniqueRowNumer();
+      reImIndex = false;
+    }
+    return uniqueRowNumber[imIndex];
+  }
+
+  int? imRowIndex(int index) =>
+      indexed.elementAtOrNull(index)?.immutableRowIndex;
+
+  reIndexUniqueRowNumer() {
+    uniqueRowNumber.clear();
+
+    for (int i = 0; i < indexed.length; i++) {
+      uniqueRowNumber[indexed[i].immutableRowIndex] = i;
+    }
+  }
+
+  removeImIdexes(Set<int> imIndexes) {
+    indexed
+        .removeWhere((ribbon) => imIndexes.contains(ribbon.immutableRowIndex));
+    reImIndex = true;
+  }
+
+  HashMap<int, C> column(int rowIndex) => indexed[rowIndex].column;
+}

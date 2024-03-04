@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-typedef RequestNextFocusCallback = bool Function();
+typedef RequestNextFocusCallback = bool Function(String value);
 typedef UnfocusCallback<T> = Function(
     UnfocusDisposition disposition, T value, bool escape);
 
@@ -55,12 +55,16 @@ class _FtEditTextState extends State<FtEditText> {
   bool hasFocus = false;
 
   late TextEditingController tec;
-  late final SkipFocusNode focusNode = SkipFocusNode(
-      requestNextFocusCallback:
-          widget.requestNextFocus ? widget.requestNextFocusCallback : null,
-      unfocusCallback: (UnfocusDisposition unfocusDisposition, bool escape) {
-        widget.unFocus(unfocusDisposition, tec.text, escape);
-      });
+  late final SkipFocusNode focusNode =
+      SkipFocusNode(requestNextFocusCallback: () {
+    if ((widget.requestNextFocus, widget.requestNextFocusCallback)
+        case (true, RequestNextFocusCallback v)) {
+      return v(tec.text);
+    }
+    return false;
+  }, unfocusCallback: (UnfocusDisposition unfocusDisposition, bool escape) {
+    widget.unFocus(unfocusDisposition, tec.text, escape);
+  });
 
   ObtainSharedTextEditController? obtainSharedTextEditController;
   RemoveSharedTextEditController? removeSharedTextEditController;
@@ -89,9 +93,9 @@ class _FtEditTextState extends State<FtEditText> {
 
   @override
   void didUpdateWidget(covariant FtEditText oldWidget) {
-    if (widget.requestNextFocusCallback != oldWidget.requestNextFocusCallback) {
-      focusNode.requestNextFocusCallback = widget.requestNextFocusCallback;
-    }
+    // if (widget.requestNextFocusCallback != oldWidget.requestNextFocusCallback) {
+    //   focusNode.requestNextFocusCallback = widget.requestNextFocusCallback;
+    // }
     // scheduleRequestFocus();
     // focusNode.requestFocus();
     focusNode.safetyStop = false;
@@ -153,7 +157,7 @@ class _FtEditTextState extends State<FtEditText> {
 }
 
 class SkipFocusNode extends FocusNode {
-  RequestNextFocusCallback? requestNextFocusCallback;
+  bool Function()? requestNextFocusCallback;
   Function(UnfocusDisposition disposition, bool escape) unfocusCallback;
 
   bool skipUnfocusCallback = false;
