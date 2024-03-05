@@ -170,10 +170,10 @@ class FlexTableState<C extends AbstractCell, M extends AbstractFtModel<C>>
                 viewModel: viewModel,
               ),
             if (tableZoom != null) tableZoom,
-            // TableScrollbar(
-            //   scrollChangeNotifier: _innerScrollChangeNotifier,
-            //   viewModel: viewModel,
-            // ),
+            TableScrollbar(
+              scrollChangeNotifier: _innerScrollChangeNotifier,
+              viewModel: viewModel,
+            ),
             if (so != null)
               AdjustTableSplit(
                 viewModel: viewModel,
