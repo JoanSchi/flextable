@@ -3,10 +3,7 @@
 // license that can be found in the LICENSE file.
 
 import 'package:flextable/flextable.dart';
-import 'package:flextable/src/properties.dart';
 import 'package:flutter/widgets.dart';
-import '../gesture_scroll/table_scroll_physics.dart';
-import '../listeners/inner_change_notifiers.dart';
 
 class FtController<C extends AbstractCell, M extends AbstractFtModel<C>>
     extends ChangeNotifier {
@@ -62,34 +59,13 @@ class FtController<C extends AbstractCell, M extends AbstractFtModel<C>>
     _viewModels.remove(viewModel);
   }
 
+  bool contains(FtViewModel<C, M> viewModel) => _viewModels.contains(viewModel);
+
   @override
   void dispose() {
     for (FtViewModel viewModel in _viewModels) {
       viewModel.removeListener(notifyListeners);
     }
     super.dispose();
-  }
-
-  FtViewModel<C, M> createViewModel(
-    TableScrollPhysics physics,
-    ScrollContext context,
-    FtViewModel<C, M>? oldViewModel,
-    M model,
-    AbstractTableBuilder tableBuilder,
-    InnerScrollChangeNotifier scrollChangeNotifier,
-    InnerScaleChangeNotifier scaleChangeNotifier,
-    List<TableChangeNotifier> tableChangeNotifiers,
-    FtProperties properties,
-  ) {
-    return FtViewModel<C, M>(
-        physics: physics,
-        context: context,
-        oldPosition: oldViewModel,
-        model: model,
-        tableBuilder: tableBuilder,
-        scrollChangeNotifier: scrollChangeNotifier,
-        scaleChangeNotifier: scaleChangeNotifier,
-        tableChangeNotifiers: tableChangeNotifiers,
-        properties: properties);
   }
 }

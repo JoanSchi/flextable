@@ -33,6 +33,9 @@ enum SplitChange { start, edit, no }
 
 typedef _SetPixels = Function(int scrollIndexX, int scrollIndexY, double value);
 
+typedef ChangedCellValue<C extends AbstractCell> = Function(
+    FtIndex index, C? previous, C? next);
+
 enum DrawScrollBar { left, top, right, bottom, multiple, none }
 
 ScrollDirection get userScrollDirectionY => _userScrollDirectionY;
@@ -58,6 +61,7 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
     required InnerScrollChangeNotifier scrollChangeNotifier,
     required this.tableChangeNotifiers,
     required this.properties,
+    this.changedCellValue,
   })  : _scrollChangeNotifier = scrollChangeNotifier,
         _scaleChangeNotifier = scaleChangeNotifier,
         sharedTextControllersByIndex =
@@ -145,6 +149,8 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
 
   bool _mounted = true;
   bool get mounted => _mounted;
+
+  ChangedCellValue? changedCellValue;
 
   // Scroll
   //
@@ -4098,6 +4104,13 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
     required C? cell,
     C? previousCell,
   }) {
+    cellsToUpdate.add(ftIndex);
+    clearEditCell(ftIndex);
+    lastEditIndex = ftIndex;
+
+    if (previousCell == cell) {
+      return;
+    }
     Set<FtIndex>? set = model.updateCell(
         ftIndex: ftIndex,
         cell: cell,
@@ -4106,13 +4119,21 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
         previousCell: previousCell,
         user: true);
 
-    lastEditIndex = ftIndex;
-
     if (set != null) {
       cellsToUpdate.addAll(set);
     }
-    cellsToUpdate.add(ftIndex);
-    clearEditCell(ftIndex);
+
+    // const onlyValue = true;
+    // if (onlyValue) {
+    if ((previousCell, cell) case (Cell? p, Cell? c)
+        when p?.value != c?.value) {
+      changedCellValue?.call(ftIndex, previousCell, cell);
+    }
+    // } else {
+    //   changedCellValue?.call(ftIndex, previousCell, cell);
+    // }
+
+    changedCellValue?.call(ftIndex, previousCell, cell);
     markNeedsLayout();
   }
 

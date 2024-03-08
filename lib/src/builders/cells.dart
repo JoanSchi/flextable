@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+import 'dart:convert';
+
 import '../panels/panel_viewport.dart';
 import '../templates/cells/cell_styles.dart';
 
@@ -24,14 +26,16 @@ class FtCellGroupState {
 }
 
 class Cell<T, I, S extends CellStyle> extends AbstractCell<I> {
-  Cell(
-      {this.value,
-      this.style,
-      super.merged,
-      this.groupState,
-      super.identifier,
-      this.noBlank = false,
-      this.validate = ''});
+  Cell({
+    this.value,
+    this.style,
+    super.merged,
+    this.groupState,
+    super.identifier,
+    this.noBlank = false,
+    this.validate = '',
+    Set<FtIndex>? ref,
+  }) : ref = ref ?? {};
 
   final S? style;
   T? value;
@@ -39,19 +43,20 @@ class Cell<T, I, S extends CellStyle> extends AbstractCell<I> {
   FtCellState get cellState => groupState?.state ?? FtCellState.ready;
   final bool noBlank;
   String validate;
+  final Set<FtIndex> ref;
 
   bool get editable => false;
 
   @override
-  Cell<T, I, S> copyWith({
-    S? style,
-    T? value,
-    Merged? merged,
-    FtCellGroupState? groupState,
-    I? identifier,
-    bool? noBlank,
-    String? validate,
-  }) {
+  Cell<T, I, S> copyWith(
+      {S? style,
+      T? value,
+      Merged? merged,
+      FtCellGroupState? groupState,
+      I? identifier,
+      bool? noBlank,
+      String? validate,
+      Set<FtIndex>? ref}) {
     return Cell(
         groupState: groupState ?? this.groupState,
         style: style ?? this.style,
@@ -59,8 +64,33 @@ class Cell<T, I, S extends CellStyle> extends AbstractCell<I> {
         merged: merged ?? this.merged,
         identifier: identifier ?? this.identifier,
         noBlank: noBlank ?? this.noBlank,
-        validate: validate ?? this.validate);
+        validate: validate ?? this.validate,
+        ref: ref ?? this.ref);
   }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+
+    return other is Cell<T, I, S> &&
+        super == other &&
+        other.value == value &&
+        other.identifier == identifier &&
+        other.style == style &&
+        other.merged == merged &&
+        // other.groupState == groupState &&
+        other.noBlank == noBlank;
+  }
+
+  @override
+  int get hashCode =>
+      super.hashCode ^
+      value.hashCode ^
+      identifier.hashCode ^
+      style.hashCode ^
+      merged.hashCode ^
+      // groupState.hashCode ^
+      noBlank.hashCode;
 }
 
 abstract class AbstractCell<I> {
@@ -69,6 +99,17 @@ abstract class AbstractCell<I> {
   final Merged? merged;
 
   AbstractCell copyWith({Merged? merged});
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+
+    return other is AbstractCell<I> &&
+        other.identifier == identifier &&
+        other.merged == merged;
+  }
+
+  @override
+  int get hashCode => identifier.hashCode ^ merged.hashCode;
 }
 
 class Merged {

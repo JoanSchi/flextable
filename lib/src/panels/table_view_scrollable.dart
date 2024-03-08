@@ -15,6 +15,19 @@ import '../gesture_scroll/table_gesture.dart';
 import 'dart:math' as math;
 import '../gesture_scroll/table_scroll_physics.dart';
 
+typedef CreateViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
+    = FtViewModel<C, M> Function(
+        TableScrollPhysics physics,
+        ScrollContext context,
+        FtViewModel<C, M>? oldViewModel,
+        M model,
+        AbstractTableBuilder tableBuilder,
+        InnerScrollChangeNotifier scrollChangeNotifier,
+        InnerScaleChangeNotifier scaleChangeNotifier,
+        List<TableChangeNotifier> tableChangeNotifiers,
+        FtProperties properties,
+        ChangedCellValue? changedCellValue);
+
 const Set<PointerDeviceKind> kTouchLikeDeviceTypes = <PointerDeviceKind>{
   PointerDeviceKind.touch,
   PointerDeviceKind.stylus,
@@ -43,9 +56,10 @@ class TableViewScrollable<C extends AbstractCell, M extends AbstractFtModel<C>>
       required this.tableBuilder,
       required this.innerScrollChangeNotifier,
       required this.innerScaleChangeNotifier,
-      this.rebuildNotifier,
+      this.changeCellValue,
       required this.tableChangeNotifiers,
-      required this.properties})
+      required this.properties,
+      required this.createViewModel})
       : assert(semanticChildCount == null || semanticChildCount >= 0);
 
   final FtController<C, M> controller;
@@ -66,11 +80,13 @@ class TableViewScrollable<C extends AbstractCell, M extends AbstractFtModel<C>>
 
   final InnerScaleChangeNotifier innerScaleChangeNotifier;
 
-  final ChangeNotifier? rebuildNotifier;
+  final ChangedCellValue? changeCellValue;
 
   final List<TableChangeNotifier> tableChangeNotifiers;
 
   final FtProperties properties;
+
+  final CreateViewModel<C, M> createViewModel;
 
   @override
   TableViewScrollableState<C, M> createState() => TableViewScrollableState();
@@ -149,7 +165,7 @@ class TableViewScrollableState<C extends AbstractCell,
   FtViewModel<C, M> get viewModel => _viewModel!;
   FtViewModel<C, M>? _viewModel;
   InnerScaleChangeNotifier? _innerScaleChangeNotifier;
-  ChangeNotifier? _rebuildNotifier;
+  FtController<C, M>? _controller;
 
   @override
   AxisDirection get axisDirection => AxisDirection.down;
@@ -163,15 +179,6 @@ class TableViewScrollableState<C extends AbstractCell,
     _configuration = const TableScrollBehavior();
     _physics = _configuration.getScrollPhysics(context);
     if (widget.physics != null) _physics = widget.physics!.applyTo(_physics);
-    final FtController<C, M> controller = widget.controller;
-    final FtViewModel<C, M>? oldViewModel = _viewModel;
-    if (oldViewModel != null) {
-      controller.detach(oldViewModel);
-      // It's important that we not dispose the old position until after the
-      // viewport has had a chance to unregister its listeners from the old
-      // position. So, schedule a microtask to do it.
-      scheduleMicrotask(oldViewModel.dispose);
-    }
 
     if (_innerScaleChangeNotifier != widget.innerScaleChangeNotifier) {
       _innerScaleChangeNotifier?.removeListener(rebuildTable);
@@ -179,12 +186,11 @@ class TableViewScrollableState<C extends AbstractCell,
         ..addListener(rebuildTable);
     }
 
-    if (_rebuildNotifier != widget.rebuildNotifier) {
-      _rebuildNotifier?.removeListener(rebuildTable);
-      _rebuildNotifier = widget.rebuildNotifier?..addListener(rebuildTable);
-    }
+    final FtViewModel<C, M>? oldViewModel = _viewModel;
+    final FtController<C, M>? oldController = _controller;
+    _controller = widget.controller;
 
-    _viewModel = controller.createViewModel(
+    _viewModel ??= widget.createViewModel(
         _physics!,
         this,
         oldViewModel,
@@ -193,11 +199,18 @@ class TableViewScrollableState<C extends AbstractCell,
         widget.innerScrollChangeNotifier,
         _innerScaleChangeNotifier!,
         widget.tableChangeNotifiers,
-        widget.properties);
+        widget.properties,
+        widget.changeCellValue);
 
     assert(_viewModel != null);
 
-    controller.attach(viewModel);
+    if (oldController != _controller && oldViewModel != null) {
+      oldController?.detach(oldViewModel);
+    }
+
+    if (oldController != _controller) {
+      _controller?.attach(viewModel);
+    }
   }
 
   @override
@@ -225,7 +238,6 @@ class TableViewScrollableState<C extends AbstractCell,
         widget.innerScrollChangeNotifier !=
             oldWidget.innerScrollChangeNotifier ||
         widget.innerScaleChangeNotifier != oldWidget.innerScaleChangeNotifier ||
-        widget.rebuildNotifier != oldWidget.rebuildNotifier ||
         widget.properties != oldWidget.properties) {
       return true;
     }
@@ -250,7 +262,6 @@ class TableViewScrollableState<C extends AbstractCell,
   @override
   void dispose() {
     _innerScaleChangeNotifier?.removeListener(rebuildTable);
-    _rebuildNotifier?.removeListener(rebuildTable);
     widget.controller.detach(viewModel);
     viewModel.dispose();
     super.dispose();

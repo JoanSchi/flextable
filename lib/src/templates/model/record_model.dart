@@ -226,25 +226,7 @@ class RecordFtModel<C extends AbstractCell> extends AbstractFtModel<C> {
     _placeCell(ftIndex, cell);
 
     switch (cell) {
-      case (DecimalCell c):
-        {
-          if (c.ref.isNotEmpty) {
-            for (FtIndex imIndex in c.ref) {
-              reEvaluation(imIndex);
-            }
-            return {for (FtIndex i in c.ref) immutableIndexToIndex(i)};
-          }
-        }
-      case (DigitCell c):
-        {
-          if (c.ref.isNotEmpty) {
-            for (FtIndex imIndex in c.ref) {
-              reEvaluation(imIndex);
-            }
-            return {for (FtIndex i in c.ref) immutableIndexToIndex(i)};
-          }
-        }
-      case (SelectionCell c):
+      case (Cell c):
         {
           if (c.ref.isNotEmpty) {
             for (FtIndex imIndex in c.ref) {
@@ -480,16 +462,18 @@ class RecordFtModel<C extends AbstractCell> extends AbstractFtModel<C> {
       unUsedImutableRowIndexes.add(rb.immutableRowIndex);
       removedImIdex.add(rb.immutableRowIndex);
 
-      deletedIdRow.add(rb);
-      insertIdRow.remove(rb);
-      updateIdRow.remove(rb);
+      /// If the row is in the insertIdRow, then the row is not inserted in the backend, therefore the row is not added to deltedIdRow
+      /// if the row is not in the insertIdRow, then the row is in the backend and should be deleted also remove the row in the updateIdRow
+      ///
+      if (!insertIdRow.remove(rb)) {
+        deletedIdRow.add(rb);
+        updateIdRow.remove(rb);
+      }
       tableRows--;
     }
     if (_unFilteredLinkedRowRibbons case LinkedRowRibbons<C> unfiltered) {
       unfiltered.removeImIdexes(removedImIdex);
     }
-
-    // editCell = const PanelCellIndex();
   }
 
   @override
@@ -802,9 +786,7 @@ class RecordFtModel<C extends AbstractCell> extends AbstractFtModel<C> {
     }
     if (index case FtIndex i) {
       return switch (linkedRowRibbons.cell(i)) {
-        (DigitCell c) => c.value,
-        (DecimalCell c) => c.value,
-        (SelectionCell c) => c.value,
+        (Cell c) => c.value,
         (_) => null
       };
     }
@@ -863,34 +845,20 @@ class RecordFtModel<C extends AbstractCell> extends AbstractFtModel<C> {
           ///
           ///
           ///
-          List<Object> values = [];
+          List<Object?> values = [
+            for (FtIndex i in c.imRefIndex) valueFromIndex(imIndex: i)
+          ];
 
-          bool missingValue = false;
-
-          for (FtIndex i in c.imRefIndex) {
-            if (valueFromIndex(imIndex: i) case Object v) {
-              values.add(v);
-            } else {
-              missingValue = true;
-              break;
-            }
-          }
-          if (missingValue) {
+          try {
+            final num? calculatedValue = c.calculationSyntax(values);
+            c
+              ..value = calculatedValue
+              ..evaluted = true;
+          } catch (e) {
             c
               ..value = null
+              ..validate = 'Calc?'
               ..evaluted = true;
-          } else {
-            try {
-              final num? calculatedValue = c.calculationSyntax(values);
-              c
-                ..value = calculatedValue
-                ..evaluted = true;
-            } catch (e) {
-              c
-                ..value = null
-                ..validate = 'Calc?'
-                ..evaluted = true;
-            }
           }
         }
       default:
@@ -902,17 +870,7 @@ class RecordFtModel<C extends AbstractCell> extends AbstractFtModel<C> {
       {required FtIndex immutableIndex, required FtIndex immutableRef}) {
     if (linkedRowRibbons.rowIndex(immutableRef.row) case int row) {
       switch (linkedRowRibbons.cell(immutableRef.copyWith(row: row))) {
-        case (DigitCell c):
-          {
-            c.ref.add(immutableIndex);
-            return true;
-          }
-        case (DecimalCell c):
-          {
-            c.ref.add(immutableIndex);
-            return true;
-          }
-        case (SelectionCell c):
+        case (Cell c):
           {
             c.ref.add(immutableIndex);
             return true;

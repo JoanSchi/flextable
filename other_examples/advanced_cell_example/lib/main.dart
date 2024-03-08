@@ -60,7 +60,6 @@ class _RowChangeExampleState extends State<TextEditExample>
           LogicalKeySet(LogicalKeyboardKey.escape): const EscapeIntent(),
         },
         child: DefaultRecordFlexTable(
-            rebuildNotifier: rebuildNotifier,
             backgroundColor: Colors.white,
             controller: _ftController,
             model: model,
@@ -220,7 +219,7 @@ class _RowChangeExampleState extends State<TextEditExample>
         ftIndex: FtIndex(row: r, column: column),
         cell: CalculationCell(
           style: styleNumber,
-          calculationSyntax: (List<Object> list) {
+          calculationSyntax: (List<Object?> list) {
             var [a, b] = list.whereType<num>().toList();
             return a * b;
           },

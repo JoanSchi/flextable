@@ -29,7 +29,7 @@ class CellCalculation extends StatelessWidget {
       c.value,
       c.format,
     )
-        case (double value, String format)) {
+        case (num value, String format)) {
       return formatCellNumber(
         identifier: cell.identifier,
         format: format,

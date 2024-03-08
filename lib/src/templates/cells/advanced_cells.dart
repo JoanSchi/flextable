@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import '../../../flextable.dart';
 
@@ -15,7 +16,8 @@ class TextCell<I> extends Cell<String, I, TextCellStyle> {
       this.editable = true,
       this.translate = false,
       super.noBlank,
-      super.validate = ''});
+      super.validate = '',
+      super.ref});
 
   @override
   final bool editable;
@@ -34,6 +36,7 @@ class TextCell<I> extends Cell<String, I, TextCellStyle> {
     bool? translate,
     bool? noBlank,
     String? validate,
+    Set<FtIndex>? ref,
   }) {
     return TextCell(
         style: style ?? this.style,
@@ -44,8 +47,22 @@ class TextCell<I> extends Cell<String, I, TextCellStyle> {
         editable: editable ?? this.editable,
         translate: translate ?? this.translate,
         noBlank: noBlank ?? this.noBlank,
-        validate: validate ?? this.validate);
+        validate: validate ?? this.validate,
+        ref: ref ?? this.ref);
   }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+
+    return other is TextCell<I> &&
+        super == other &&
+        other.editable == editable &&
+        other.translate == translate;
+  }
+
+  @override
+  int get hashCode => editable.hashCode ^ translate.hashCode ^ super.hashCode;
 }
 
 class DigitCell<I> extends Cell<int, I, NumberCellStyle> {
@@ -60,14 +77,13 @@ class DigitCell<I> extends Cell<int, I, NumberCellStyle> {
     this.editable = true,
     super.noBlank,
     super.validate = '',
-    Set<FtIndex>? ref,
-  }) : ref = ref ?? {};
+    super.ref,
+  });
 
   final int? min;
   final int? max;
   @override
   final bool editable;
-  final Set<FtIndex> ref;
 
   int? get exceeded {
     return switch ((min, max, value)) {
@@ -105,6 +121,27 @@ class DigitCell<I> extends Cell<int, I, NumberCellStyle> {
         validate: validate ?? this.validate,
         ref: ref ?? this.ref);
   }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+
+    return other is DigitCell<I> &&
+        super == other &&
+        other.min == min &&
+        other.max == max &&
+        other.editable == editable &&
+        setEquals(other.ref, ref);
+  }
+
+  @override
+  int get hashCode {
+    return super.hashCode ^
+        min.hashCode ^
+        max.hashCode ^
+        editable.hashCode ^
+        ref.hashCode;
+  }
 }
 
 class DecimalCell<I> extends Cell<double, I, NumberCellStyle> {
@@ -119,16 +156,14 @@ class DecimalCell<I> extends Cell<double, I, NumberCellStyle> {
       this.format = '#0.0#',
       this.editable = true,
       super.noBlank,
-      Set<FtIndex>? ref,
-      super.validate = ''})
-      : ref = ref ?? {};
+      super.ref,
+      super.validate = ''});
 
   final double? min;
   final double? max;
   final String format;
   @override
   final bool editable;
-  final Set<FtIndex> ref;
 
   double? get exceeded {
     return switch ((min, max, value)) {
@@ -168,9 +203,32 @@ class DecimalCell<I> extends Cell<double, I, NumberCellStyle> {
         validate: validate ?? this.validate,
         ref: ref ?? this.ref);
   }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+
+    return other is DecimalCell<I> &&
+        super == other &&
+        other.min == min &&
+        other.max == max &&
+        other.format == format &&
+        other.editable == editable &&
+        setEquals(other.ref, ref);
+  }
+
+  @override
+  int get hashCode {
+    return super.hashCode ^
+        min.hashCode ^
+        max.hashCode ^
+        format.hashCode ^
+        editable.hashCode ^
+        ref.hashCode;
+  }
 }
 
-typedef FtCalculationFunction = num? Function(List<Object> list);
+typedef FtCalculationFunction = num? Function(List<Object?> list);
 
 class CalculationCell<I> extends Cell<num, I, NumberCellStyle> {
   CalculationCell(
@@ -185,7 +243,8 @@ class CalculationCell<I> extends Cell<num, I, NumberCellStyle> {
       required this.imRefIndex,
       super.validate = '',
       this.linked = false,
-      this.evaluted = false});
+      this.evaluted = false,
+      super.ref});
 
   final String format;
   final List<FtIndex> imRefIndex;
@@ -194,21 +253,21 @@ class CalculationCell<I> extends Cell<num, I, NumberCellStyle> {
   bool linked;
 
   @override
-  CalculationCell<I> copyWith({
-    NumberCellStyle? style,
-    num? value,
-    bool valueCanBeNull = false,
-    FtCellGroupState? groupState,
-    Merged? merged,
-    String? format,
-    I? identifier,
-    String? validate,
-    bool? noBlank,
-    FtCalculationFunction? calculationSyntax,
-    bool? evaluted,
-    List<FtIndex>? imRefIndex,
-    bool? linked,
-  }) {
+  CalculationCell<I> copyWith(
+      {NumberCellStyle? style,
+      num? value,
+      bool valueCanBeNull = false,
+      FtCellGroupState? groupState,
+      Merged? merged,
+      String? format,
+      I? identifier,
+      String? validate,
+      bool? noBlank,
+      FtCalculationFunction? calculationSyntax,
+      bool? evaluted,
+      List<FtIndex>? imRefIndex,
+      bool? linked,
+      Set<FtIndex>? ref}) {
     return CalculationCell(
         style: style ?? this.style,
         value: valueCanBeNull ? value : (value ?? this.value),
@@ -221,8 +280,24 @@ class CalculationCell<I> extends Cell<num, I, NumberCellStyle> {
         evaluted: evaluted ?? this.evaluted,
         linked: linked ?? this.linked,
         imRefIndex: imRefIndex ?? this.imRefIndex,
-        calculationSyntax: calculationSyntax ?? this.calculationSyntax);
+        calculationSyntax: calculationSyntax ?? this.calculationSyntax,
+        ref: ref ?? this.ref);
   }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+
+    return other is CalculationCell<I> &&
+        super == other &&
+        other.format == format &&
+        listEquals(other.imRefIndex, imRefIndex) &&
+        other.calculationSyntax == calculationSyntax;
+  }
+
+  @override
+  int get hashCode =>
+      format.hashCode ^ imRefIndex.hashCode ^ calculationSyntax.hashCode;
 }
 
 class BooleanCell<I> extends Cell<bool, I, CellStyle> {
@@ -234,7 +309,8 @@ class BooleanCell<I> extends Cell<bool, I, CellStyle> {
       super.identifier,
       this.editable = true,
       super.noBlank,
-      super.validate = ''});
+      super.validate = '',
+      super.ref});
 
   @override
   final bool editable;
@@ -249,6 +325,7 @@ class BooleanCell<I> extends Cell<bool, I, CellStyle> {
     bool? editable,
     bool? noBlank,
     String? validate,
+    Set<FtIndex>? ref,
   }) {
     return BooleanCell(
         style: style ?? this.style,
@@ -258,24 +335,39 @@ class BooleanCell<I> extends Cell<bool, I, CellStyle> {
         identifier: identifier ?? this.identifier,
         editable: editable ?? this.editable,
         noBlank: noBlank ?? this.noBlank,
-        validate: validate ?? this.validate);
+        validate: validate ?? this.validate,
+        ref: ref ?? this.ref);
   }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+
+    return other is BooleanCell<I> &&
+        super == other &&
+        other.editable == editable;
+  }
+
+  @override
+  int get hashCode => super.hashCode ^ editable.hashCode;
 }
 
 class DateTimeCell<I> extends Cell<DateTime, I, TextCellStyle> {
-  DateTimeCell(
-      {super.style,
-      super.value,
-      this.minDate,
-      this.maxDate,
-      required this.isUtc,
-      super.merged,
-      this.includeTime = false,
-      super.groupState,
-      super.identifier,
-      this.editable = true,
-      super.noBlank,
-      super.validate = ''});
+  DateTimeCell({
+    super.style,
+    super.value,
+    this.minDate,
+    this.maxDate,
+    required this.isUtc,
+    super.merged,
+    this.includeTime = false,
+    super.groupState,
+    super.identifier,
+    this.editable = true,
+    super.noBlank,
+    super.validate = '',
+    super.ref,
+  });
 
   final DateTime? minDate;
   final DateTime? maxDate;
@@ -299,6 +391,7 @@ class DateTimeCell<I> extends Cell<DateTime, I, TextCellStyle> {
     bool? editable,
     bool? noBlank,
     String? validate,
+    Set<FtIndex>? ref,
   }) {
     return DateTimeCell(
         style: style ?? this.style,
@@ -312,7 +405,31 @@ class DateTimeCell<I> extends Cell<DateTime, I, TextCellStyle> {
         identifier: identifier ?? this.identifier,
         editable: editable ?? this.editable,
         noBlank: noBlank ?? this.noBlank,
-        validate: validate ?? this.validate);
+        validate: validate ?? this.validate,
+        ref: ref ?? this.ref);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+
+    return other is DateTimeCell<I> &&
+        super == other &&
+        other.minDate == minDate &&
+        other.maxDate == maxDate &&
+        other.includeTime == includeTime &&
+        other.isUtc == isUtc &&
+        other.editable == editable;
+  }
+
+  @override
+  int get hashCode {
+    return super.hashCode ^
+        minDate.hashCode ^
+        maxDate.hashCode ^
+        includeTime.hashCode ^
+        isUtc.hashCode ^
+        editable.hashCode;
   }
 }
 
@@ -328,15 +445,15 @@ class SelectionCell<T, I> extends Cell<T, I, TextCellStyle> {
     super.noBlank,
     super.validate = '',
     this.editable = true,
-    Set<FtIndex>? ref,
+    super.ref,
     this.translation,
-  }) : ref = ref ?? {};
+  });
 
   final bool translate;
   final List<T> values;
   @override
   final bool editable;
-  final Set<FtIndex> ref;
+
   String? translation;
 
   @override
@@ -366,6 +483,27 @@ class SelectionCell<T, I> extends Cell<T, I, TextCellStyle> {
         translation: null,
         ref: ref ?? this.ref);
   }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+
+    return other is SelectionCell<T, I> &&
+        super == other &&
+        other.translate == translate &&
+        listEquals(other.values, values) &&
+        other.editable == editable &&
+        setEquals(other.ref, ref);
+  }
+
+  @override
+  int get hashCode {
+    return super.hashCode ^
+        translate.hashCode ^
+        values.hashCode ^
+        editable.hashCode ^
+        ref.hashCode;
+  }
 }
 
 class ActionCellItem<A> {
@@ -382,16 +520,18 @@ class ActionCellItem<A> {
 }
 
 class ActionCell<T, I> extends Cell<T, I, TextCellStyle> {
-  ActionCell(
-      {super.style,
-      super.value,
-      this.text,
-      super.merged,
-      this.translate = false,
-      super.groupState,
-      super.identifier,
-      super.noBlank,
-      super.validate = ''});
+  ActionCell({
+    super.style,
+    super.value,
+    this.text,
+    super.merged,
+    this.translate = false,
+    super.groupState,
+    super.identifier,
+    super.noBlank,
+    super.validate = '',
+    super.ref,
+  });
 
   final bool translate;
   final String? text;
@@ -410,17 +550,18 @@ class ActionCell<T, I> extends Cell<T, I, TextCellStyle> {
     String? text,
     bool? noBlank,
     String? validate,
+    Set<FtIndex>? ref,
   }) {
     return ActionCell(
-      style: style ?? this.style,
-      value: value ?? this.value,
-      translate: translate ?? this.translate,
-      merged: merged ?? this.merged,
-      groupState: groupState ?? this.groupState,
-      identifier: identifier ?? this.identifier,
-      text: text ?? this.text,
-      noBlank: noBlank ?? this.noBlank,
-      validate: validate ?? this.validate,
-    );
+        style: style ?? this.style,
+        value: value ?? this.value,
+        translate: translate ?? this.translate,
+        merged: merged ?? this.merged,
+        groupState: groupState ?? this.groupState,
+        identifier: identifier ?? this.identifier,
+        text: text ?? this.text,
+        noBlank: noBlank ?? this.noBlank,
+        validate: validate ?? this.validate,
+        ref: ref ?? this.ref);
   }
 }

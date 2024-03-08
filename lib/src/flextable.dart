@@ -11,36 +11,61 @@ import 'adjust/freeze/adjust_table_freeze.dart';
 import 'adjust/freeze/adjust_table_move_freeze.dart';
 import 'adjust/freeze/adjust_freeze_properties.dart';
 import 'adjust/scale/adjust_table_scale.dart';
-import 'adjust/scale/combi_key.dart';
+import 'gesture_scroll/table_scroll_physics.dart';
 import 'listeners/inner_change_notifiers.dart';
 import 'panels/table_multi_panel_viewport.dart';
 import 'panels/table_view_scrollable.dart';
 import 'panels/hit_test_stack.dart';
 import 'panels/table_scrollbar.dart';
 
+FtViewModel<C, M> defaultCreateViewModel<C extends AbstractCell,
+        M extends AbstractFtModel<C>>(
+    TableScrollPhysics physics,
+    ScrollContext context,
+    FtViewModel<C, M>? oldViewModel,
+    M model,
+    AbstractTableBuilder tableBuilder,
+    InnerScrollChangeNotifier scrollChangeNotifier,
+    InnerScaleChangeNotifier scaleChangeNotifier,
+    List<TableChangeNotifier> tableChangeNotifiers,
+    FtProperties properties,
+    ChangedCellValue? changedCellValue) {
+  return FtViewModel<C, M>(
+      physics: physics,
+      context: context,
+      oldPosition: oldViewModel,
+      model: model,
+      tableBuilder: tableBuilder,
+      scrollChangeNotifier: scrollChangeNotifier,
+      scaleChangeNotifier: scaleChangeNotifier,
+      tableChangeNotifiers: tableChangeNotifiers,
+      properties: properties,
+      changedCellValue: changedCellValue);
+}
+
 class FlexTable<C extends AbstractCell, M extends AbstractFtModel<C>>
     extends StatefulWidget {
-  FlexTable({
-    super.key,
-    required this.model,
-    this.controller,
-    this.properties = const FtProperties(
-        minimalSizeDividedWindow: 20.0,
-        adjustSplit: AdjustSplitProperties(),
-        adjustFreeze: AdjustFreezeProperties()),
-    required this.tableBuilder,
-    this.backgroundColor,
-    this.rebuildNotifier,
-    List<TableChangeNotifier>? tableChangeNotifiers,
-  }) : tableChangeNotifiers = tableChangeNotifiers ?? [];
+  FlexTable(
+      {super.key,
+      required this.model,
+      this.controller,
+      this.properties = const FtProperties(
+          minimalSizeDividedWindow: 20.0,
+          adjustSplit: AdjustSplitProperties(),
+          adjustFreeze: AdjustFreezeProperties()),
+      required this.tableBuilder,
+      this.backgroundColor,
+      List<TableChangeNotifier>? tableChangeNotifiers,
+      this.changeCellValue})
+      : tableChangeNotifiers = tableChangeNotifiers ?? [];
 
   final M model;
   final FtController<C, M>? controller;
   final FtProperties properties;
   final AbstractTableBuilder<C, M> tableBuilder;
   final Color? backgroundColor;
-  final ChangeNotifier? rebuildNotifier;
   final List<TableChangeNotifier> tableChangeNotifiers;
+  final ChangedCellValue? changeCellValue;
 
   @override
   State<StatefulWidget> createState() => FlexTableState<C, M>();
@@ -67,10 +92,10 @@ class FlexTableState<C extends AbstractCell, M extends AbstractFtModel<C>>
   final InnerScaleChangeNotifier _innerScaleChangeNotifier =
       InnerScaleChangeNotifier();
 
-  CombiKeyNotification? _combiKeyNotification;
+  // CombiKeyNotification? _combiKeyNotification;
 
-  CombiKeyNotification get combiKeyNotification =>
-      _combiKeyNotification ??= CombiKeyNotification();
+  // CombiKeyNotification get combiKeyNotification =>
+  //     _combiKeyNotification ??= CombiKeyNotification();
 
   @override
   void initState() {
@@ -125,7 +150,8 @@ class FlexTableState<C extends AbstractCell, M extends AbstractFtModel<C>>
         innerScrollChangeNotifier: _innerScrollChangeNotifier,
         innerScaleChangeNotifier: _innerScaleChangeNotifier,
         tableChangeNotifiers: widget.tableChangeNotifiers,
-        rebuildNotifier: widget.rebuildNotifier,
+        createViewModel: defaultCreateViewModel<C, M>,
+        changeCellValue: widget.changeCellValue,
         viewportBuilder: (BuildContext context, FtViewModel<C, M> viewModel) {
           final theme = Theme.of(context);
 
@@ -137,7 +163,6 @@ class FlexTableState<C extends AbstractCell, M extends AbstractFtModel<C>>
               tableZoom = TableScaleTouch(
                 viewModel: viewModel,
               );
-              _combiKeyNotification = null;
               break;
             case TargetPlatform.macOS:
             case TargetPlatform.linux:

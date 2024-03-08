@@ -18,7 +18,7 @@ export 'src/model/grid_ribbon.dart'
     show MergedRibbon, MergedColumns, MergedRows;
 export 'src/flextable.dart' show FlexTable;
 
-export 'src/model/view_model.dart' show FtViewModel;
+export 'src/model/view_model.dart' show FtViewModel, ChangedCellValue;
 
 //Build
 export 'src/builders/cells.dart'
