@@ -4123,15 +4123,10 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
       cellsToUpdate.addAll(set);
     }
 
-    // const onlyValue = true;
-    // if (onlyValue) {
-    if ((previousCell, cell) case (Cell? p, Cell? c)
-        when p?.value != c?.value) {
-      changedCellValue?.call(ftIndex, previousCell, cell);
-    }
-    // } else {
-    //   changedCellValue?.call(ftIndex, previousCell, cell);
-    // }
+    /// If only value is important for the user then compare the value in the function
+    ///
+    ///
+    changedCellValue?.call(ftIndex, previousCell, cell);
 
     changedCellValue?.call(ftIndex, previousCell, cell);
     markNeedsLayout();
