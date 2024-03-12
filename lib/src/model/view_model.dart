@@ -4128,7 +4128,6 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
     ///
     changedCellValue?.call(ftIndex, previousCell, cell);
 
-    changedCellValue?.call(ftIndex, previousCell, cell);
     markNeedsLayout();
   }
 
