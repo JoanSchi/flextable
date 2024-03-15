@@ -665,7 +665,7 @@ class RecordFtModel<C extends AbstractCell> extends AbstractFtModel<C> {
           }
         case (DateTimeCell c):
           {
-            map[columnId] = c;
+            map[columnId] = c.value;
             break;
           }
         case (SelectionCell c):

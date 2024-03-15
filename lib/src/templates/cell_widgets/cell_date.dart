@@ -293,13 +293,10 @@ class _DateCellState extends State<_DateCell> {
                               widget.cell.maxDate ?? DateTime(2049, 12, 31),
                           initialEntryMode: DatePickerEntryMode.calendarOnly)
                       .then((value) {
-                    widget.viewModel
-                      ..model.updateCell(
-                          previousCell: widget.cell,
-                          cell: widget.cell.copyWith(value: value),
-                          ftIndex: widget.tableCellIndex)
-                      ..cellsToRemove.add(widget.tableCellIndex)
-                      ..markNeedsLayout();
+                    widget.viewModel.updateCell(
+                        previousCell: widget.cell,
+                        cell: widget.cell.copyWith(value: value),
+                        ftIndex: widget.tableCellIndex);
                   });
                 },
               ),
