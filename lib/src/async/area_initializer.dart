@@ -14,7 +14,7 @@ abstract class AreaInitializer<I> {
   FtIndex get leftTopIndex;
 
   List<DefinedTableArea<I>> definedTableAreas;
-  FtController<Cell, AsyncAreaModel> tableController;
+  FtController tableController;
   Set<String> initiated = HashSet<String>();
 
   bool cell(

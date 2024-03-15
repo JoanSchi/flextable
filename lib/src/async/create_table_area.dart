@@ -14,7 +14,7 @@ abstract class DefinedTableArea<I> {
   CreateTableArea<I>? create({
     required int minimalHeaderRows,
     required AsyncAreaModel model,
-    required FtController<Cell, AsyncAreaModel> tableController,
+    required FtController tableController,
     required FtCellGroupState cellGroupState,
     required DateTime firstDay,
     required DateTime startWeekDate,
@@ -26,7 +26,7 @@ abstract class DefinedTableArea<I> {
 
 abstract class CreateTableArea<I> {
   AsyncAreaModel model;
-  FtController<Cell, AsyncAreaModel> tableController;
+  FtController tableController;
   FtCellGroupState cellGroupState;
 
   CreateTableArea({

@@ -176,9 +176,9 @@ class _RowChangeExampleState extends State<TextEditExample>
       model.insertCell(
         ftIndex: FtIndex(row: r, column: column),
         cell: DateTimeCell(
-            value: DateTime.utc(2024, 1, 1).add(Duration(days: r)),
-            style: style,
-            isUtc: true),
+          value: DateTime.utc(2024, 1, 1).add(Duration(days: r)),
+          style: style,
+        ),
       );
     }
 

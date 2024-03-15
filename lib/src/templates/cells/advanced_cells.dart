@@ -358,7 +358,6 @@ class DateTimeCell<I> extends Cell<DateTime, I, TextCellStyle> {
     super.value,
     this.minDate,
     this.maxDate,
-    required this.isUtc,
     super.merged,
     this.includeTime = false,
     super.groupState,
@@ -372,7 +371,6 @@ class DateTimeCell<I> extends Cell<DateTime, I, TextCellStyle> {
   final DateTime? minDate;
   final DateTime? maxDate;
   final bool includeTime;
-  final bool isUtc;
   @override
   final bool editable;
 
@@ -384,7 +382,6 @@ class DateTimeCell<I> extends Cell<DateTime, I, TextCellStyle> {
     DateTime? minDate,
     DateTime? maxDate,
     bool? includeTime,
-    bool? isUtc,
     FtCellGroupState? groupState,
     Merged? merged,
     I? identifier,
@@ -398,7 +395,6 @@ class DateTimeCell<I> extends Cell<DateTime, I, TextCellStyle> {
         value: valueCanBeNull ? value : (value ?? this.value),
         minDate: minDate ?? this.minDate,
         maxDate: maxDate ?? this.maxDate,
-        isUtc: isUtc ?? this.isUtc,
         includeTime: includeTime ?? this.includeTime,
         merged: merged ?? this.merged,
         groupState: groupState ?? this.groupState,
@@ -418,7 +414,6 @@ class DateTimeCell<I> extends Cell<DateTime, I, TextCellStyle> {
         other.minDate == minDate &&
         other.maxDate == maxDate &&
         other.includeTime == includeTime &&
-        other.isUtc == isUtc &&
         other.editable == editable;
   }
 
@@ -428,7 +423,6 @@ class DateTimeCell<I> extends Cell<DateTime, I, TextCellStyle> {
         minDate.hashCode ^
         maxDate.hashCode ^
         includeTime.hashCode ^
-        isUtc.hashCode ^
         editable.hashCode;
   }
 }
