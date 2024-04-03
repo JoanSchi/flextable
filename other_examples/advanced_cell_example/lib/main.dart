@@ -92,7 +92,7 @@ class _RowChangeExampleState extends State<TextEditExample>
     final model = DefaultRecordFtModel(
         columnHeader: true,
         rowHeader: true,
-        defaultWidthCell: 120.0,
+        defaultWidthCell: 320.0,
         defaultHeightCell: 50.0,
         tableColumns: tableColumns,
         tableRows: tableRows,
@@ -106,6 +106,38 @@ class _RowChangeExampleState extends State<TextEditExample>
     const line = Line(width: 0.5, color: Color.fromARGB(255, 70, 78, 38));
     const color2 = Color.fromARGB(255, 249, 250, 245);
     const color1 = Color.fromARGB(255, 229, 235, 206);
+
+    model.horizontalLines.addLineRanges((create) {
+      create(LineRange(
+          startIndex: 1,
+          lineNodeRange: LineNodeRange(list: [
+            LineNode(
+              startIndex: 1,
+              after: line,
+            ),
+            LineNode(startIndex: 2, before: line)
+          ])));
+
+      create(LineRange(
+          startIndex: 1,
+          lineNodeRange: LineNodeRange(list: [
+            LineNode(
+              startIndex: 3,
+              after: line,
+            ),
+            LineNode(startIndex: 4, before: line)
+          ])));
+
+      create(LineRange(
+          startIndex: 1,
+          lineNodeRange: LineNodeRange(list: [
+            LineNode(
+              startIndex: 2,
+              after: line,
+            ),
+            LineNode(startIndex: 3, before: line)
+          ])));
+    });
 
     const style = TextCellStyle(
       background: color1,
@@ -270,7 +302,7 @@ class _RowChangeExampleState extends State<TextEditExample>
               widget: Icon(Icons.delete_outline),
             ),
             style: style,
-            text: 'Action :)'),
+            cellValue: 'Action :)'),
       );
     }
 

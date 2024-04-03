@@ -271,7 +271,7 @@ abstract class LineLinkedList<E extends LineLinkedListEntry<E>> {
     ///
 
     assert(link.startIndex <= link.endIndex,
-        'StartIndex is not smaller or equal compared to endIndex');
+        'StartIndex: ${link.startIndex} is not smaller or equal compared to endIndex: ${link.endIndex}');
 
     if (_length == 0) {
       if (link.isNotEmpty || _addEmpty) {

@@ -112,16 +112,6 @@ class AsyncAreaModel extends BasicFtModel<Cell> {
   }
 
   @override
-  void didFinishLayout() {
-    tableAreaQueue.cleanAndReorder();
-  }
-
-  @override
-  void didStartLayout() {
-    tableAreaQueue.setRemoveCandidates();
-  }
-
-  @override
   FtIndex isCellEditable(FtIndex cellIndex) {
     return (cell(row: cellIndex.row, column: cellIndex.column)?.editable ??
             false)

@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -14,16 +13,16 @@ import '../gesture_scroll/table_drag_details.dart';
 import '../gesture_scroll/table_gesture.dart';
 import 'dart:math' as math;
 import '../gesture_scroll/table_scroll_physics.dart';
+import 'flextable_context.dart';
 
 typedef CreateViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
     = FtViewModel<C, M> Function(
         TableScrollPhysics physics,
-        ScrollContext context,
+        FlexTableContext context,
         FtViewModel<C, M>? oldViewModel,
         M model,
         AbstractTableBuilder tableBuilder,
         InnerScrollChangeNotifier scrollChangeNotifier,
-        InnerScaleChangeNotifier scaleChangeNotifier,
         List<TableChangeNotifier> tableChangeNotifiers,
         FtProperties properties,
         ChangedCellValue? changedCellValue);
@@ -161,10 +160,9 @@ class _ScrollableScope<C extends AbstractCell, M extends AbstractFtModel<C>>
 class TableViewScrollableState<C extends AbstractCell,
         M extends AbstractFtModel<C>> extends State<TableViewScrollable<C, M>>
     with TickerProviderStateMixin
-    implements ScrollContext {
+    implements FlexTableContext {
   FtViewModel<C, M> get viewModel => _viewModel!;
   FtViewModel<C, M>? _viewModel;
-  InnerScaleChangeNotifier? _innerScaleChangeNotifier;
   FtController<C, M>? _controller;
 
   @override
@@ -180,12 +178,6 @@ class TableViewScrollableState<C extends AbstractCell,
     _physics = _configuration.getScrollPhysics(context);
     if (widget.physics != null) _physics = widget.physics!.applyTo(_physics);
 
-    if (_innerScaleChangeNotifier != widget.innerScaleChangeNotifier) {
-      _innerScaleChangeNotifier?.removeListener(rebuildTable);
-      _innerScaleChangeNotifier = widget.innerScaleChangeNotifier
-        ..addListener(rebuildTable);
-    }
-
     final FtViewModel<C, M>? oldViewModel = _viewModel;
     final FtController<C, M>? oldController = _controller;
     _controller = widget.controller;
@@ -197,7 +189,6 @@ class TableViewScrollableState<C extends AbstractCell,
         widget.model,
         widget.tableBuilder,
         widget.innerScrollChangeNotifier,
-        _innerScaleChangeNotifier!,
         widget.tableChangeNotifiers,
         widget.properties,
         widget.changeCellValue);
@@ -261,7 +252,6 @@ class TableViewScrollableState<C extends AbstractCell,
 
   @override
   void dispose() {
-    _innerScaleChangeNotifier?.removeListener(rebuildTable);
     widget.controller.detach(viewModel);
     viewModel.dispose();
     super.dispose();

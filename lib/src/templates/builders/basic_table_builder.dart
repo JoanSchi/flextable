@@ -214,7 +214,7 @@ class BasicTableBuilder<C extends AbstractCell, M extends AbstractFtModel<C>, A>
   }
 
   @override
-  Widget buildHeaderIndex(BuildContext context, AbstractFtModel model,
+  Widget buildHeaderIndex(BuildContext context, AbstractFtModel viewModel,
       TableHeaderIndex tableHeaderIndex, double scale) {
     if (tableHeaderIndex.panelIndex <= 3 || tableHeaderIndex.panelIndex >= 12) {
       return Center(

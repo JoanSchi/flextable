@@ -1,8 +1,5 @@
-import 'package:flextable/src/templates/cells/advanced_cells.dart';
 import 'package:flutter/material.dart';
-
 import '../../../flextable.dart';
-import 'cell_number.dart';
 import 'shared/validate_drawer.dart';
 
 class CellCalculation extends StatelessWidget {

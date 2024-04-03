@@ -887,10 +887,8 @@ class DrivenTableScrollActivity extends TableScrollActivity {
   }
 
   end() {
-    debugPrint('end and isDisposed $isDisposed from $from to $to');
-    if (!isDisposed) {
-      // delegate.goBallistic(scrollIndexX, scrollIndexY, 0, 0);
-    }
+    delegate.goIdle(scrollIndexX, scrollIndexY);
+    // delegate.goBallistic(scrollIndexX, scrollIndexY, 0, 0);
   }
 
   Future<void> get done => _completer.future;

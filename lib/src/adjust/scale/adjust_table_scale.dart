@@ -7,9 +7,7 @@ import 'dart:ui';
 import 'package:flextable/src/model/view_model.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'combi_key.dart';
-import '../../gesture_scroll/table_drag_details.dart';
 import '../../gesture_scroll/table_gesture.dart';
 import '../../gesture_scroll/table_scale_gesture.dart';
 
@@ -98,125 +96,127 @@ class TableScaleTouchState extends State<TableScaleTouch> {
   }
 }
 
-class TableScaleMouse extends StatefulWidget {
-  const TableScaleMouse(
-      {super.key,
-      required this.viewModel,
-      required this.properties,
-      required this.combiKeyNotification});
+// TODO Reimplement TableScaleMouse
 
-  final FtViewModel viewModel;
-  final TableMouseScaleProperties properties;
-  final CombiKeyNotification combiKeyNotification;
+// class TableScaleMouse extends StatefulWidget {
+//   const TableScaleMouse(
+//       {super.key,
+//       required this.viewModel,
+//       required this.properties,
+//       required this.combiKeyNotification});
 
-  @override
-  State<StatefulWidget> createState() => TableScaleMouseState();
-}
+//   final FtViewModel viewModel;
+//   final TableMouseScaleProperties properties;
+//   final CombiKeyNotification combiKeyNotification;
 
-class TableScaleMouseState extends State<TableScaleMouse> {
-  late TableScaleMouseNotifier _tableScaleMouseNotifier;
-  late TableMouseScaleProperties _properties;
-  late CombiKeyNotification _combiKeyNotification;
+//   @override
+//   State<StatefulWidget> createState() => TableScaleMouseState();
+// }
 
-  @override
-  void initState() {
-    final ftProperties = widget.viewModel.properties;
-    _tableScaleMouseNotifier = TableScaleMouseNotifier(
-        minTableScale: ftProperties.minTableScale,
-        maxTableScale: ftProperties.maxTableScale);
-    _properties = widget.properties;
-    _combiKeyNotification = widget.combiKeyNotification..addListener(keyUpdate);
-    super.initState();
-  }
+// class TableScaleMouseState extends State<TableScaleMouse> {
+//   late TableScaleMouseNotifier _tableScaleMouseNotifier;
+//   late TableMouseScaleProperties _properties;
+//   late CombiKeyNotification _combiKeyNotification;
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-  }
+//   @override
+//   void initState() {
+//     final ftProperties = widget.viewModel.properties;
+//     _tableScaleMouseNotifier = TableScaleMouseNotifier(
+//         minTableScale: ftProperties.minTableScale,
+//         maxTableScale: ftProperties.maxTableScale);
+//     _properties = widget.properties;
+//     _combiKeyNotification = widget.combiKeyNotification..addListener(keyUpdate);
+//     super.initState();
+//   }
 
-  @override
-  void didUpdateWidget(TableScaleMouse oldWidget) {
-    super.didUpdateWidget(oldWidget);
+//   @override
+//   void didChangeDependencies() {
+//     super.didChangeDependencies();
+//   }
 
-    if (widget.properties != _properties) {
-      _properties = widget.properties;
-    }
-    if (widget.combiKeyNotification != _combiKeyNotification) {
-      _combiKeyNotification.removeListener(keyUpdate);
-      _combiKeyNotification = widget.combiKeyNotification
-        ..addListener(keyUpdate);
-    }
-  }
+//   @override
+//   void didUpdateWidget(TableScaleMouse oldWidget) {
+//     super.didUpdateWidget(oldWidget);
 
-  keyUpdate() {
-    _tableScaleMouseNotifier.active = _combiKeyNotification.control;
-  }
+//     if (widget.properties != _properties) {
+//       _properties = widget.properties;
+//     }
+//     if (widget.combiKeyNotification != _combiKeyNotification) {
+//       _combiKeyNotification.removeListener(keyUpdate);
+//       _combiKeyNotification = widget.combiKeyNotification
+//         ..addListener(keyUpdate);
+//     }
+//   }
 
-  @override
-  void dispose() {
-    _combiKeyNotification.removeListener(keyUpdate);
-    super.dispose();
-  }
+//   keyUpdate() {
+//     _tableScaleMouseNotifier.active = _combiKeyNotification.control;
+//   }
 
-  @override
-  Widget build(BuildContext context) {
-    return MouseRegion(
-      onHover: onHover,
-      child: RawGestureDetector(
-          gestures: <Type, GestureRecognizerFactory>{
-            TableScaleMouseGestureRecognizer:
-                GestureRecognizerFactoryWithHandlers<
-                    TableScaleMouseGestureRecognizer>(
-              () => TableScaleMouseGestureRecognizer(),
-              (TableScaleMouseGestureRecognizer instance) {
-                instance
-                  ..onStart = onStart
-                  ..onUpdate = onUpdate
-                  ..onEnd = onEnd
-                  ..tableScaleMouseNotifier = _tableScaleMouseNotifier
-                  ..dragDirection = TableScrollDirection.both;
-              },
-            ),
-          },
-          behavior: HitTestBehavior.translucent,
-          child: MouseScalePaint(
-            properties: _properties,
-            tableScaleMouseNotifier: _tableScaleMouseNotifier,
-            child: Container(),
-          )),
-    );
-  }
+//   @override
+//   void dispose() {
+//     _combiKeyNotification.removeListener(keyUpdate);
+//     super.dispose();
+//   }
 
-  onStart(DragStartDetails details) {
-    _tableScaleMouseNotifier
-      ..isScaling = true
-      ..scale = widget.viewModel.tableScale;
-  }
+//   @override
+//   Widget build(BuildContext context) {
+//     return MouseRegion(
+//       onHover: onHover,
+//       child: RawGestureDetector(
+//           gestures: <Type, GestureRecognizerFactory>{
+//             TableScaleMouseGestureRecognizer:
+//                 GestureRecognizerFactoryWithHandlers<
+//                     TableScaleMouseGestureRecognizer>(
+//               () => TableScaleMouseGestureRecognizer(),
+//               (TableScaleMouseGestureRecognizer instance) {
+//                 instance
+//                   ..onStart = onStart
+//                   ..onUpdate = onUpdate
+//                   ..onEnd = onEnd
+//                   ..tableScaleMouseNotifier = _tableScaleMouseNotifier
+//                   ..dragDirection = TableScrollDirection.both;
+//               },
+//             ),
+//           },
+//           behavior: HitTestBehavior.translucent,
+//           child: MouseScalePaint(
+//             properties: _properties,
+//             tableScaleMouseNotifier: _tableScaleMouseNotifier,
+//             child: Container(),
+//           )),
+//     );
+//   }
 
-  onHover(PointerHoverEvent event) {
-    _tableScaleMouseNotifier
-      ..scale = widget.viewModel.tableScale
-      ..position = event.localPosition;
-    _tableScaleMouseNotifier.active = RawKeyboard.instance.keysPressed
-        .contains(LogicalKeyboardKey.controlLeft);
-  }
+//   onStart(DragStartDetails details) {
+//     _tableScaleMouseNotifier
+//       ..isScaling = true
+//       ..scale = widget.viewModel.tableScale;
+//   }
 
-  onUpdate(TableDragUpdateDetails details) {
-    _tableScaleMouseNotifier.position = details.localPosition;
-    widget.viewModel
-        .setTableScale(_tableScaleMouseNotifier.scale, unfocus: false);
-  }
+//   onHover(PointerHoverEvent event) {
+//     _tableScaleMouseNotifier
+//       ..scale = widget.viewModel.tableScale
+//       ..position = event.localPosition;
+//     _tableScaleMouseNotifier.active = RawKeyboard.instance.keysPressed
+//         .contains(LogicalKeyboardKey.controlLeft);
+//   }
 
-  onEnd(TableDragEndDetails details) {
-    _tableScaleMouseNotifier.isScaling = false;
+//   onUpdate(TableDragUpdateDetails details) {
+//     _tableScaleMouseNotifier.position = details.localPosition;
+//     widget.viewModel
+//         .setTableScale(_tableScaleMouseNotifier.scale, unfocus: false);
+//   }
 
-    _tableScaleMouseNotifier.active = RawKeyboard.instance.keysPressed
-        .contains(LogicalKeyboardKey.controlLeft);
+//   onEnd(TableDragEndDetails details) {
+//     _tableScaleMouseNotifier.isScaling = false;
 
-    widget.viewModel.correctOffScroll(0, 0);
-    // _tableModel.notifyScrollBarListeners();
-  }
-}
+//     _tableScaleMouseNotifier.active = RawKeyboard.instance.keysPressed
+//         .contains(LogicalKeyboardKey.controlLeft);
+
+//     widget.viewModel.correctOffScroll(0, 0);
+//     // _tableModel.notifyScrollBarListeners();
+//   }
+// }
 
 class TableScaleMouseGestureRecognizer extends MyDragGestureRecognizer {
   TableScaleMouseNotifier? tableScaleMouseNotifier;

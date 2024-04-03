@@ -223,7 +223,7 @@ class _CellNumberEditorState extends State<_CellNumberEditor> {
             }
           }
         },
-        onValueChanged: onValueChange,
+        // onValueChanged: onValueChange,
       ),
     ));
     child = Container(

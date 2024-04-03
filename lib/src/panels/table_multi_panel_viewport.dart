@@ -346,7 +346,6 @@ class TableMultiPanelRenderObjectElement<C extends AbstractCell,
       _currentlyUpdatingTablePanelIndex = null;
       renderObject.debugChildIntegrityEnabled = true;
     }
-    widget.viewModel.didPerformRebuild();
   }
 
   @override
@@ -395,16 +394,6 @@ class TableMultiPanelRenderObjectElement<C extends AbstractCell,
     final TablePanelParentData childParentData =
         child.parentData as TablePanelParentData;
     childParentData.tablePanelIndex = _currentlyUpdatingTablePanelIndex!;
-  }
-
-  @override
-  void didFinishLayout() {
-    widget.viewModel.didFinishLayout();
-  }
-
-  @override
-  void didStartLayout() {
-    widget.viewModel.didStartLayout();
   }
 
   @override
@@ -501,7 +490,7 @@ class TableMultiPanelRenderViewport<C extends AbstractCell,
   void performLayout() {
     size = constraints.biggest;
 
-    childManager.didStartLayout();
+    // childManager.didStartLayout();
     childManager.setDidUnderflow(false);
 
     viewModel.calculate(
@@ -568,7 +557,7 @@ class TableMultiPanelRenderViewport<C extends AbstractCell,
 
     // scrollPosition.applyTableDimensions(layoutX: tableModel.widthLayoutList, layoutY: tableModel.heightLayoutList);
 
-    childManager.didFinishLayout();
+    // childManager.didFinishLayout();
 
     // Clean the for the viewPanels the refresh.
     viewModel.cellsToRemove.clear();
@@ -927,9 +916,9 @@ abstract class TableMultiPanelRenderChildManager {
 
   void setDidUnderflow(bool value);
 
-  void didStartLayout();
+  // void didStartLayout();
 
-  void didFinishLayout();
+  // void didFinishLayout();
 
   bool debugAssertChildListLocked() => true;
 }

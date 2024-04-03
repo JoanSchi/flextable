@@ -5,22 +5,9 @@
 import 'package:flutter/widgets.dart';
 
 class InnerScaleChangeNotifier extends ChangeNotifier {
-  InnerScaleChangeNotifier(
-      {this.minScale = 0.5, this.maxScale = 3.0, this.scale = 1.0});
+  InnerScaleChangeNotifier({this.scale = 1.0});
 
-  double minScale;
-  double maxScale;
   double scale;
-
-  setValues({
-    required double minScale,
-    required double maxScale,
-    required double scale,
-  }) {
-    this.scale = scale;
-    this.minScale = minScale;
-    this.maxScale = maxScale;
-  }
 
   void changeScale(double value) {
     if (value != scale) {

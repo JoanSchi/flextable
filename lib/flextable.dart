@@ -62,6 +62,12 @@ export 'src/listeners/flextable_change_notifier.dart'
         LastEditIndexNotifier,
         RebuildNotifier;
 
+export 'src/templates/cell_widgets/cell_date.dart' show FormatCellDate;
+export 'src/templates/cell_widgets/cell_number.dart' show FormatCellNumber;
+export 'src/templates/cell_widgets/shared/background_drawer.dart'
+    show BackgroundDrawer;
+export 'src/templates/cell_widgets/shared/text_drawer.dart' show TextDrawer;
+
 export 'src/function_listeners/scroll_change_notifier.dart'
     show FlexTableScrollChangeNotifier, FlexTableScrollNotification;
 

@@ -3,11 +3,8 @@
 // license that can be found in the LICENSE file.
 
 import 'dart:collection';
-import 'dart:convert';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
-
 import 'package:flextable/flextable.dart';
 
 class RecordFtModel<C extends AbstractCell> extends AbstractFtModel<C> {
@@ -382,11 +379,6 @@ class RecordFtModel<C extends AbstractCell> extends AbstractFtModel<C> {
   }
 
   @override
-  void didPerformRebuild() {
-    // rearrange = const NoRearrangeCells();
-  }
-
-  @override
   FtIndex? findIndexByKey(FtIndex oldIndex, key) {
     if (key case ValueKey<FtIndex> v) {
       if (linkedRowRibbons.rowIndex(v.value.row) case int row) {
@@ -675,7 +667,7 @@ class RecordFtModel<C extends AbstractCell> extends AbstractFtModel<C> {
           }
         case (ActionCell c):
           {
-            map[columnId] = c.text;
+            map[columnId] = c.cellValue;
 
             break;
           }

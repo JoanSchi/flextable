@@ -3,8 +3,6 @@
 // license that can be found in the LICENSE file.
 
 import 'dart:collection';
-import 'package:flutter/foundation.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flextable/flextable.dart';
 
 class BasicFtModel<C extends AbstractCell> extends AbstractFtModel<C> {
@@ -48,7 +46,6 @@ class BasicFtModel<C extends AbstractCell> extends AbstractFtModel<C> {
   List<RowRibbon<C>> rowRibbon;
   int lastImutableIndex = 0;
   List<int> unUsedImutableRowIndexes = [];
-  RearrangeCells rearrange = const NoRearrangeCells();
 
   void insertCell(
       {required FtIndex ftIndex,
@@ -58,6 +55,9 @@ class BasicFtModel<C extends AbstractCell> extends AbstractFtModel<C> {
       checkPreviousCell = false}) {
     if (tableRows < ftIndex.row + rows) {
       tableRows = ftIndex.row + rows;
+    }
+    if (tableColumns < ftIndex.column + columns) {
+      tableColumns = ftIndex.column + columns;
     }
 
     updateCell(ftIndex: ftIndex, cell: cell, rows: rows, columns: columns);
@@ -125,9 +125,11 @@ class BasicFtModel<C extends AbstractCell> extends AbstractFtModel<C> {
       }
     }
 
-    if (tableRows < ftIndex.row + rows) {
-      tableRows = ftIndex.row + rows;
-    }
+    assert(ftIndex.row + rows <= tableRows,
+        'TableRows $tableRows is not larger than lastest index: ${ftIndex.row + rows - 1}');
+
+    assert(ftIndex.column + columns <= tableColumns,
+        'TableColumns $tableColumns is not larger than lastest index: ${ftIndex.column + columns - 1}');
 
     if (rowRibbon.length < tableRows) {
       rowRibbon.addAll([
@@ -136,33 +138,26 @@ class BasicFtModel<C extends AbstractCell> extends AbstractFtModel<C> {
       ]);
     }
 
-    if (tableColumns < ftIndex.column + columns) {
-      tableColumns = ftIndex.column + columns;
-    }
     _placeCell(ftIndex, cell);
 
     return null;
   }
 
   _placeCell(FtIndex ftIndex, C? cell) {
-    if (cell case C c) {
-      rowRibbon[ftIndex.row].column[ftIndex.column] = c;
-    } else {
-      rowRibbon[ftIndex.row].column.remove(ftIndex.column);
-    }
+    rowRibbon[ftIndex.row].addCell(ftIndex.column, cell);
   }
 
   C? _cell(FtIndex ftIndex) {
-    return rowRibbon.elementAtOrNull(ftIndex.row)?.column[ftIndex.column];
+    return rowRibbon.elementAtOrNull(ftIndex.row)?.cell(ftIndex.column);
   }
 
   C? _removeCell(FtIndex ftIndex) {
-    return rowRibbon[ftIndex.row].column.remove(ftIndex.column);
+    return rowRibbon[ftIndex.row].removeCell(ftIndex.column);
   }
 
   @override
   C? cell({required int row, required int column}) {
-    return rowRibbon.elementAtOrNull(row)?.column[column];
+    return rowRibbon.elementAtOrNull(row)?.cell(column);
   }
 
   Merged? removeMergedCellFromGrid(
@@ -266,13 +261,8 @@ class BasicFtModel<C extends AbstractCell> extends AbstractFtModel<C> {
   }
 
   @override
-  void didPerformRebuild() {
-    rearrange = const NoRearrangeCells();
-  }
-
-  @override
   FtIndex? findIndexByKey(FtIndex oldIndex, key) {
-    return rearrange.findIndexByKey(this, oldIndex, key);
+    return null;
   }
 
   @override
@@ -282,190 +272,80 @@ class BasicFtModel<C extends AbstractCell> extends AbstractFtModel<C> {
   insertRowRange({
     required int startRow,
     int? endRow,
-  }) {
-    assert(rearrange is NoRearrangeCells,
-        'Process the previous RearrangeCells object before adding another range');
-
-    if (rearrange is! NoRearrangeCells) {
-      return;
-    }
-
-    rearrange = InsertDeleteRow(
-        changeRows: [ChangeRange(start: startRow, last: endRow, insert: true)]);
-
-    for (int i = startRow; i <= (endRow ?? startRow); i++) {
-      rowRibbon.insert(
-          i, RowRibbon(immutableRowIndex: uniqueImmutableRowIndex));
-      tableRows++;
-    }
-
-    editCell = editCell.copyWith(index: rearrange.obtainNewIndex(editCell));
-  }
+  }) {}
 
   @override
   removeRowRange({
     required int startRow,
     int? lastRow,
-  }) {
-    assert(rearrange is NoRearrangeCells,
-        'Process the previous RearrangeCells object before adding another range');
-
-    if (rearrange is! NoRearrangeCells) {
-      return;
-    }
-
-    rearrange = InsertDeleteRow(changeRows: [
-      ChangeRange(start: startRow, last: lastRow, insert: false)
-    ]);
-
-    for (int i = startRow; i <= (lastRow ?? startRow); i++) {
-      unUsedImutableRowIndexes.add(rowRibbon.removeAt(i).immutableRowIndex);
-    }
-
-    editCell = editCell.copyWith(index: rearrange.obtainNewIndex(editCell));
-  }
+  }) {}
 
   @override
   FtIndex? indexToImmutableIndex(FtIndex index) {
     return index.copyWith(row: rowRibbon[index.row].immutableRowIndex);
   }
 
+  @override
   void reIndexUniqueRowNumber() {
-    // TODO: implement calculateCell
     throw UnimplementedError();
   }
 
   @override
   void calculateCell({AbstractCell? cell, FtIndex? index, FtIndex? imIndex}) {
-    // TODO: implement calculateCell
     throw UnimplementedError();
   }
 
   @override
   num? numberValue({FtIndex? index, required FtIndex? imIndex}) {
-    // TODO: implement numberValue
     throw UnimplementedError();
   }
 
   @override
   Object? valueFromIndex({FtIndex? index, required FtIndex? imIndex}) {
-    // TODO: implement valueFromIndex
     throw UnimplementedError();
   }
 }
 
 class RowRibbon<C extends AbstractCell> {
   int immutableRowIndex;
+  final List<C?> _columns = <C?>[];
 
   RowRibbon({
     required this.immutableRowIndex,
   });
 
-  HashMap<int, C> column = HashMap<int, C>();
-}
-
-abstract class RearrangeCells {
-  const RearrangeCells();
-  FtIndex? findIndexByKey(BasicFtModel model, FtIndex oldIndex, key);
-
-  FtIndex obtainNewIndex(FtIndex index);
-}
-
-class NoRearrangeCells extends RearrangeCells {
-  const NoRearrangeCells();
-  @override
-  FtIndex? findIndexByKey(BasicFtModel model, FtIndex oldIndex, key) =>
-      oldIndex;
-
-  @override
-  FtIndex obtainNewIndex(FtIndex index) => index;
-}
-
-class InsertDeleteRow extends RearrangeCells {
-  List<ChangeRange> changeRows;
-
-  InsertDeleteRow({
-    required this.changeRows,
-  });
-
-  @override
-  FtIndex? findIndexByKey(BasicFtModel model, FtIndex oldIndex, key) {
-    int immutableIndex = -1;
-    if (key is ValueKey<FtIndex>) {
-      immutableIndex = key.value.row;
+  addCell(int column, C? cell) {
+    final l = _columns.length;
+    if (column < l) {
+      _columns[column] = cell;
     } else {
-      throw Exception();
-    }
-    int swift = 0;
-    int previous = oldIndex.row;
-    for (ChangeRange c in changeRows) {
-      if (previous < c.start) {
-        break;
-      } else if (c.last < previous) {
-        if (c.insert) {
-          swift += c.length;
-        } else {
-          swift -= c.length;
-        }
-      } else {
-        if (c.insert) {
-          swift += c.length;
-          break;
-        } else {
-          return null;
-        }
+      for (int i = l; i < column; i++) {
+        _columns.insert(i, null);
       }
-    }
 
-    if (swift != 0) {
-      int newIndex = oldIndex.row + swift;
-      if (newIndex >= 0 &&
-          newIndex < model.rowRibbon.length &&
-          model.rowRibbon[newIndex].immutableRowIndex == immutableIndex) {
-        return oldIndex.copyWith(row: newIndex);
-      }
-      return null;
+      assert(column == _columns.length,
+          'Cell not added at the end of the list column: $column, length list: ${_columns.length}');
+
+      _columns.insert(column, cell);
     }
-    return oldIndex;
   }
 
-  @override
-  FtIndex obtainNewIndex(FtIndex index) {
-    return index.isIndex
-        ? index.copyWith(row: obtainSwift(changeRows, index.row))
-        : index;
-  }
-
-  int obtainSwift(List<ChangeRange> changeRanges, int index) {
-    int swift = 0;
-    for (ChangeRange c in changeRanges) {
-      if (index < c.start) {
-        break;
-      } else if (c.last < index) {
-        if (c.insert) {
-          swift += c.length;
-        } else {
-          swift -= c.length;
-        }
-      } else {
-        if (c.insert) {
-          swift += c.length;
-          break;
-        } else {
-          return -1;
-        }
-      }
+  C? removeCell(int column) {
+    C? cell;
+    if (column < _columns.length) {
+      cell = _columns[column];
+      _columns[column] = null;
     }
-    int newIndex = index + swift;
-    return (0 < newIndex) ? newIndex : -1;
+    return cell;
   }
-}
 
-class SortRows extends RearrangeCells {
-  const SortRows();
-  @override
-  FtIndex? findIndexByKey(BasicFtModel model, FtIndex oldIndex, key) => null;
+  List<(int, C)> filterCells(bool Function(int index, C cell) filter) {
+    return [
+      for (int i = 0; i < _columns.length; i++)
+        if (_columns[i] case C c)
+          if (filter(i, c)) (i, c)
+    ];
+  }
 
-  @override
-  FtIndex obtainNewIndex(FtIndex index) => const FtIndex();
+  C? cell(int column) => _columns.elementAtOrNull(column);
 }

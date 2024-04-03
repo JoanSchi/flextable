@@ -270,39 +270,40 @@ class _DateCellState extends State<_DateCell> {
           formatedValue: value,
           useAccent: widget.useAccent,
         ),
-        Positioned(
-          right: 2.0,
-          top: 2.0,
-          bottom: 2.0,
-          child: AspectRatio(
-            aspectRatio: 1.0,
-            child: Material(
-              type: MaterialType.transparency,
-              clipBehavior: Clip.antiAlias,
-              shape: RoundedRectangleBorder(
-                  borderRadius: (BorderRadius.circular(8.0))),
-              child: InkWell(
-                hoverColor: theme.primaryColor.withOpacity(0.3),
-                onTap: () {
-                  showDatePicker(
-                          context: context,
-                          currentDate: widget.cell.value,
-                          firstDate:
-                              widget.cell.minDate ?? DateTime(2000, 1, 1),
-                          lastDate:
-                              widget.cell.maxDate ?? DateTime(2049, 12, 31),
-                          initialEntryMode: DatePickerEntryMode.calendarOnly)
-                      .then((value) {
-                    widget.viewModel.updateCell(
-                        previousCell: widget.cell,
-                        cell: widget.cell.copyWith(value: value),
-                        ftIndex: widget.tableCellIndex);
-                  });
-                },
+        if (widget.cell.editable)
+          Positioned(
+            right: 2.0,
+            top: 2.0,
+            bottom: 2.0,
+            child: AspectRatio(
+              aspectRatio: 1.0,
+              child: Material(
+                type: MaterialType.transparency,
+                clipBehavior: Clip.antiAlias,
+                shape: RoundedRectangleBorder(
+                    borderRadius: (BorderRadius.circular(8.0))),
+                child: InkWell(
+                  hoverColor: theme.primaryColor.withOpacity(0.3),
+                  onTap: () {
+                    showDatePicker(
+                            context: context,
+                            currentDate: widget.cell.value,
+                            firstDate:
+                                widget.cell.minDate ?? DateTime(2000, 1, 1),
+                            lastDate:
+                                widget.cell.maxDate ?? DateTime(2049, 12, 31),
+                            initialEntryMode: DatePickerEntryMode.calendarOnly)
+                        .then((value) {
+                      widget.viewModel.updateCell(
+                          previousCell: widget.cell,
+                          cell: widget.cell.copyWith(value: value),
+                          ftIndex: widget.tableCellIndex);
+                    });
+                  },
+                ),
               ),
             ),
           ),
-        ),
       ],
     );
   }

@@ -314,8 +314,6 @@ abstract class AbstractFtModel<C extends AbstractCell> {
 
   Merged? findMergedColumns(int row, int column);
 
-  PanelCellIndex editCell = const PanelCellIndex();
-
   /// Lenght en Position
   ///
   ///
@@ -1062,10 +1060,6 @@ abstract class AbstractFtModel<C extends AbstractCell> {
     bool user = false,
   });
 
-  void didFinishLayout() {}
-
-  void didStartLayout() {}
-
   FtIndex nextCell(PanelCellIndex current) {
     int row = current.row;
     int column = current.column + current.columns;
@@ -1076,15 +1070,10 @@ abstract class AbstractFtModel<C extends AbstractCell> {
 
   FtIndex isCellEditable(FtIndex cellIndex) => const FtIndex();
 
-  setInitialIndex(FtIndex index) {
+  void initialScrollFromIndex(FtIndex index) {
     if (index.row > 0) {
-      switch (stateSplitY) {
-        case SplitState.noSplit:
-          {
-            scrollY0pX0 = getY(index.row, 0);
-            break;
-          }
-        case SplitState.autoFreezeSplit:
+      switch ((stateSplitY, autoFreezeAreasY.isNotEmpty)) {
+        case (SplitState.noSplit || SplitState.autoFreezeSplit, true):
           {
             double scrollY = getY(index.row, 0);
             double deltaY = 0.0;
@@ -1094,9 +1083,15 @@ abstract class AbstractFtModel<C extends AbstractCell> {
                 break;
               }
             }
-            mainScrollY = scrollY + deltaY;
+            mainScrollY = scrollY0pX0 = scrollY + deltaY;
             break;
           }
+        case (SplitState.noSplit, _):
+          {
+            mainScrollY = scrollY0pX0 = getY(index.row, 0);
+            break;
+          }
+
         default:
           {
             assert(false, 'No support for stateSplitY');
@@ -1108,7 +1103,7 @@ abstract class AbstractFtModel<C extends AbstractCell> {
       switch (stateSplitY) {
         case SplitState.noSplit:
           {
-            scrollX0pY0 = getX(index.column, 0);
+            mainScrollX = scrollX0pY0 = getX(index.column, 0);
             break;
           }
         case SplitState.autoFreezeSplit:
@@ -1155,8 +1150,6 @@ abstract class AbstractFtModel<C extends AbstractCell> {
   FtIndex? findIndexByKey(FtIndex oldIndex, key) {
     return oldIndex;
   }
-
-  void didPerformRebuild() {}
 
   insertRowRange({
     required int startRow,

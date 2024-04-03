@@ -3,9 +3,7 @@
 // license that can be found in the LICENSE file.
 
 import 'package:flextable/flextable.dart';
-import 'package:flextable/src/templates/cell_widgets/shared/text_drawer.dart';
 import 'package:flutter/material.dart';
-import 'shared/background_drawer.dart';
 
 typedef ActionCallBack<C extends AbstractCell, M extends AbstractFtModel<C>, A>
     = bool Function(
@@ -52,11 +50,19 @@ class CellActionWidget<C extends AbstractCell, M extends AbstractFtModel<C>, A>
 
   @override
   Widget build(BuildContext context) {
+    final value = cell.value;
+
+    String? text = switch (cell.cellValue) {
+      (int o) => '$o',
+      (String o) => o,
+      (_) => null
+    };
+
     return switch ((
-      cell.value,
-      cell.text,
+      value,
+      text,
     )) {
-      (ActionCellItem<A> item, String? _) => BackgroundDrawer(
+      (ActionCellItem<A> item, Object? _) => BackgroundDrawer(
           style: cell.style,
           tableScale: tableScale,
           useAccent: useAccent,
@@ -70,7 +76,6 @@ class CellActionWidget<C extends AbstractCell, M extends AbstractFtModel<C>, A>
           ))),
       (List<A> list, String? text) => PopupMenuButton<A>(
           tooltip: '',
-
           // Callback that sets the selected popup menu item.
           onSelected: (a) {
             actionCallBack(viewModel, cell, tableCellIndex, a);

@@ -517,7 +517,7 @@ class ActionCell<T, I> extends Cell<T, I, TextCellStyle> {
   ActionCell({
     super.style,
     super.value,
-    this.text,
+    this.cellValue,
     super.merged,
     this.translate = false,
     super.groupState,
@@ -525,10 +525,12 @@ class ActionCell<T, I> extends Cell<T, I, TextCellStyle> {
     super.noBlank,
     super.validate = '',
     super.ref,
+    this.format = '',
   });
 
   final bool translate;
-  final String? text;
+  final Object? cellValue;
+  final String format;
 
   @override
   bool get editable => false;
@@ -541,10 +543,11 @@ class ActionCell<T, I> extends Cell<T, I, TextCellStyle> {
     FtCellGroupState? groupState,
     Merged? merged,
     I? identifier,
-    String? text,
+    String? cellValue,
     bool? noBlank,
     String? validate,
     Set<FtIndex>? ref,
+    String? format,
   }) {
     return ActionCell(
         style: style ?? this.style,
@@ -553,9 +556,10 @@ class ActionCell<T, I> extends Cell<T, I, TextCellStyle> {
         merged: merged ?? this.merged,
         groupState: groupState ?? this.groupState,
         identifier: identifier ?? this.identifier,
-        text: text ?? this.text,
+        cellValue: cellValue ?? this.cellValue,
         noBlank: noBlank ?? this.noBlank,
         validate: validate ?? this.validate,
-        ref: ref ?? this.ref);
+        ref: ref ?? this.ref,
+        format: format ?? this.format);
   }
 }

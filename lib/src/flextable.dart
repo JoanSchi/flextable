@@ -4,6 +4,7 @@
 
 import 'package:flextable/flextable.dart';
 import 'package:flextable/src/keys/escape.dart';
+import 'package:flextable/src/panels/flextable_context.dart';
 import 'package:flutter/material.dart';
 import 'adjust/select_cell/select_cell.dart';
 import 'adjust/split/adjust_table_split.dart';
@@ -21,12 +22,11 @@ import 'panels/table_scrollbar.dart';
 FtViewModel<C, M> defaultCreateViewModel<C extends AbstractCell,
         M extends AbstractFtModel<C>>(
     TableScrollPhysics physics,
-    ScrollContext context,
+    FlexTableContext context,
     FtViewModel<C, M>? oldViewModel,
     M model,
     AbstractTableBuilder tableBuilder,
     InnerScrollChangeNotifier scrollChangeNotifier,
-    InnerScaleChangeNotifier scaleChangeNotifier,
     List<TableChangeNotifier> tableChangeNotifiers,
     FtProperties properties,
     ChangedCellValue? changedCellValue) {
@@ -37,7 +37,6 @@ FtViewModel<C, M> defaultCreateViewModel<C extends AbstractCell,
       model: model,
       tableBuilder: tableBuilder,
       scrollChangeNotifier: scrollChangeNotifier,
-      scaleChangeNotifier: scaleChangeNotifier,
       tableChangeNotifiers: tableChangeNotifiers,
       properties: properties,
       changedCellValue: changedCellValue);
@@ -104,10 +103,6 @@ class FlexTableState<C extends AbstractCell, M extends AbstractFtModel<C>>
 
   @override
   void didChangeDependencies() {
-    _innerScaleChangeNotifier.setValues(
-        scale: widget.model.tableScale,
-        minScale: widget.properties.minTableScale,
-        maxScale: widget.properties.maxTableScale);
     super.didChangeDependencies();
   }
 
@@ -117,11 +112,6 @@ class FlexTableState<C extends AbstractCell, M extends AbstractFtModel<C>>
       _ftController?.dispose();
       _ftController = null;
     }
-
-    _innerScaleChangeNotifier.setValues(
-        scale: widget.model.tableScale,
-        minScale: widget.properties.minTableScale,
-        maxScale: widget.properties.maxTableScale);
 
     super.didUpdateWidget(oldWidget);
   }
@@ -227,6 +217,9 @@ class FlexTableState<C extends AbstractCell, M extends AbstractFtModel<C>>
 
     return widget.backgroundColor == null
         ? table
-        : Container(color: widget.backgroundColor, child: table);
+        : Container(
+            color: widget.backgroundColor,
+            child: table,
+          );
   }
 }

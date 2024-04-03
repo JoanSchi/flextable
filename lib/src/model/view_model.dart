@@ -5,22 +5,20 @@
 import 'dart:async';
 import 'dart:collection';
 import 'dart:math' as math;
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/physics.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
-
 import 'package:flextable/src/builders/shared_text_controller.dart';
 import 'package:flextable/src/model/model.dart';
-
 import '../../flextable.dart';
 import '../gesture_scroll/table_animation_controller.dart';
 import '../gesture_scroll/table_drag_details.dart';
 import '../gesture_scroll/table_scroll_activity.dart';
 import '../gesture_scroll/table_scroll_physics.dart';
 import '../listeners/inner_change_notifiers.dart';
+import '../panels/flextable_context.dart';
 import 'properties/flextable_freeze_change.dart';
 import 'properties/flextable_grid_layout.dart';
 import 'properties/flextable_header_properties.dart';
@@ -57,13 +55,11 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
     required this.model,
     required this.tableBuilder,
     String? debugLabel,
-    required InnerScaleChangeNotifier scaleChangeNotifier,
     required InnerScrollChangeNotifier scrollChangeNotifier,
     required this.tableChangeNotifiers,
     required this.properties,
     this.changedCellValue,
   })  : _scrollChangeNotifier = scrollChangeNotifier,
-        _scaleChangeNotifier = scaleChangeNotifier,
         sharedTextControllersByIndex =
             oldPosition?.sharedTextControllersByIndex ??
                 SharedTextControllersByIndex() {
@@ -159,7 +155,7 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
   //
   //
   late AdjustScroll _adjustScroll;
-  final ScrollContext context;
+  final FlexTableContext context;
   final TableScrollPhysics physics;
   final M model;
   final AbstractTableBuilder tableBuilder;
@@ -177,15 +173,18 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
   PanelCellIndex previousEditCell = const PanelCellIndex();
 
   FtIndex lastEditIndex = const FtIndex();
+  PanelCellIndex _editCell = const PanelCellIndex();
+  bool scrollToEditCell = false;
 
   set editCell(PanelCellIndex value) {
-    if (model.editCell == value) {
+    if (_editCell == value) {
       return;
     }
+    scrollToEditCell = true;
 
     previousCellTime = null;
 
-    previousEditCell = model.editCell;
+    previousEditCell = _editCell;
 
     if (value.isIndex) {
       store(value.scrollIndexX, value.scrollIndexY);
@@ -195,8 +194,10 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
     if (previousEditCell.isIndex && !value.isIndex) {
       previousCellTime = DateTime.now();
     }
-    model.editCell = value;
+    _editCell = value;
   }
+
+  PanelCellIndex get editCell => _editCell;
 
   store(scrollIndexX, scrollIndexY) {
     switch (stateSplitY) {
@@ -224,16 +225,15 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
     }
   }
 
-  PanelCellIndex get editCell => model.editCell;
-
   void clearEditCell(FtIndex cellIndex) {
-    if (editCell == cellIndex) {
-      editCell = const PanelCellIndex();
+    if (_editCell == cellIndex) {
+      _editCell = const PanelCellIndex();
     }
+    scrollToEditCell = false;
   }
 
   void updateCellPanel(LayoutPanelIndex layoutPanelIndex) {
-    model.editCell = editCell.copyWith(
+    _editCell = _editCell.copyWith(
         panelIndexX: layoutPanelIndex.xIndex,
         panelIndexY: layoutPanelIndex.yIndex);
   }
@@ -317,7 +317,6 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
   HeaderProperties leftRowHeaderProperty = noHeader;
 
   final InnerScrollChangeNotifier _scrollChangeNotifier;
-  final InnerScaleChangeNotifier _scaleChangeNotifier;
   List<TableChangeNotifier> tableChangeNotifiers;
   FtProperties properties;
 
@@ -783,8 +782,11 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
         scrollIndexY: scrollIndexY,
         adjustScroll: _adjustScroll);
 
+    scrollToEditCell = false;
+
     beginActivity(TableDragScrollActivity(
         scrollIndexX, scrollIndexY, this, drag, scrollNotificationEnabled));
+
     assert(currentChange == null);
     currentChange = drag;
     return drag;
@@ -1248,12 +1250,12 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
   /// the texEditor will take the focus from the slider and so on.
   ///
   setTableScale(double value, {bool unfocus = true}) {
-    if (unfocus && editCell.isIndex) {
-      editCell = const PanelCellIndex();
+    if (unfocus && _editCell.isIndex) {
+      _editCell = const PanelCellIndex();
     }
     value =
         clampDouble(value, properties.minTableScale, properties.maxTableScale);
-    if (value != tableScale) {
+    scale() {
       double oldScale = tableScale;
       model.tableScale = value;
 
@@ -1267,8 +1269,10 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
             scrollY * tableScale -
             scrollY * oldScale);
       }
+    }
 
-      _scaleChangeNotifier.changeScale(tableScale);
+    if (value != tableScale) {
+      context.setState(scale);
       _notifyChange();
     }
   }
@@ -1308,23 +1312,23 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
     setScrollX(horizontal, vertical, scrollScaledX / tableScale);
   }
 
-  void setScrollX(int horizontal, int vertical, double scrollScaledX) {
+  void setScrollX(int horizontal, int vertical, double scrollX) {
     if (model.autoFreezePossibleX) {
-      mainScrollX = scrollScaledX;
+      mainScrollX = scrollX;
       calculateAutoFreezeX();
     } else if (vertical == 0 ||
         !protectedScrollUnlockX ||
         model.anyFreezeSplitY) {
       if (horizontal == 0) {
-        mainScrollX = scrollX0pY0 = scrollScaledX;
+        mainScrollX = scrollX0pY0 = scrollX;
       } else {
-        scrollX1pY0 = scrollScaledX;
+        scrollX1pY0 = scrollX;
       }
     } else {
       if (horizontal == 0) {
-        scrollX0pY1 = scrollScaledX;
+        scrollX0pY1 = scrollX;
       } else {
-        scrollX1pY1 = scrollScaledX;
+        scrollX1pY1 = scrollX;
       }
     }
   }
@@ -1420,23 +1424,23 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
     setScrollY(horizontal, vertical, scrollScaledY / tableScale);
   }
 
-  void setScrollY(int horizontal, int vertical, double scrollScaledY) {
+  void setScrollY(int horizontal, int vertical, double scrollY) {
     if (model.autoFreezePossibleY) {
-      mainScrollY = scrollScaledY;
+      mainScrollY = scrollY;
       calculateAutoFreezeY();
     } else if (horizontal == 0 ||
         !protectedScrollUnlockY ||
         model.anyFreezeSplitX) {
       if (vertical == 0) {
-        mainScrollY = scrollY0pX0 = scrollScaledY;
+        mainScrollY = scrollY0pX0 = scrollY;
       } else {
-        scrollY1pX0 = scrollScaledY;
+        scrollY1pX0 = scrollY;
       }
     } else {
       if (vertical == 0) {
-        scrollY0pX1 = scrollScaledY;
+        scrollY0pX1 = scrollY;
       } else {
-        scrollY1pX1 = scrollScaledY;
+        scrollY1pX1 = scrollY;
       }
     }
   }
@@ -1490,10 +1494,10 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
         }
       }
     } else {
-      if (editCell.isIndex) {
+      if (_editCell.isIndex) {
         if (stateSplitY == SplitState.autoFreezeSplit) {
           if (autoFreezeAreaY.freeze) {
-            final row = editCell.row;
+            final row = _editCell.row;
             if (row < autoFreezeAreaY.freezeIndex) {
               mainScrollY = autoFreezeAreaY.startPosition;
             }
@@ -2158,6 +2162,8 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
     list[secondIndex] = temp;
   }
 
+  bool firstLayout = true;
+
   void calculate({required double width, required double height}) {
     final oldStateSplitX = stateSplitX;
     final oldStateSplitY = stateSplitY;
@@ -2190,27 +2196,38 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
     }
 
     final maxHeightNoSplit = computeMaxIntrinsicHeightNoSplit(width);
-    final maxWidthNoSplit = computeMaxIntrinsicWidthNoSplit(height);
 
     _layoutY(
         maxHeightNoSplit:
             maxHeightNoSplit + sizeScrollBarBottom + bottomHeaderLayoutLength,
         height: height);
+
+    findRowHeaderWidth();
+
+    //findRowHeaderWidth is peformed in LayoutY
+
+    final maxWidthNoSplit = computeMaxIntrinsicWidthNoSplit(height);
+
     _layoutX(
         maxWidthNoSplit:
             maxWidthNoSplit + sizeScrollBarRight + rightHeaderLayoutLength,
         width: width);
 
-    // if (!(activity?.isScrolling ?? false)) {
-    if (deltaHeight > 0.0 || deltaWidth > 0.0 && editCell.isIndex) {
-      showCell(editCell);
+    if (firstLayout) {
+      firstLayout = false;
+      _checkFirstLayout(width, height);
+    }
+
+    if (scrollToEditCell &&
+        (deltaHeight > 0.0 || deltaWidth > 0.0) &&
+        _editCell.isIndex) {
+      showCell(_editCell);
     } else if ((widthChanged || heightChanged) &&
-        (previousCellTime == null) &&
-        (activity?.isScrolling ?? false)) {
+        !(activity is TableDragScrollActivity ||
+            activity is BallisticScrollActivity)) {
       scheduleCorrectOffScroll = false;
       correctOffScroll(0, 0);
     }
-    // }
 
     if (widthChanged ||
         heightChanged ||
@@ -2220,6 +2237,49 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
         _notifyChange();
       });
     }
+  }
+
+  _checkFirstLayout(double width, double height) {
+    bool layout = false;
+    firstLayout = false;
+    switch (stateSplitY) {
+      case (SplitState.noSplit ||
+            SplitState.canceledFreezeSplit ||
+            SplitState.autoFreezeSplit):
+        {
+          layout = simpleYBoundery(0, 0);
+        }
+      default:
+        {}
+    }
+
+    if (layout && rowHeader) {
+      findRowHeaderWidth();
+
+      final maxWidthNoSplit = computeMaxIntrinsicWidthNoSplit(height);
+
+      _layoutX(
+          maxWidthNoSplit:
+              maxWidthNoSplit + sizeScrollBarRight + rightHeaderLayoutLength,
+          width: width);
+    }
+  }
+
+  bool simpleYBoundery(int scrollIndexX, int scrollIndexY) {
+    double scrollY = scrollPixelsY(scrollIndexX, scrollIndexY);
+    final m = minScrollExtentY(scrollIndexY);
+    final max = maxScrollExtentY(scrollIndexY);
+    double scrollYClamped = clampDouble(
+      scrollY,
+      m,
+      max,
+    );
+
+    if (scrollY != scrollYClamped) {
+      mainScrollY = scrollY0pX0 = scrollYClamped;
+      return true;
+    }
+    return false;
   }
 
   _layoutY({required double maxHeightNoSplit, required double height}) {
@@ -2274,8 +2334,6 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
     } else {
       rowInfoListX1Y1.clear();
     }
-
-    findRowHeaderWidth();
   }
 
   _layoutX({required double maxWidthNoSplit, required double width}) {
@@ -2334,10 +2392,10 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
     double minimumWidthForCell = 0.0;
     int column = -1;
 
-    if (editCell.isIndex) {
-      column = editCell.columns;
-      final x0 = getY(editCell.column);
-      final x1 = getY(editCell.column + editCell.columns);
+    if (_editCell.isIndex) {
+      column = _editCell.columns;
+      final x0 = getY(_editCell.column);
+      final x1 = getY(_editCell.column + _editCell.columns);
 
       minimumWidthForCell =
           (x1 - x0 + properties.editPadding.horizontal) * tableScale;
@@ -2385,7 +2443,7 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
               rightHeaderLayoutLength -
               properties.panelPadding.right;
 
-          final minimumHeightPanel2 = editCell.panelIndexX == 3
+          final minimumHeightPanel2 = _editCell.panelIndexX == 3
               ? math.max(minWidthPanel, minimumWidthForCell)
               : minWidthPanel;
 
@@ -2402,10 +2460,10 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
     double minimumHeightForCell = 0.0;
     int row = -1;
 
-    if (editCell.isIndex) {
-      row = editCell.row;
-      final y0 = getY(editCell.row);
-      final y1 = getY(editCell.row + editCell.rows);
+    if (_editCell.isIndex) {
+      row = _editCell.row;
+      final y0 = getY(_editCell.row);
+      final y1 = getY(_editCell.row + _editCell.rows);
 
       minimumHeightForCell =
           (y1 - y0 + properties.editPadding.vertical) * tableScale;
@@ -2453,7 +2511,7 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
               bottomHeaderLayoutLength -
               properties.panelPadding.bottom * tableScale;
 
-          final minimumHeightPanel2 = editCell.panelIndexY == 3
+          final minimumHeightPanel2 = _editCell.panelIndexY == 3
               ? math.max(minHeightPanel, minimumHeightForCell)
               : minHeightPanel;
 
@@ -2494,7 +2552,7 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
   // }
 
   adjustSplitStateAfterWidthResize(double width) {
-    if ((editCell.isIndex, stateSplitX)
+    if ((_editCell.isIndex, stateSplitX)
         case (
           true,
           SplitState.canceledAutoFreezeSplit ||
@@ -2599,7 +2657,7 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
   RestoreScroll restoreScroll = const RestoreScroll();
 
   adjustSplitStateAfterHeightResize(double height) {
-    if ((editCell.isIndex, stateSplitY)
+    if ((_editCell.isIndex, stateSplitY)
         case (
           true,
           SplitState.canceledAutoFreezeSplit ||
@@ -3989,18 +4047,6 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
   ///
   ///
 
-  void didFinishLayout() {
-    model.didFinishLayout();
-  }
-
-  void didStartLayout() {
-    model.didStartLayout();
-  }
-
-  void didPerformRebuild() {
-    model.didPerformRebuild();
-  }
-
   animateRestoreScroll(RestoreScroll animateScroll) {
     if (animateScroll.isEmpty) {
       return;
@@ -4086,14 +4132,14 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
       return;
     }
 
-    FtIndex? immRowIndex = model.indexToImmutableIndex(editCell);
+    FtIndex? immRowIndex = model.indexToImmutableIndex(_editCell);
 
     change();
 
     if (immRowIndex case FtIndex index) {
-      editCell = editCell.copyWith(index: model.immutableIndexToIndex(index));
+      _editCell = _editCell.copyWith(index: model.immutableIndexToIndex(index));
     } else {
-      editCell = const PanelCellIndex();
+      _editCell = const PanelCellIndex();
     }
   }
 
@@ -4136,8 +4182,8 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
   /// the texEditor will take the focus from the slider and so on.
   ///
   stopEditing() {
-    if (editCell.isIndex) {
-      editCell = const PanelCellIndex();
+    if (_editCell.isIndex) {
+      _editCell = const PanelCellIndex();
       markNeedsLayout();
     }
   }
