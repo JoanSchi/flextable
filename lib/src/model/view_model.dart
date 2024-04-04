@@ -4158,7 +4158,9 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
     C? previousCell,
   }) {
     cellsToUpdate.add(ftIndex);
-    _editCell = const PanelCellIndex();
+    if (ftIndex == _editCell) {
+      _editCell = const PanelCellIndex();
+    }
     lastEditIndex = ftIndex;
 
     if (previousCell == cell) {

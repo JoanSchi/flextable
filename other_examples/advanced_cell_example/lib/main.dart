@@ -92,7 +92,7 @@ class _RowChangeExampleState extends State<TextEditExample>
     final model = DefaultRecordFtModel(
         columnHeader: true,
         rowHeader: true,
-        defaultWidthCell: 320.0,
+        defaultWidthCell: 120.0,
         defaultHeightCell: 50.0,
         tableColumns: tableColumns,
         tableRows: tableRows,
