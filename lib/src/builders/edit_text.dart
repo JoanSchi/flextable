@@ -87,7 +87,9 @@ class _FtEditTextState extends State<FtEditText> {
     /// If the request is scheduled then the keyboard is to fast and widget is lost before focus
     ///
     ///
-    focusNode.requestFocus();
+    if (widget.requestFocus) {
+      focusNode.requestFocus();
+    }
     super.initState();
   }
 
@@ -98,6 +100,9 @@ class _FtEditTextState extends State<FtEditText> {
     // }
     // scheduleRequestFocus();
     // focusNode.requestFocus();
+    if (widget.requestFocus) {
+      focusNode.requestFocus();
+    }
     focusNode.safetyStop = false;
     super.didUpdateWidget(oldWidget);
   }

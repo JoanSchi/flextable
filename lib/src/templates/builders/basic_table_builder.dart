@@ -4,7 +4,6 @@
 
 import 'package:flextable/flextable.dart';
 import 'package:flextable/src/templates/cell_widgets/cell_calculation.dart';
-import 'package:flextable/src/templates/cell_widgets/shared/text_drawer.dart';
 import 'package:flutter/material.dart';
 import '../cell_widgets/cell_date.dart';
 import '../cell_widgets/cell_action.dart';

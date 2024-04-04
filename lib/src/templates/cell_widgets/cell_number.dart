@@ -43,6 +43,7 @@ class CellNumberWidget<C extends AbstractCell, M extends AbstractFtModel<C>>
             viewModel: viewModel,
             tableScale: tableScale,
             cell: cell,
+            requestFocus: cellStatus.hasFocus,
             layoutPanelIndex: layoutPanelIndex,
             tableCellIndex: tableCellIndex,
             formatCellNumber: formatCellNumber,
@@ -70,6 +71,7 @@ class _CellNumberEditor<C extends AbstractCell, M extends AbstractFtModel<C>>
       required this.tableCellIndex,
       required this.formatCellNumber,
       required this.useAccent,
+      required this.requestFocus,
       this.valueKey});
 
   final FtViewModel<C, M> viewModel;
@@ -80,6 +82,7 @@ class _CellNumberEditor<C extends AbstractCell, M extends AbstractFtModel<C>>
   final FormatCellNumber formatCellNumber;
   final bool useAccent;
   final ValueKey? valueKey;
+  final bool requestFocus;
 
   @override
   State<_CellNumberEditor> createState() => _CellNumberEditorState();
@@ -148,90 +151,92 @@ class _CellNumberEditorState extends State<_CellNumberEditor> {
 
     final valueKey = widget.valueKey;
 
+    /// Without resizer:
+    ///        MediaQuery(
+    ///     data: MediaQuery.of(context)
+    ///         .copyWith(textScaler: TextScaler.linear(widget.tableScale)),child:...
+    /// }
+
     Widget child = Center(
-        child: MediaQuery(
-      data: MediaQuery.of(context)
-          .copyWith(textScaler: TextScaler.linear(widget.tableScale)),
-      child: FtEditText(
-        obtainSharedTextEditController: valueKey != null
-            ? (value) {
-                return viewModel.sharedTextControllersByIndex
-                    .obtainFromIndex(valueKey, value);
-              }
-            : null,
-        removeSharedTextEditController: valueKey != null
-            ? () {
-                viewModel.sharedTextControllersByIndex.removeIndex(
-                  valueKey,
-                );
-              }
-            : null,
-        editInputType: textEditInputType,
-        text: value,
-        requestFocus: viewModel.editCell.samePanel(widget.layoutPanelIndex),
-        textAlign: TextAlign.center,
-        requestNextFocus: true,
-        requestNextFocusCallback: (String text) {
-          ///
-          /// ViewModel can be rebuild and the old viewbuild is disposed!
-          /// Get the latest viewModel and do again checks.
-          ///
-          ///
+        child: FtEditText(
+      obtainSharedTextEditController: valueKey != null
+          ? (value) {
+              return viewModel.sharedTextControllersByIndex
+                  .obtainFromIndex(valueKey, value);
+            }
+          : null,
+      removeSharedTextEditController: valueKey != null
+          ? () {
+              viewModel.sharedTextControllersByIndex.removeIndex(
+                valueKey,
+              );
+            }
+          : null,
+      editInputType: textEditInputType,
+      text: value,
+      requestFocus: widget
+          .requestFocus, //viewModel.editCell.samePanel(widget.layoutPanelIndex),
+      textAlign: TextAlign.center,
+      requestNextFocus: true,
+      requestNextFocusCallback: (String text) {
+        ///
+        /// ViewModel can be rebuild and the old viewbuild is disposed!
+        /// Get the latest viewModel and do again checks.
+        ///
+        ///
 
-          if (nextFocus) {
-            viewModel
-              ..editCell = PanelCellIndex.from(
-                  panelIndexX: widget.layoutPanelIndex.xIndex,
-                  panelIndexY: widget.layoutPanelIndex.yIndex,
-                  ftIndex: viewModel.nextCell(PanelCellIndex.from(
-                      ftIndex: widget.tableCellIndex, cell: cell)))
-              ..markNeedsLayout();
+        if (nextFocus) {
+          viewModel
+            ..editCell = PanelCellIndex.from(
+                panelIndexX: widget.layoutPanelIndex.xIndex,
+                panelIndexY: widget.layoutPanelIndex.yIndex,
+                ftIndex: viewModel.nextCell(PanelCellIndex.from(
+                    ftIndex: widget.tableCellIndex, cell: cell)))
+            ..markNeedsLayout();
 
-            onValueChange(text);
-            return true;
-          } else {
-            /// Unfocus is called and unfocus will handel onValueChange
-            ///
+          onValueChange(text);
+          return true;
+        } else {
+          /// Unfocus is called and unfocus will handel onValueChange
+          ///
+          viewModel
+            ..clearEditCell(widget.tableCellIndex)
+            ..markNeedsLayout();
+          return false;
+        }
+      },
+      focus: () {
+        viewModel.updateCellPanel(widget.layoutPanelIndex);
+      },
+      unFocus: (UnfocusDisposition disposition, String value, bool escape) {
+        if (kIsWeb) {
+          if (!escape) {
+            onValueChange(value);
+          }
+          if (disposition == UnfocusDisposition.scope) {
             viewModel
               ..clearEditCell(widget.tableCellIndex)
               ..markNeedsLayout();
-            return false;
           }
-        },
-        focus: () {
-          viewModel.updateCellPanel(widget.layoutPanelIndex);
-        },
-        unFocus: (UnfocusDisposition disposition, String value, bool escape) {
-          if (kIsWeb) {
-            if (!escape) {
-              onValueChange(value);
-            }
-            if (disposition == UnfocusDisposition.scope) {
-              viewModel
-                ..clearEditCell(widget.tableCellIndex)
-                ..markNeedsLayout();
-            }
-          } else {
-            if (!escape &&
-                !viewModel.editCell.sameIndex(widget.tableCellIndex)) {
-              onValueChange(value);
-            }
-            if (disposition == UnfocusDisposition.scope) {
-              viewModel
-                ..clearEditCell(widget.tableCellIndex)
-                ..markNeedsLayout();
-            }
+        } else {
+          if (!escape && !viewModel.editCell.sameIndex(widget.tableCellIndex)) {
+            onValueChange(value);
           }
-        },
-        // onValueChanged: onValueChange,
-      ),
+          if (disposition == UnfocusDisposition.scope) {
+            viewModel
+              ..clearEditCell(widget.tableCellIndex)
+              ..markNeedsLayout();
+          }
+        }
+      },
+      // onValueChanged: onValueChange,
     ));
     child = Container(
         color: widget.useAccent
             ? (numberCellStyle?.backgroundAccent ?? numberCellStyle?.background)
             : numberCellStyle?.background,
         child: child);
-
+    child = FtScaledCell(scale: widget.tableScale, child: child);
     return AutomaticKeepAlive(child: SelectionKeepAlive(child: child));
   }
 
@@ -268,8 +273,7 @@ class _CellNumberEditorState extends State<_CellNumberEditor> {
 
 class _CellNumber extends StatelessWidget {
   const _CellNumber(
-      {super.key,
-      required this.tableScale,
+      {required this.tableScale,
       required this.cell,
       required this.layoutPanelIndex,
       required this.tableCellIndex,

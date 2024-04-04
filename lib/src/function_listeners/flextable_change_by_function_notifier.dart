@@ -14,7 +14,7 @@ class ChangeByFunctionNotifier<T> {
   bool _debugDisposed = false;
 
   /// If true, the event [ObjectCreated] for this instance was dispatched to
-  /// [MemoryAllocations].
+  ///
   ///
   /// As [ChangedNotifier] is used as mixin, it does not have constructor,
   /// so we use [addListener] to dispatch the event.
@@ -103,7 +103,7 @@ class ChangeByFunctionNotifier<T> {
   void addListener(T listener) {
     assert(ChangeByFunctionNotifier.debugAssertNotDisposed(this));
     if (kFlutterMemoryAllocationsEnabled && !_creationDispatched) {
-      MemoryAllocations.instance.dispatchObjectCreated(
+      FlutterMemoryAllocations.instance.dispatchObjectCreated(
         library: _flutterFoundationLibrary,
         className: '$ChangeByFunctionNotifier',
         object: this,

@@ -1099,7 +1099,7 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
       }
     }
 
-    if (model.anyFreezeSplitX) {
+    if (model.anyNoAutoFreezeX) {
       if (outOfRangeX(1, 0)) xSimulation(1, 0);
 
       if (model.stateSplitX == SplitState.split && protectedScrollUnlockY) {
@@ -2253,7 +2253,13 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
         {}
     }
 
-    if (layout && rowHeader) {
+    if (layout) {
+      final maxHeightNoSplit = computeMaxIntrinsicHeightNoSplit(width);
+      _layoutY(
+          maxHeightNoSplit:
+              maxHeightNoSplit + sizeScrollBarBottom + bottomHeaderLayoutLength,
+          height: height);
+
       findRowHeaderWidth();
 
       final maxWidthNoSplit = computeMaxIntrinsicWidthNoSplit(height);

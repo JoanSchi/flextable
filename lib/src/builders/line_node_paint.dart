@@ -49,7 +49,7 @@ calculateLinePosition({
     int endDrawOne = node.end > endLevelOne ? endLevelOne : node.end;
 
     for (int i = startDrawOne; i <= endDrawOne; i++) {
-      LineNode firstNode = node.lineNodeRange
+      LineNode? firstNode = node.lineNodeRange
           .begin(startLevelTwo, scrollIndexX, scrollIndexY, false);
 
       int startWithinBoundery = 0;
@@ -67,38 +67,40 @@ calculateLinePosition({
       /// The line is only drawn if the node has a line at the start and end side.
       ///
 
-      startWithinBoundery =
-          firstNode.start < startLevelTwo ? startLevelTwo : firstNode.start;
-      endWithinboundery =
-          firstNode.end > endLevelTwo ? endLevelTwo : firstNode.end;
+      single(LineNode node) {
+        if (node.end - node.start == 0) {
+          return;
+        }
+        startWithinBoundery =
+            node.start < startLevelTwo ? startLevelTwo : node.start;
+        endWithinboundery = node.end > endLevelTwo ? endLevelTwo : node.end;
 
-      if (startWithinBoundery < endWithinboundery) {
-        startPosition =
-            infoLevelTwo[startWithinBoundery - startLevelTwo].position;
-        endPosition = positionLevelTwo(endWithinboundery);
-        drawLine(
-            horizontal: horizontal,
-            canvas: canvas,
-            paint: paint,
-            size: size,
-            xScroll: xScroll,
-            yScroll: yScroll,
-            tableScale: tableScale,
-            first: firstNode,
-            second: firstNode,
-            levelTwoStartPosition: startPosition,
-            levelTwoEndPosition: endPosition,
-            levelOnePosition: positionLevelOne);
+        if (startWithinBoundery < endWithinboundery) {
+          startPosition =
+              infoLevelTwo[startWithinBoundery - startLevelTwo].position;
+          endPosition = positionLevelTwo(endWithinboundery);
+          drawLine(
+              horizontal: horizontal,
+              canvas: canvas,
+              paint: paint,
+              size: size,
+              xScroll: xScroll,
+              yScroll: yScroll,
+              tableScale: tableScale,
+              first: node,
+              second: node,
+              levelTwoStartPosition: startPosition,
+              levelTwoEndPosition: endPosition,
+              levelOnePosition: positionLevelOne);
+        }
       }
 
-      while (secondNode != null &&
-          firstNode.start < endLevelTwo &&
-          secondNode.end >= startLevelTwo) {
+      two(LineNode nodeOne, LineNode nodeTwo) {
         startWithinBoundery =
-            firstNode.end > endLevelTwo ? endLevelTwo : firstNode.end;
+            nodeOne.end > endLevelTwo ? endLevelTwo : nodeOne.end;
 
         endWithinboundery =
-            secondNode.start < startLevelTwo ? startLevelTwo : secondNode.start;
+            nodeTwo.start < startLevelTwo ? startLevelTwo : nodeTwo.start;
 
         if (startWithinBoundery < endWithinboundery) {
           startPosition = positionLevelTwo(startWithinBoundery);
@@ -112,15 +114,31 @@ calculateLinePosition({
               xScroll: xScroll,
               yScroll: yScroll,
               tableScale: tableScale,
-              first: firstNode,
-              second: secondNode,
+              first: nodeOne,
+              second: nodeTwo,
               levelTwoStartPosition: startPosition,
               levelTwoEndPosition: endPosition,
               levelOnePosition: positionLevelOne);
         }
+      }
+
+      while (firstNode != null) {
+        if (firstNode.start < endLevelTwo) {
+          single(firstNode);
+        } else {
+          break;
+        }
+
+        if (secondNode != null &&
+            firstNode.start < endLevelTwo &&
+            secondNode.end >= startLevelTwo) {
+          two(firstNode, secondNode);
+        } else {
+          break;
+        }
 
         firstNode = secondNode;
-        secondNode = secondNode.next;
+        secondNode = firstNode.next;
       }
     }
 

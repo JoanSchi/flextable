@@ -8,7 +8,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../builders/edit_text.dart';
-import 'shared/text_drawer.dart';
 
 typedef FormatCellDate = String Function(String format, DateTime dateTime);
 
@@ -48,7 +47,7 @@ class CellDateWidget<C extends AbstractCell, M extends AbstractFtModel<C>>
             format: 'dd-MM-yy',
             layoutPanelIndex: layoutPanelIndex,
             tableCellIndex: tableCellIndex,
-            requestFocus: true,
+            requestFocus: cellStatus.hasFocus,
             useAccent: useAccent,
             valueKey: valueKey,
           )
@@ -120,97 +119,99 @@ class _CellDateEditorState extends State<_CellDateEditor> {
 
     final valueKey = widget.valueKey;
 
+    /// Without resizer:
+    ///        MediaQuery(
+    ///     data: MediaQuery.of(context)
+    ///         .copyWith(textScaler: TextScaler.linear(widget.tableScale)),child:...
+    /// }
+
     Widget child = Center(
-        child: MediaQuery(
-            data: MediaQuery.of(context)
-                .copyWith(textScaler: TextScaler.linear(widget.tableScale)),
-            child: _DateInputPicker(
-              obtainSharedTextEditController: valueKey != null
-                  ? (String text) {
-                      return viewModel.sharedTextControllersByIndex
-                          .obtainFromIndex(valueKey, text);
-                    }
-                  : null,
-              removeSharedTextEditController: valueKey != null
-                  ? () {
-                      viewModel.sharedTextControllersByIndex.removeIndex(
-                        valueKey,
-                      );
-                    }
-                  : null,
-              additionalDividers: const ['.', '/', '-'],
-              format: widget.format ?? 'dd-MM-yy',
-              formatCellDate: widget.formatCellDate,
-              formatHint: widget.format ?? 'dd-MM-yy',
-              changeDate: onDateChange,
-              textInputAction:
-                  nextFocus ? TextInputAction.next : TextInputAction.done,
-              date: cell.value,
-              firstDate: cell.minDate,
-              lastDate: cell.maxDate,
-              requestFocus:
-                  viewModel.editCell.samePanel(widget.layoutPanelIndex),
-              requestNextFocus: true,
-              requestNextFocusCallback: (DateTime? date) {
-                ///
-                /// ViewModel can be rebuild and the old viewbuild is disposed!
-                /// Get the latest viewModel and do again checks.
-                ///
-                ///
+        child: _DateInputPicker(
+      obtainSharedTextEditController: valueKey != null
+          ? (String text) {
+              return viewModel.sharedTextControllersByIndex
+                  .obtainFromIndex(valueKey, text);
+            }
+          : null,
+      removeSharedTextEditController: valueKey != null
+          ? () {
+              viewModel.sharedTextControllersByIndex.removeIndex(
+                valueKey,
+              );
+            }
+          : null,
+      additionalDividers: const ['.', '/', '-'],
+      format: widget.format ?? 'dd-MM-yy',
+      formatCellDate: widget.formatCellDate,
+      formatHint: widget.format ?? 'dd-MM-yy',
+      changeDate: onDateChange,
+      textInputAction: nextFocus ? TextInputAction.next : TextInputAction.done,
+      date: cell.value,
+      firstDate: cell.minDate,
+      lastDate: cell.maxDate,
+      requestFocus: widget
+          .requestFocus, // viewModel.editCell.samePanel(widget.layoutPanelIndex),
+      requestNextFocus: true,
+      requestNextFocusCallback: (DateTime? date) {
+        ///
+        /// ViewModel can be rebuild and the old viewbuild is disposed!
+        /// Get the latest viewModel and do again checks.
+        ///
+        ///
 
-                if (nextFocus) {
-                  final t = viewModel.nextCell(PanelCellIndex.from(
-                      ftIndex: widget.tableCellIndex, cell: cell));
+        if (nextFocus) {
+          final t = viewModel.nextCell(
+              PanelCellIndex.from(ftIndex: widget.tableCellIndex, cell: cell));
 
-                  viewModel
-                    ..editCell = PanelCellIndex.from(
-                        panelIndexX: widget.layoutPanelIndex.xIndex,
-                        panelIndexY: widget.layoutPanelIndex.yIndex,
-                        ftIndex: t)
-                    ..markNeedsLayout();
+          viewModel
+            ..editCell = PanelCellIndex.from(
+                panelIndexX: widget.layoutPanelIndex.xIndex,
+                panelIndexY: widget.layoutPanelIndex.yIndex,
+                ftIndex: t)
+            ..markNeedsLayout();
 
-                  onDateChange(date);
-                  return true;
-                } else {
-                  viewModel
-                    ..clearEditCell(widget.tableCellIndex)
-                    ..markNeedsLayout();
-                  return false;
-                }
-              },
-              unFocus: (UnfocusDisposition disposition, DateTime? dateTime,
-                  bool escape) {
-                if (kIsWeb) {
-                  if (!escape) {
-                    onDateChange(dateTime);
-                  }
-                  if (disposition == UnfocusDisposition.scope) {
-                    viewModel
-                      ..clearEditCell(widget.tableCellIndex)
-                      ..markNeedsLayout();
-                  }
-                } else {
-                  if (!escape &&
-                      !viewModel.editCell.sameIndex(widget.tableCellIndex)) {
-                    onDateChange(dateTime);
-                  }
-                  if (disposition == UnfocusDisposition.scope) {
-                    viewModel
-                      ..clearEditCell(widget.tableCellIndex)
-                      ..markNeedsLayout();
-                  }
-                }
-              },
-              focus: () {
-                viewModel.updateCellPanel(widget.layoutPanelIndex);
-              },
-            )));
-    child = Container(
-        color: widget.useAccent
-            ? (textCellStyle?.backgroundAccent ?? textCellStyle?.background)
-            : textCellStyle?.background,
+          onDateChange(date);
+          return true;
+        } else {
+          viewModel
+            ..clearEditCell(widget.tableCellIndex)
+            ..markNeedsLayout();
+          return false;
+        }
+      },
+      unFocus:
+          (UnfocusDisposition disposition, DateTime? dateTime, bool escape) {
+        if (kIsWeb) {
+          if (!escape) {
+            onDateChange(dateTime);
+          }
+          if (disposition == UnfocusDisposition.scope) {
+            viewModel
+              ..clearEditCell(widget.tableCellIndex)
+              ..markNeedsLayout();
+          }
+        } else {
+          if (!escape && !viewModel.editCell.sameIndex(widget.tableCellIndex)) {
+            onDateChange(dateTime);
+          }
+          if (disposition == UnfocusDisposition.scope) {
+            viewModel
+              ..clearEditCell(widget.tableCellIndex)
+              ..markNeedsLayout();
+          }
+        }
+      },
+      focus: () {
+        viewModel.updateCellPanel(widget.layoutPanelIndex);
+      },
+    ));
+    child = BackgroundDrawer(
+        useAccent: widget.useAccent,
+        style: cell.style,
+        tableScale: 1.0,
         child: child);
 
+    child = FtScaledCell(scale: widget.tableScale, child: child);
     return AutomaticKeepAlive(child: SelectionKeepAlive(child: child));
   }
 
@@ -262,10 +263,10 @@ class _DateCellState extends State<_DateCell> {
     };
     final theme = Theme.of(context);
 
-    return Stack(
+    Widget child = Stack(
       children: [
         TextDrawer(
-          tableScale: widget.tableScale,
+          tableScale: 1.0,
           cell: widget.cell,
           formatedValue: value,
           useAccent: widget.useAccent,
@@ -306,6 +307,7 @@ class _DateCellState extends State<_DateCell> {
           ),
       ],
     );
+    return FtScaledCell(scale: widget.tableScale, child: child);
   }
 }
 
@@ -331,8 +333,7 @@ class _DateInputPicker extends StatefulWidget {
   final RemoveSharedTextEditController? removeSharedTextEditController;
 
   const _DateInputPicker(
-      {super.key,
-      required this.date,
+      {required this.date,
       required this.firstDate,
       required this.lastDate,
       this.changeDate,
@@ -404,7 +405,7 @@ class _DateInputPickerState extends State<_DateInputPicker> {
     });
 
     if (widget.requestFocus) {
-      scheduleRequestFocus();
+      focusNode.requestFocus();
     }
 
     if (widget.formatWithUnfocus) {

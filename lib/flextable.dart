@@ -147,3 +147,5 @@ export 'src/model/change/model_change.dart' show ChangeRange;
 /// Keys
 ///
 export 'src/keys/escape.dart' show EscapeIntent;
+
+export 'src/templates/builders/ft_scaled_cell.dart' show FtScaledCell;

@@ -53,12 +53,14 @@ class CellTextWidget<C extends AbstractCell, M extends AbstractFtModel<C>>
         text = '';
       }
 
-      return TextDrawer(
-        tableScale: tableScale,
-        cell: cell,
-        useAccent: useAccent,
-        formatedValue: text,
-      );
+      return FtScaledCell(
+          scale: tableScale,
+          child: TextDrawer(
+            tableScale: 1.0,
+            cell: cell,
+            useAccent: useAccent,
+            formatedValue: text,
+          ));
     }
   }
 }
@@ -126,90 +128,90 @@ class _CellTextEditorState extends State<CellTextEditor> {
 
     final valueKey = widget.valueKey;
 
+    /// Without resizer:
+    ///        MediaQuery(
+    ///     data: MediaQuery.of(context)
+    ///         .copyWith(textScaler: TextScaler.linear(widget.tableScale)),child:...
+    /// }
+
     Widget child = Center(
-        child: MediaQuery(
-      data: MediaQuery.of(context)
-          .copyWith(textScaler: TextScaler.linear(widget.tableScale)),
-      child: FtEditText(
-        obtainSharedTextEditController: valueKey != null
-            ? (String text) {
-                return viewModel.sharedTextControllersByIndex
-                    .obtainFromIndex(valueKey, text);
-              }
-            : null,
-        removeSharedTextEditController: valueKey != null
-            ? () {
-                viewModel.sharedTextControllersByIndex.removeIndex(
-                  valueKey,
-                );
-              }
-            : null,
-        editInputType: textEditInputType,
-        text: value,
-        requestFocus: viewModel.editCell.samePanel(widget.layoutPanelIndex),
-        textAlign: TextAlign.center,
-        requestNextFocus: true,
-        requestNextFocusCallback: (String text) {
-          ///
-          /// ViewModel can be rebuild and the old viewbuild is disposed!
-          /// Get the latest viewModel and do again checks.
-          ///
-          ///
+        child: FtEditText(
+      obtainSharedTextEditController: valueKey != null
+          ? (String text) {
+              return viewModel.sharedTextControllersByIndex
+                  .obtainFromIndex(valueKey, text);
+            }
+          : null,
+      removeSharedTextEditController: valueKey != null
+          ? () {
+              viewModel.sharedTextControllersByIndex.removeIndex(
+                valueKey,
+              );
+            }
+          : null,
+      editInputType: textEditInputType,
+      text: value,
+      requestFocus: viewModel.editCell.samePanel(widget.layoutPanelIndex),
+      textAlign: TextAlign.center,
+      requestNextFocus: true,
+      requestNextFocusCallback: (String text) {
+        ///
+        /// ViewModel can be rebuild and the old viewbuild is disposed!
+        /// Get the latest viewModel and do again checks.
+        ///
+        ///
 
-          if (nextFocus) {
-            viewModel
-              ..editCell = PanelCellIndex.from(
-                  panelIndexX: widget.layoutPanelIndex.xIndex,
-                  panelIndexY: widget.layoutPanelIndex.yIndex,
-                  ftIndex: viewModel.nextCell(PanelCellIndex.from(
-                      ftIndex: widget.tableCellIndex, cell: cell)))
-              ..markNeedsLayout();
+        if (nextFocus) {
+          viewModel
+            ..editCell = PanelCellIndex.from(
+                panelIndexX: widget.layoutPanelIndex.xIndex,
+                panelIndexY: widget.layoutPanelIndex.yIndex,
+                ftIndex: viewModel.nextCell(PanelCellIndex.from(
+                    ftIndex: widget.tableCellIndex, cell: cell)))
+            ..markNeedsLayout();
 
-            onValueChange(text);
-            return true;
-          } else {
+          onValueChange(text);
+          return true;
+        } else {
+          viewModel
+            ..clearEditCell(widget.tableCellIndex)
+            ..markNeedsLayout();
+          return false;
+        }
+      },
+      focus: () {
+        viewModel.updateCellPanel(widget.layoutPanelIndex);
+      },
+      unFocus: (UnfocusDisposition disposition, String value, bool escape) {
+        if (kIsWeb) {
+          if (!escape) {
+            onValueChange(value);
+          }
+          if (disposition == UnfocusDisposition.scope) {
             viewModel
               ..clearEditCell(widget.tableCellIndex)
               ..markNeedsLayout();
-            return false;
           }
-        },
-        focus: () {
-          viewModel.updateCellPanel(widget.layoutPanelIndex);
-        },
-        unFocus: (UnfocusDisposition disposition, String value, bool escape) {
-          if (kIsWeb) {
-            if (!escape) {
-              onValueChange(value);
-            }
-            if (disposition == UnfocusDisposition.scope) {
-              viewModel
-                ..clearEditCell(widget.tableCellIndex)
-                ..markNeedsLayout();
-            }
-          } else {
-            if (!escape &&
-                !viewModel.editCell.sameIndex(widget.tableCellIndex)) {
-              onValueChange(value);
-            }
-            if (disposition == UnfocusDisposition.scope) {
-              viewModel
-                ..clearEditCell(widget.tableCellIndex)
-                ..markNeedsLayout();
-            }
+        } else {
+          if (!escape && !viewModel.editCell.sameIndex(widget.tableCellIndex)) {
+            onValueChange(value);
           }
-        },
-        onValueChanged: onValueChange,
-      ),
+          if (disposition == UnfocusDisposition.scope) {
+            viewModel
+              ..clearEditCell(widget.tableCellIndex)
+              ..markNeedsLayout();
+          }
+        }
+      },
+      onValueChanged: onValueChange,
     ));
     child = Container(
         color: widget.useAccent
             ? (textCellStyle?.backgroundAccent ?? textCellStyle?.background)
             : textCellStyle?.background,
         child: child);
-
+    child = FtScaledCell(scale: widget.tableScale, child: child);
     return AutomaticKeepAlive(child: SelectionKeepAlive(child: child));
-    // return KeepAlive(keepAlive: true, child: child);
   }
 
   void onValueChange(String text) {

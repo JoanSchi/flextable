@@ -7,7 +7,6 @@ import 'dart:ui';
 import 'package:flextable/src/model/view_model.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'combi_key.dart';
 import '../../gesture_scroll/table_gesture.dart';
 import '../../gesture_scroll/table_scale_gesture.dart';
 

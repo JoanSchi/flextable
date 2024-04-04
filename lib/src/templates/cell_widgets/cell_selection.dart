@@ -111,12 +111,14 @@ class _CellSelectionWidgetState extends State<CellSelectionWidget> {
   @override
   Widget build(BuildContext context) {
     return !cell.editable
-        ? TextDrawer(
-            cell: cell,
-            tableScale: widget.tableScale,
-            useAccent: widget.useAccent,
-            formatedValue: translateValue(),
-          )
+        ? FtScaledCell(
+            scale: widget.tableScale,
+            child: TextDrawer(
+              cell: cell,
+              tableScale: 1.0,
+              useAccent: widget.useAccent,
+              formatedValue: translateValue(),
+            ))
         : PopupMenuButton<Object>(
             tooltip: '',
             initialValue: cell.value,
@@ -129,15 +131,17 @@ class _CellSelectionWidgetState extends State<CellSelectionWidget> {
             },
             itemBuilder: (BuildContext context) =>
                 widget.cell.values.map<PopupMenuEntry<Object>>((value) {
-              return PopupMenuItem<Object>(
-                  value: value, child: Text(translateItem(value)));
-            }).toList(),
-            child: TextDrawer(
-              cell: cell,
-              tableScale: widget.tableScale,
-              useAccent: widget.useAccent,
-              formatedValue: translateValue(),
-            ),
-          );
+                  return PopupMenuItem<Object>(
+                      value: value, child: Text(translateItem(value)));
+                }).toList(),
+            child: FtScaledCell(
+              scale: widget.tableScale,
+              child: TextDrawer(
+                cell: cell,
+                tableScale: 1.0,
+                useAccent: widget.useAccent,
+                formatedValue: translateValue(),
+              ),
+            ));
   }
 }

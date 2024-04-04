@@ -53,12 +53,12 @@ class CellCalculation extends StatelessWidget {
       formatValue(cell),
       textAlign: numberCellStyle?.textAlign,
       style: numberCellStyle?.textStyle,
-      textScaler: TextScaler.linear(tableScale),
+      textScaler: const TextScaler.linear(1.0),
     );
 
     child = Container(
         padding: switch (numberCellStyle?.padding) {
-          (EdgeInsets e) => e * tableScale,
+          (EdgeInsets e) => e * 1.0,
           (_) => null
         },
         alignment: numberCellStyle?.alignment ?? Alignment.center,
@@ -67,10 +67,12 @@ class CellCalculation extends StatelessWidget {
             : numberCellStyle?.background,
         child: child);
 
-    return ValidationDrawer(
+    child = ValidationDrawer(
       cell: cell,
-      tableScale: tableScale,
+      tableScale: 1.0,
       child: child,
     );
+
+    return FtScaledCell(scale: tableScale, child: child);
   }
 }
