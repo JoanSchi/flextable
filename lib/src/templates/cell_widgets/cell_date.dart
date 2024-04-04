@@ -173,9 +173,7 @@ class _CellDateEditorState extends State<_CellDateEditor> {
           onDateChange(date);
           return true;
         } else {
-          viewModel
-            ..clearEditCell(widget.tableCellIndex)
-            ..markNeedsLayout();
+          viewModel.clearEditCell(cellIndex: widget.tableCellIndex);
           return false;
         }
       },
@@ -186,18 +184,14 @@ class _CellDateEditorState extends State<_CellDateEditor> {
             onDateChange(dateTime);
           }
           if (disposition == UnfocusDisposition.scope) {
-            viewModel
-              ..clearEditCell(widget.tableCellIndex)
-              ..markNeedsLayout();
+            viewModel.clearEditCell(cellIndex: widget.tableCellIndex);
           }
         } else {
           if (!escape && !viewModel.editCell.sameIndex(widget.tableCellIndex)) {
             onDateChange(dateTime);
           }
           if (disposition == UnfocusDisposition.scope) {
-            viewModel
-              ..clearEditCell(widget.tableCellIndex)
-              ..markNeedsLayout();
+            viewModel.clearEditCell(cellIndex: widget.tableCellIndex);
           }
         }
       },

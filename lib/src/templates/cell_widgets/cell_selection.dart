@@ -120,6 +120,9 @@ class _CellSelectionWidgetState extends State<CellSelectionWidget> {
               formatedValue: translateValue(),
             ))
         : PopupMenuButton<Object>(
+            onOpened: () {
+              widget.viewModel.clearEditCell();
+            },
             tooltip: '',
             initialValue: cell.value,
             // Callback that sets the selected popup menu item.

@@ -199,9 +199,7 @@ class _CellNumberEditorState extends State<_CellNumberEditor> {
         } else {
           /// Unfocus is called and unfocus will handel onValueChange
           ///
-          viewModel
-            ..clearEditCell(widget.tableCellIndex)
-            ..markNeedsLayout();
+          viewModel.clearEditCell(cellIndex: widget.tableCellIndex);
           return false;
         }
       },
@@ -214,18 +212,14 @@ class _CellNumberEditorState extends State<_CellNumberEditor> {
             onValueChange(value);
           }
           if (disposition == UnfocusDisposition.scope) {
-            viewModel
-              ..clearEditCell(widget.tableCellIndex)
-              ..markNeedsLayout();
+            viewModel.clearEditCell(cellIndex: widget.tableCellIndex);
           }
         } else {
           if (!escape && !viewModel.editCell.sameIndex(widget.tableCellIndex)) {
             onValueChange(value);
           }
           if (disposition == UnfocusDisposition.scope) {
-            viewModel
-              ..clearEditCell(widget.tableCellIndex)
-              ..markNeedsLayout();
+            viewModel.clearEditCell(cellIndex: widget.tableCellIndex);
           }
         }
       },

@@ -173,9 +173,7 @@ class _CellTextEditorState extends State<CellTextEditor> {
           onValueChange(text);
           return true;
         } else {
-          viewModel
-            ..clearEditCell(widget.tableCellIndex)
-            ..markNeedsLayout();
+          viewModel.clearEditCell(cellIndex: widget.tableCellIndex);
           return false;
         }
       },
@@ -188,18 +186,14 @@ class _CellTextEditorState extends State<CellTextEditor> {
             onValueChange(value);
           }
           if (disposition == UnfocusDisposition.scope) {
-            viewModel
-              ..clearEditCell(widget.tableCellIndex)
-              ..markNeedsLayout();
+            viewModel.clearEditCell(cellIndex: widget.tableCellIndex);
           }
         } else {
           if (!escape && !viewModel.editCell.sameIndex(widget.tableCellIndex)) {
             onValueChange(value);
           }
           if (disposition == UnfocusDisposition.scope) {
-            viewModel
-              ..clearEditCell(widget.tableCellIndex)
-              ..markNeedsLayout();
+            viewModel.clearEditCell(cellIndex: widget.tableCellIndex);
           }
         }
       },

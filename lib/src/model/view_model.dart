@@ -225,9 +225,10 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
     }
   }
 
-  void clearEditCell(FtIndex cellIndex) {
-    if (_editCell == cellIndex) {
+  void clearEditCell({FtIndex? cellIndex}) {
+    if ((cellIndex == null && _editCell.isIndex) || _editCell == cellIndex) {
       _editCell = const PanelCellIndex();
+      markNeedsLayout();
     }
     scrollToEditCell = false;
   }
@@ -4157,7 +4158,7 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
     C? previousCell,
   }) {
     cellsToUpdate.add(ftIndex);
-    clearEditCell(ftIndex);
+    _editCell = const PanelCellIndex();
     lastEditIndex = ftIndex;
 
     if (previousCell == cell) {

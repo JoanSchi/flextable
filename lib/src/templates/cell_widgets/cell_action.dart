@@ -77,6 +77,9 @@ class CellActionWidget<C extends AbstractCell, M extends AbstractFtModel<C>, A>
                 icon: item.widget!,
               )))),
       (List<A> list, String? text) => PopupMenuButton<A>(
+          onOpened: () {
+            viewModel.clearEditCell();
+          },
           tooltip: '',
           // Callback that sets the selected popup menu item.
           onSelected: (a) {
@@ -107,6 +110,7 @@ class CellActionWidget<C extends AbstractCell, M extends AbstractFtModel<C>, A>
               child: SizedBox.expand(
                 child: TextButton(
                     onPressed: () {
+                      viewModel.clearEditCell();
                       actionCallBack(viewModel, cell, tableCellIndex, a);
                     },
                     child: Text(translateItem(text ?? ':{'),
