@@ -66,7 +66,7 @@ class FlexTable<C extends AbstractCell, M extends AbstractFtModel<C>>
   final Color? backgroundColor;
   final List<TableChangeNotifier> tableChangeNotifiers;
   final ChangedCellValueCallback? changeCellValue;
-  final SelectedCellCallback? selectedCell;
+  final SelectedCellCallback<C, M>? selectedCell;
 
   @override
   State<StatefulWidget> createState() => FlexTableState<C, M>();

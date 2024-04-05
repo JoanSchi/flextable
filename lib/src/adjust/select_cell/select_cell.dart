@@ -5,20 +5,24 @@
 import 'package:flutter/material.dart';
 import '../../../flextable.dart';
 
-typedef SelectedCellCallback = bool Function(
-    FtViewModel viewModel, PanelCellIndex panelCellIndex, AbstractCell? cell);
+typedef SelectedCellCallback<C extends AbstractCell,
+        M extends AbstractFtModel<C>>
+    = bool Function(
+        FtViewModel<C, M> viewModel, PanelCellIndex panelCellIndex, C? cell);
 
-class SelectCell extends StatefulWidget {
-  final FtViewModel viewModel;
-  final SelectedCellCallback? selectedCell;
+class SelectCell<C extends AbstractCell, M extends AbstractFtModel<C>>
+    extends StatefulWidget {
+  final FtViewModel<C, M> viewModel;
+  final SelectedCellCallback<C, M>? selectedCell;
 
   const SelectCell({super.key, required this.viewModel, this.selectedCell});
 
   @override
-  State<SelectCell> createState() => _SelectCellState();
+  State<SelectCell> createState() => _SelectCellState<C, M>();
 }
 
-class _SelectCellState extends State<SelectCell> {
+class _SelectCellState<C extends AbstractCell, M extends AbstractFtModel<C>>
+    extends State<SelectCell<C, M>> {
   Offset localPosition = Offset.zero;
 
   @override
@@ -30,20 +34,21 @@ class _SelectCellState extends State<SelectCell> {
       },
       onTap: () {
         final viewModel = widget.viewModel;
-        final cellIndex = viewModel.findCell(localPosition);
+        final indexAndCell = viewModel.findCell(localPosition);
 
-        if (!(widget.selectedCell
-                ?.call(viewModel, cellIndex.panelCellIndex, cellIndex.cell) ??
+        if (!(widget.selectedCell?.call(
+                viewModel, indexAndCell.panelCellIndex, indexAndCell.cell) ??
             false)) {
-          if (!viewModel.editCell.sameIndex(cellIndex.panelCellIndex)) {
+          if (!viewModel.editCell.sameIndex(indexAndCell.panelCellIndex)) {
             final editable = viewModel.model
-                .isCellEditable(cellIndex.panelCellIndex)
+                .isCellEditable(indexAndCell.panelCellIndex)
                 .ftIndex
                 .isIndex;
 
             widget.viewModel
-              ..editCell =
-                  editable ? cellIndex.panelCellIndex : const PanelCellIndex()
+              ..editCell = editable
+                  ? indexAndCell.panelCellIndex
+                  : const PanelCellIndex()
               ..markNeedsLayout();
           }
         }

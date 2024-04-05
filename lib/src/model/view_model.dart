@@ -3819,8 +3819,7 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
   ///
   ///
 
-  ({PanelCellIndex panelCellIndex, AbstractCell? cell}) findCell(
-      Offset offset) {
+  ({PanelCellIndex panelCellIndex, C? cell}) findCell(Offset offset) {
     int panelIndexX = -1;
     double correctX = 0.0;
     int panelIndexY = -1;
@@ -3850,7 +3849,7 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
 
     ({
       FtIndex ftIndex,
-      AbstractCell? cell
+      C? cell
     }) y = model.isCellEditable(model.findCellIndexFromPosition(
         correctX / tableScale +
             getScrollX(panelIndexX <= 1 ? 0 : 1, panelIndexY <= 1 ? 0 : 1),
@@ -3995,7 +3994,7 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
             {}
         }
 
-        debugPrint('leftPadding $leftPadding');
+        // debugPrint('leftPadding $leftPadding');
 
         if (!skipX) {
           if (x1 > scrollX + widthPanel) {

@@ -1060,7 +1060,7 @@ abstract class AbstractFtModel<C extends AbstractCell> {
     bool user = false,
   });
 
-  ({FtIndex ftIndex, AbstractCell? cell}) nextCell(PanelCellIndex current) {
+  ({FtIndex ftIndex, C? cell}) nextCell(PanelCellIndex current) {
     int row = current.row;
     int column = current.column + current.columns;
 
@@ -1068,7 +1068,7 @@ abstract class AbstractFtModel<C extends AbstractCell> {
         findCellIndexFromGridIndex(rowIndex: row, columnIndex: column));
   }
 
-  ({FtIndex ftIndex, AbstractCell? cell}) isCellEditable(FtIndex cellIndex) =>
+  ({FtIndex ftIndex, C? cell}) isCellEditable(FtIndex cellIndex) =>
       (ftIndex: const FtIndex(), cell: null);
 
   void initialScrollFromIndex(FtIndex index) {

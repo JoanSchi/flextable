@@ -390,14 +390,21 @@ class RecordFtModel<C extends AbstractCell> extends AbstractFtModel<C> {
   }
 
   @override
-  ({FtIndex ftIndex, AbstractCell? cell}) isCellEditable(FtIndex cellIndex) {
+  ({FtIndex ftIndex, C? cell}) isCellEditable(FtIndex cellIndex) {
     if (!cellIndex.isIndex) {
       return (ftIndex: const FtIndex(), cell: null);
     }
-    return switch (cell(row: cellIndex.row, column: cellIndex.column)) {
-      (Cell c) when c.editable => (ftIndex: cellIndex, cell: c),
-      (_) => (ftIndex: const FtIndex(), cell: null)
-    };
+    final ce = cell(row: cellIndex.row, column: cellIndex.column);
+    switch (cell(row: cellIndex.row, column: cellIndex.column)) {
+      case (Cell c) when c.editable:
+        {
+          return (ftIndex: cellIndex, cell: ce);
+        }
+      default:
+        {
+          return (ftIndex: const FtIndex(), cell: null);
+        }
+    }
   }
 
   @override
