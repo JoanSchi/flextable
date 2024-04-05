@@ -63,6 +63,7 @@ class _RowChangeExampleState extends State<TextEditExample>
             backgroundColor: Colors.white,
             controller: _ftController,
             model: model,
+            selectedCell: selectedCellCallBack,
             tableBuilder: DefaultRecordTableBuilder<dynamic, String>(
                 formatCellDate: (format, date) {
               return DateFormat(format).format(date);
@@ -86,6 +87,12 @@ class _RowChangeExampleState extends State<TextEditExample>
         // rebuildNotifier.notify();
       }),
     );
+  }
+
+  bool selectedCellCallBack(FtViewModel viewModel,
+      PanelCellIndex panelCellIndex, AbstractCell? cell) {
+    debugPrint('selectedCellCallBack: $panelCellIndex');
+    return false;
   }
 
   makeModel({required int tableRows, required int tableColumns}) {

@@ -25,7 +25,7 @@ typedef CreateViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
         InnerScrollChangeNotifier scrollChangeNotifier,
         List<TableChangeNotifier> tableChangeNotifiers,
         FtProperties properties,
-        ChangedCellValue? changedCellValue);
+        ChangedCellValueCallback? changedCellValue);
 
 const Set<PointerDeviceKind> kTouchLikeDeviceTypes = <PointerDeviceKind>{
   PointerDeviceKind.touch,
@@ -79,7 +79,7 @@ class TableViewScrollable<C extends AbstractCell, M extends AbstractFtModel<C>>
 
   final InnerScaleChangeNotifier innerScaleChangeNotifier;
 
-  final ChangedCellValue? changeCellValue;
+  final ChangedCellValueCallback? changeCellValue;
 
   final List<TableChangeNotifier> tableChangeNotifiers;
 

@@ -266,7 +266,8 @@ class BasicFtModel<C extends AbstractCell> extends AbstractFtModel<C> {
   }
 
   @override
-  FtIndex isCellEditable(FtIndex cellIndex) => cellIndex;
+  ({FtIndex ftIndex, AbstractCell? cell}) isCellEditable(FtIndex cellIndex) =>
+      (ftIndex: cellIndex, cell: null);
 
   @override
   insertRowRange({

@@ -109,6 +109,7 @@ class _CellDateEditorState extends State<_CellDateEditor> {
     final nextFocus = viewModel
         .nextCell(
             PanelCellIndex.from(ftIndex: widget.tableCellIndex, cell: cell))
+        .ftIndex
         .isIndex;
 
     TextCellStyle? textCellStyle;
@@ -160,14 +161,16 @@ class _CellDateEditorState extends State<_CellDateEditor> {
         ///
 
         if (nextFocus) {
-          final t = viewModel.nextCell(
-              PanelCellIndex.from(ftIndex: widget.tableCellIndex, cell: cell));
+          final ftIndex = viewModel
+              .nextCell(PanelCellIndex.from(
+                  ftIndex: widget.tableCellIndex, cell: cell))
+              .ftIndex;
 
           viewModel
             ..editCell = PanelCellIndex.from(
                 panelIndexX: widget.layoutPanelIndex.xIndex,
                 panelIndexY: widget.layoutPanelIndex.yIndex,
-                ftIndex: t)
+                ftIndex: ftIndex)
             ..markNeedsLayout();
 
           onDateChange(date);

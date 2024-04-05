@@ -3,8 +3,11 @@
 // license that can be found in the LICENSE file.
 
 import 'dart:collection';
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+
 import '../builders/abstract_table_builder.dart';
 import '../builders/cells.dart';
 import '../model/model.dart';
@@ -1559,6 +1562,11 @@ class PanelCellIndex extends FtIndex {
       columns: columns ?? this.columns,
       rows: rows ?? this.rows,
     );
+  }
+
+  @override
+  String toString() {
+    return 'PanelCellIndex(panelIndexX: $panelIndexX, panelIndexY: $panelIndexY, rows: $rows, columns: $columns)';
   }
 }
 

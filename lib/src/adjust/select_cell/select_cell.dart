@@ -5,12 +5,14 @@
 import 'package:flutter/material.dart';
 import '../../../flextable.dart';
 
+typedef SelectedCellCallback = bool Function(
+    FtViewModel viewModel, PanelCellIndex panelCellIndex, AbstractCell? cell);
+
 class SelectCell extends StatefulWidget {
   final FtViewModel viewModel;
-  const SelectCell({
-    super.key,
-    required this.viewModel,
-  });
+  final SelectedCellCallback? selectedCell;
+
+  const SelectCell({super.key, required this.viewModel, this.selectedCell});
 
   @override
   State<SelectCell> createState() => _SelectCellState();
@@ -28,15 +30,22 @@ class _SelectCellState extends State<SelectCell> {
       },
       onTap: () {
         final viewModel = widget.viewModel;
-        final foundPanelCellIndex = viewModel.findCell(localPosition);
+        final cellIndex = viewModel.findCell(localPosition);
 
-        if (!viewModel.editCell.sameIndex(foundPanelCellIndex)) {
-          final editable =
-              viewModel.model.isCellEditable(foundPanelCellIndex).isIndex;
+        if (!(widget.selectedCell
+                ?.call(viewModel, cellIndex.panelCellIndex, cellIndex.cell) ??
+            false)) {
+          if (!viewModel.editCell.sameIndex(cellIndex.panelCellIndex)) {
+            final editable = viewModel.model
+                .isCellEditable(cellIndex.panelCellIndex)
+                .ftIndex
+                .isIndex;
 
-          widget.viewModel
-            ..editCell = editable ? foundPanelCellIndex : const PanelCellIndex()
-            ..markNeedsLayout();
+            widget.viewModel
+              ..editCell =
+                  editable ? cellIndex.panelCellIndex : const PanelCellIndex()
+              ..markNeedsLayout();
+          }
         }
       },
     );

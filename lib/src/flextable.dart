@@ -29,7 +29,7 @@ FtViewModel<C, M> defaultCreateViewModel<C extends AbstractCell,
     InnerScrollChangeNotifier scrollChangeNotifier,
     List<TableChangeNotifier> tableChangeNotifiers,
     FtProperties properties,
-    ChangedCellValue? changedCellValue) {
+    ChangedCellValueCallback? changedCellValue) {
   return FtViewModel<C, M>(
       physics: physics,
       context: context,
@@ -55,7 +55,8 @@ class FlexTable<C extends AbstractCell, M extends AbstractFtModel<C>>
       required this.tableBuilder,
       this.backgroundColor,
       List<TableChangeNotifier>? tableChangeNotifiers,
-      this.changeCellValue})
+      this.changeCellValue,
+      this.selectedCell})
       : tableChangeNotifiers = tableChangeNotifiers ?? [];
 
   final M model;
@@ -64,7 +65,8 @@ class FlexTable<C extends AbstractCell, M extends AbstractFtModel<C>>
   final AbstractTableBuilder<C, M> tableBuilder;
   final Color? backgroundColor;
   final List<TableChangeNotifier> tableChangeNotifiers;
-  final ChangedCellValue? changeCellValue;
+  final ChangedCellValueCallback? changeCellValue;
+  final SelectedCellCallback? selectedCell;
 
   @override
   State<StatefulWidget> createState() => FlexTableState<C, M>();
@@ -169,6 +171,7 @@ class FlexTableState<C extends AbstractCell, M extends AbstractFtModel<C>>
 
           Widget m = MultiHitStack(children: [
             SelectCell(
+              selectedCell: widget.selectedCell,
               viewModel: viewModel,
             ),
             TableMultiPanel<C, M>(

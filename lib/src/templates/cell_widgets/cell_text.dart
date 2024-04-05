@@ -118,6 +118,7 @@ class _CellTextEditorState extends State<CellTextEditor> {
     final nextFocus = viewModel
         .nextCell(
             PanelCellIndex.from(ftIndex: widget.tableCellIndex, cell: cell))
+        .ftIndex
         .isIndex;
 
     TextCellStyle? textCellStyle;
@@ -166,8 +167,10 @@ class _CellTextEditorState extends State<CellTextEditor> {
             ..editCell = PanelCellIndex.from(
                 panelIndexX: widget.layoutPanelIndex.xIndex,
                 panelIndexY: widget.layoutPanelIndex.yIndex,
-                ftIndex: viewModel.nextCell(PanelCellIndex.from(
-                    ftIndex: widget.tableCellIndex, cell: cell)))
+                ftIndex: viewModel
+                    .nextCell(PanelCellIndex.from(
+                        ftIndex: widget.tableCellIndex, cell: cell))
+                    .ftIndex)
             ..markNeedsLayout();
 
           onValueChange(text);

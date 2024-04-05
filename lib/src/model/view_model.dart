@@ -31,7 +31,7 @@ enum SplitChange { start, edit, no }
 
 typedef _SetPixels = Function(int scrollIndexX, int scrollIndexY, double value);
 
-typedef ChangedCellValue<C extends AbstractCell> = Function(
+typedef ChangedCellValueCallback<C extends AbstractCell> = Function(
     FtIndex index, C? previous, C? next);
 
 enum DrawScrollBar { left, top, right, bottom, multiple, none }
@@ -146,7 +146,7 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
   bool _mounted = true;
   bool get mounted => _mounted;
 
-  ChangedCellValue? changedCellValue;
+  ChangedCellValueCallback? changedCellValue;
 
   // Scroll
   //
@@ -3819,7 +3819,8 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
   ///
   ///
 
-  PanelCellIndex findCell(Offset offset) {
+  ({PanelCellIndex panelCellIndex, AbstractCell? cell}) findCell(
+      Offset offset) {
     int panelIndexX = -1;
     double correctX = 0.0;
     int panelIndexY = -1;
@@ -3833,7 +3834,7 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
       }
     }
     if (panelIndexX == -1) {
-      return const PanelCellIndex();
+      return (panelCellIndex: const PanelCellIndex(), cell: null);
     }
 
     for (GridLayout gl in heightLayoutList) {
@@ -3844,29 +3845,37 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
       }
     }
     if (panelIndexY == -1) {
-      return const PanelCellIndex();
+      return (panelCellIndex: const PanelCellIndex(), cell: null);
     }
 
-    final cellIndex = model.isCellEditable(model.findCellIndexFromPosition(
+    ({
+      FtIndex ftIndex,
+      AbstractCell? cell
+    }) y = model.isCellEditable(model.findCellIndexFromPosition(
         correctX / tableScale +
             getScrollX(panelIndexX <= 1 ? 0 : 1, panelIndexY <= 1 ? 0 : 1),
         correctY / tableScale +
             getScrollY(panelIndexX <= 1 ? 0 : 1, panelIndexY <= 1 ? 0 : 1)));
 
-    return cellIndex.isIndex
-        ? PanelCellIndex.from(
-            panelIndexX: panelIndexX,
-            panelIndexY: panelIndexY,
-            ftIndex: cellIndex,
-            cell: model.cell(row: cellIndex.row, column: cellIndex.column))
-        : const PanelCellIndex();
+    return y.ftIndex.isIndex
+        ? (
+            panelCellIndex: PanelCellIndex.from(
+              panelIndexX: panelIndexX,
+              panelIndexY: panelIndexY,
+              ftIndex: y.ftIndex,
+              cell: y.cell,
+            ),
+            cell: y.cell
+          )
+        : (panelCellIndex: const PanelCellIndex(), cell: null);
   }
 
   ///
   ///
   ///
 
-  FtIndex nextCell(PanelCellIndex current) => model.nextCell(current);
+  ({FtIndex ftIndex, AbstractCell? cell}) nextCell(PanelCellIndex current) =>
+      model.nextCell(current);
 
   ///
   ///

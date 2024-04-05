@@ -112,11 +112,11 @@ class AsyncAreaModel extends BasicFtModel<Cell> {
   }
 
   @override
-  FtIndex isCellEditable(FtIndex cellIndex) {
-    return (cell(row: cellIndex.row, column: cellIndex.column)?.editable ??
-            false)
-        ? cellIndex
-        : const FtIndex();
+  ({FtIndex ftIndex, AbstractCell? cell}) isCellEditable(FtIndex cellIndex) {
+    final c = cell(row: cellIndex.row, column: cellIndex.column);
+    return (c?.editable ?? false)
+        ? (ftIndex: cellIndex, cell: c)
+        : (ftIndex: const FtIndex(), cell: null);
   }
 
   @override
