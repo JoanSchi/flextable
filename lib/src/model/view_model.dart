@@ -382,11 +382,15 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
     bool? clamp,
   }) {
     if (duration == null || duration == Duration.zero) {
+      // To
       jumpTo(scrollIndexX, scrollIndexY, to);
+
       return Future<void>.value();
     } else {
       return animateTo(scrollIndexX, scrollIndexY, to,
-          duration: duration, curve: curve ?? Curves.ease);
+          duration: duration,
+          curve: curve ?? Curves.ease,
+          correctOffset: false);
     }
   }
 
@@ -847,7 +851,7 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
   bool get allowImplicitScrolling => physics.allowImplicitScrolling;
 
   Future<void> animateTo(int scrollIndexX, int scrollIndexY, Offset toScaled,
-      {Duration? duration, Curve? curve}) {
+      {Duration? duration, Curve? curve, required bool correctOffset}) {
     final from = getScrollScaled(scrollIndexX, scrollIndexY, true);
 
     final delta = (from - toScaled);
@@ -859,16 +863,13 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
     }
 
     final activity = DrivenTableScrollActivity(
-      scrollIndexX,
-      scrollIndexY,
-      this,
-      false,
-      vsync: context.vsync,
-      from: from,
-      to: toScaled,
-      duration: duration ?? const Duration(milliseconds: 200),
-      curve: curve ?? Curves.ease,
-    );
+        scrollIndexX, scrollIndexY, this, false,
+        vsync: context.vsync,
+        from: from,
+        to: toScaled,
+        duration: duration ?? const Duration(milliseconds: 200),
+        curve: curve ?? Curves.ease,
+        correctOffset: correctOffset);
 
     beginActivity(activity);
 
@@ -2222,6 +2223,9 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
     if (scrollToEditCell &&
         (deltaHeight > 0.0 || deltaWidth > 0.0) &&
         _editCell.isIndex) {
+      if (deltaHeight < 0.0 || deltaWidth < 0.0) {
+        correctOffScroll(0, 0);
+      }
       showCell(_editCell);
     } else if ((widthChanged || heightChanged) &&
         !(activity is TableDragScrollActivity ||
@@ -4035,7 +4039,8 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
             setScrollScaledY(scrollIndexX, scrollIndexY, yTo);
             markNeedsLayout();
           } else {
-            animateTo(scrollIndexX, scrollIndexY, Offset(xTo, yTo));
+            animateTo(scrollIndexX, scrollIndexY, Offset(xTo, yTo),
+                correctOffset: true);
           }
           return;
         }

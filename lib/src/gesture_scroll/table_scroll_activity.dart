@@ -853,6 +853,7 @@ class DrivenTableScrollActivity extends TableScrollActivity {
   Offset to;
   Offset? previous;
   bool stop = false;
+  bool correctOffset;
 
   DrivenTableScrollActivity(super.scrollIndexX, super.scrollIndexY,
       super.delegate, super.enableScrollNotification,
@@ -860,7 +861,8 @@ class DrivenTableScrollActivity extends TableScrollActivity {
       required this.from,
       required this.to,
       required Duration duration,
-      required Curve curve}) {
+      required Curve curve,
+      required this.correctOffset}) {
     _controller = AnimationController(vsync: vsync, duration: duration)
       ..addListener(() {
         Offset value = _animation.value;
@@ -887,7 +889,11 @@ class DrivenTableScrollActivity extends TableScrollActivity {
   }
 
   end() {
-    delegate.goIdle(scrollIndexX, scrollIndexY);
+    if (correctOffset) {
+      delegate.correctOffScroll(0, 0);
+    } else {
+      delegate.goIdle(scrollIndexX, scrollIndexY);
+    }
     // delegate.goBallistic(scrollIndexX, scrollIndexY, 0, 0);
   }
 
