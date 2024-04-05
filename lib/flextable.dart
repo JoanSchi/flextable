@@ -149,3 +149,5 @@ export 'src/model/change/model_change.dart' show ChangeRange;
 export 'src/keys/escape.dart' show EscapeIntent;
 
 export 'src/templates/builders/ft_scaled_cell.dart' show FtScaledCell;
+
+export 'src/adjust/select_cell/select_cell.dart' show SelectedCellCallback;
