@@ -20,7 +20,7 @@ class ExampleAppBarOverlap extends StatefulWidget {
 
 class _ExampleAppBarOverlapState extends State<ExampleAppBarOverlap> {
   final ftController = DefaultFtController();
-  late ScaleChangeNotifier scaleChangeNotifier;
+  late FtScaleChangeNotifier scaleChangeNotifier;
   late DefaultFtModel ftModel;
 
   @override
@@ -29,7 +29,7 @@ class _ExampleAppBarOverlapState extends State<ExampleAppBarOverlap> {
       autoFreezeListX: true,
       autoFreezeListY: true,
     );
-    scaleChangeNotifier = ScaleChangeNotifier();
+    scaleChangeNotifier = FtScaleChangeNotifier();
     super.initState();
   }
 

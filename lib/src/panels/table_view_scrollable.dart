@@ -25,7 +25,8 @@ typedef CreateViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
         InnerScrollChangeNotifier scrollChangeNotifier,
         List<TableChangeNotifier> tableChangeNotifiers,
         FtProperties properties,
-        ChangedCellValueCallback? changedCellValue);
+        ChangedCellValueCallback? changedCellValue,
+        FtScaleChangeNotifier scaleChangeNotifier);
 
 const Set<PointerDeviceKind> kTouchLikeDeviceTypes = <PointerDeviceKind>{
   PointerDeviceKind.touch,
@@ -54,7 +55,7 @@ class TableViewScrollable<C extends AbstractCell, M extends AbstractFtModel<C>>
       required this.model,
       required this.tableBuilder,
       required this.innerScrollChangeNotifier,
-      required this.innerScaleChangeNotifier,
+      required this.scaleChangeNotifier,
       this.changeCellValue,
       required this.tableChangeNotifiers,
       required this.properties,
@@ -77,7 +78,7 @@ class TableViewScrollable<C extends AbstractCell, M extends AbstractFtModel<C>>
 
   final InnerScrollChangeNotifier innerScrollChangeNotifier;
 
-  final InnerScaleChangeNotifier innerScaleChangeNotifier;
+  final FtScaleChangeNotifier scaleChangeNotifier;
 
   final ChangedCellValueCallback? changeCellValue;
 
@@ -191,7 +192,8 @@ class TableViewScrollableState<C extends AbstractCell,
         widget.innerScrollChangeNotifier,
         widget.tableChangeNotifiers,
         widget.properties,
-        widget.changeCellValue);
+        widget.changeCellValue,
+        widget.scaleChangeNotifier);
 
     assert(_viewModel != null);
 
@@ -228,7 +230,7 @@ class TableViewScrollableState<C extends AbstractCell,
         widget.tableChangeNotifiers != oldWidget.tableChangeNotifiers ||
         widget.innerScrollChangeNotifier !=
             oldWidget.innerScrollChangeNotifier ||
-        widget.innerScaleChangeNotifier != oldWidget.innerScaleChangeNotifier ||
+        widget.scaleChangeNotifier != oldWidget.scaleChangeNotifier ||
         widget.properties != oldWidget.properties) {
       return true;
     }
@@ -239,11 +241,6 @@ class TableViewScrollableState<C extends AbstractCell,
   @override
   void didUpdateWidget(TableViewScrollable<C, M> oldWidget) {
     super.didUpdateWidget(oldWidget);
-
-    if (widget.controller != oldWidget.controller) {
-      oldWidget.controller.detach(viewModel);
-      widget.controller.attach(viewModel);
-    }
 
     if (_shouldUpdatePosition(oldWidget)) {
       _updatePosition();

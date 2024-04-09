@@ -24,7 +24,7 @@ class _ExampleInternationalTradeState extends State<ExampleInternationalTrade>
     with SettingsBottomSheet {
   final _globalKey = const GlobalObjectKey<ScaffoldState>('trade');
   final _ftController = DefaultFtController();
-  late ScaleChangeNotifier scaleChangeNotifier;
+  late FtScaleChangeNotifier scaleChangeNotifier;
   late DefaultFtModel ftModel;
   bool scaleSlider = false;
 
@@ -58,7 +58,7 @@ class _ExampleInternationalTradeState extends State<ExampleInternationalTrade>
       ],
     );
 
-    scaleChangeNotifier = ScaleChangeNotifier(tableScale: tableScale);
+    scaleChangeNotifier = FtScaleChangeNotifier(tableScale: tableScale);
 
     super.initState();
   }

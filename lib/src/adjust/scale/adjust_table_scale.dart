@@ -85,8 +85,8 @@ class TableScaleTouchState extends State<TableScaleTouch> {
   }
 
   void _onScaleUpdate(ScaleUpdateDetails scaleUpdateDetails) {
-    widget.viewModel
-        .setTableScale(scaleUpdateDetails.scale * tableScale, unfocus: false);
+    widget.viewModel.scaleChangeNotifier
+        .changeScale(scaleUpdateDetails.scale * tableScale);
   }
 
   void _onScaleEnd(ScaleEndDetails details) {

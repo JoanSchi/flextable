@@ -23,7 +23,7 @@ class ExampleFruit extends StatefulWidget {
 class _ExampleFruitState extends State<ExampleFruit> with SettingsBottomSheet {
   final _globalKey = const GlobalObjectKey<ScaffoldState>('fruit');
   late DefaultFtController _ftController;
-  late ScaleChangeNotifier scaleChangeNotifier;
+  late FtScaleChangeNotifier scaleChangeNotifier;
   late DefaultFtModel ftModel;
   bool scaleSlider = false;
 
@@ -47,7 +47,7 @@ class _ExampleFruitState extends State<ExampleFruit> with SettingsBottomSheet {
 
     ftModel = DataModelFruit().makeTable(tableScale: tableScale);
 
-    scaleChangeNotifier = ScaleChangeNotifier(tableScale: tableScale);
+    scaleChangeNotifier = FtScaleChangeNotifier(tableScale: tableScale);
 
     _ftController = FtController();
     super.initState();

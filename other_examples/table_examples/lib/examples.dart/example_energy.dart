@@ -24,7 +24,7 @@ class _ExampleEnergyState extends State<ExampleEnergy>
     with SettingsBottomSheet {
   final _globalKey = const GlobalObjectKey<ScaffoldState>('energy');
   final _ftController = DefaultFtController();
-  late ScaleChangeNotifier tableScaleChangeNotifier;
+  late FtScaleChangeNotifier tableScaleChangeNotifier;
   late DefaultFtModel ftModel;
   bool scaleSlider = false;
 
@@ -48,7 +48,7 @@ class _ExampleEnergyState extends State<ExampleEnergy>
 
     ftModel = DataModelEngery.makeTable(tableScale: tableScale);
 
-    tableScaleChangeNotifier = ScaleChangeNotifier(tableScale: tableScale);
+    tableScaleChangeNotifier = FtScaleChangeNotifier(tableScale: tableScale);
     super.initState();
   }
 

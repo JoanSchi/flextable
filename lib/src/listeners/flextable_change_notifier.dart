@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+import 'dart:ui';
+
 import 'package:flutter/widgets.dart';
 
 import '../../flextable.dart';
@@ -10,15 +12,17 @@ mixin TableChangeNotifier {
   void change(FtViewModel viewModel);
 }
 
-class ScaleChangeNotifier extends ChangeNotifier with TableChangeNotifier {
-  ScaleChangeNotifier({this.tableScale = 1.0});
+class FtScaleChangeNotifier extends ChangeNotifier {
+  FtScaleChangeNotifier({this.scale = 1.0, this.min = 1.0, this.max = 1.0});
 
-  double tableScale;
+  double scale;
+  double min;
+  double max;
 
-  @override
-  void change(FtViewModel viewModel) {
-    if (viewModel.tableScale != tableScale) {
-      tableScale = viewModel.tableScale;
+  void changeScale(double value) {
+    value = clampDouble(value, min, max);
+    if (value != scale) {
+      scale = value;
       notifyListeners();
     }
   }

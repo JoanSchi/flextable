@@ -23,7 +23,7 @@ class _ExampleMortgageState extends State<ExampleMortgage>
     with SettingsBottomSheet {
   final _globalKey = const GlobalObjectKey<ScaffoldState>('mortgage');
   final _ftController = DefaultFtController();
-  late ScaleChangeNotifier scaleChangeNotifier;
+  late FtScaleChangeNotifier scaleChangeNotifier;
 
   final ftModel = MortgageTableModel(horizontalTables: 2).makeTable(
     autoFreezeListX: true,
@@ -42,7 +42,7 @@ class _ExampleMortgageState extends State<ExampleMortgage>
     };
     this.scaleSlider = scaleSlider;
 
-    scaleChangeNotifier = ScaleChangeNotifier(tableScale: tableScale);
+    scaleChangeNotifier = FtScaleChangeNotifier(tableScale: tableScale);
 
     super.initState();
   }

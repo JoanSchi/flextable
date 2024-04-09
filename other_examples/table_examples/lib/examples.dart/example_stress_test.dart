@@ -23,7 +23,7 @@ class _ExampleStressTestState extends State<ExampleStressTest>
     with SettingsBottomSheet {
   final _globalKey = const GlobalObjectKey<ScaffoldState>('stress');
   final _flexTableController = DefaultFtController();
-  late ScaleChangeNotifier scaleChangeNotifier;
+  late FtScaleChangeNotifier scaleChangeNotifier;
   late DefaultFtModel ftModel;
   bool scaleSlider = false;
 
@@ -43,7 +43,7 @@ class _ExampleStressTestState extends State<ExampleStressTest>
       scrollUnlockY: true,
     );
 
-    scaleChangeNotifier = ScaleChangeNotifier(tableScale: tableScale);
+    scaleChangeNotifier = FtScaleChangeNotifier(tableScale: tableScale);
 
     super.initState();
   }

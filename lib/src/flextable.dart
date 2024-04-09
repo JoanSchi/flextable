@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+import 'dart:async';
+
 import 'package:flextable/flextable.dart';
 import 'package:flextable/src/keys/escape.dart';
 import 'package:flextable/src/panels/flextable_context.dart';
@@ -29,7 +31,8 @@ FtViewModel<C, M> defaultCreateViewModel<C extends AbstractCell,
     InnerScrollChangeNotifier scrollChangeNotifier,
     List<TableChangeNotifier> tableChangeNotifiers,
     FtProperties properties,
-    ChangedCellValueCallback? changedCellValue) {
+    ChangedCellValueCallback? changedCellValue,
+    FtScaleChangeNotifier scaleChangeNotifier) {
   return FtViewModel<C, M>(
       physics: physics,
       context: context,
@@ -39,7 +42,8 @@ FtViewModel<C, M> defaultCreateViewModel<C extends AbstractCell,
       scrollChangeNotifier: scrollChangeNotifier,
       tableChangeNotifiers: tableChangeNotifiers,
       properties: properties,
-      changedCellValue: changedCellValue);
+      changedCellValue: changedCellValue,
+      scaleChangeNotifier: scaleChangeNotifier);
 }
 
 class FlexTable<C extends AbstractCell, M extends AbstractFtModel<C>>
@@ -56,11 +60,13 @@ class FlexTable<C extends AbstractCell, M extends AbstractFtModel<C>>
       this.backgroundColor,
       List<TableChangeNotifier>? tableChangeNotifiers,
       this.changeCellValue,
-      this.selectedCell})
+      this.selectedCell,
+      this.scaleChangeNotifier})
       : tableChangeNotifiers = tableChangeNotifiers ?? [];
 
   final M model;
   final FtController<C, M>? controller;
+  final FtScaleChangeNotifier? scaleChangeNotifier;
   final FtProperties properties;
   final AbstractTableBuilder<C, M> tableBuilder;
   final Color? backgroundColor;
@@ -89,9 +95,9 @@ class FlexTableState<C extends AbstractCell, M extends AbstractFtModel<C>>
 
   final InnerScrollChangeNotifier _innerScrollChangeNotifier =
       InnerScrollChangeNotifier();
-
-  final InnerScaleChangeNotifier _innerScaleChangeNotifier =
-      InnerScaleChangeNotifier();
+  FtScaleChangeNotifier? _scaleChangeNotifier;
+  FtScaleChangeNotifier get scaleChangeNotifier =>
+      _scaleChangeNotifier ??= FtScaleChangeNotifier();
 
   // CombiKeyNotification? _combiKeyNotification;
 
@@ -110,9 +116,22 @@ class FlexTableState<C extends AbstractCell, M extends AbstractFtModel<C>>
 
   @override
   void didUpdateWidget(FlexTable<C, M> oldWidget) {
-    if (widget.controller != null) {
-      _ftController?.dispose();
+    if ((widget.controller, _ftController)
+        case (FtController(), FtController fc)) {
+      scheduleMicrotask(() {
+        fc.dispose();
+      });
+
       _ftController = null;
+    }
+
+    if ((widget.scaleChangeNotifier, _scaleChangeNotifier)
+        case (FtScaleChangeNotifier(), FtScaleChangeNotifier sc)) {
+      scheduleMicrotask(() {
+        sc.dispose();
+      });
+
+      _scaleChangeNotifier = null;
     }
 
     super.didUpdateWidget(oldWidget);
@@ -121,7 +140,7 @@ class FlexTableState<C extends AbstractCell, M extends AbstractFtModel<C>>
   @override
   void dispose() {
     _ftController?.dispose();
-    _innerScaleChangeNotifier.dispose();
+    _scaleChangeNotifier?.dispose();
     _innerScrollChangeNotifier.dispose();
     super.dispose();
   }
@@ -140,7 +159,7 @@ class FlexTableState<C extends AbstractCell, M extends AbstractFtModel<C>>
         tableBuilder: widget.tableBuilder,
         controller: widget.controller ?? ftController,
         innerScrollChangeNotifier: _innerScrollChangeNotifier,
-        innerScaleChangeNotifier: _innerScaleChangeNotifier,
+        scaleChangeNotifier: widget.scaleChangeNotifier ?? scaleChangeNotifier,
         tableChangeNotifiers: widget.tableChangeNotifiers,
         createViewModel: defaultCreateViewModel<C, M>,
         changeCellValue: widget.changeCellValue,

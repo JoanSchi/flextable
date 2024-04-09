@@ -57,7 +57,7 @@ export 'src/model/controller.dart' show FtController;
 export 'src/listeners/flextable_change_notifier.dart'
     show
         TableChangeNotifier,
-        ScaleChangeNotifier,
+        FtScaleChangeNotifier,
         ScrollChangeNotifier,
         LastEditIndexNotifier,
         RebuildNotifier;

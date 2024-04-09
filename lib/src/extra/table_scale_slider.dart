@@ -23,14 +23,14 @@ class TableScaleSlider extends StatefulWidget {
   final double trackHeight;
   final double thumbRadius;
   final double overlayRadius;
-  final ScaleChangeNotifier scaleChangeNotifier;
+  final FtScaleChangeNotifier scaleChangeNotifier;
 
   @override
   State<StatefulWidget> createState() => TableScaleSliderState();
 }
 
 class TableScaleSliderState extends State<TableScaleSlider> {
-  late ScaleChangeNotifier _scaleChangeNotifier;
+  late FtScaleChangeNotifier _scaleChangeNotifier;
 
   @override
   void initState() {
@@ -62,7 +62,7 @@ class TableScaleSliderState extends State<TableScaleSlider> {
 
   @override
   Widget build(BuildContext context) {
-    double scale = _scaleChangeNotifier.tableScale;
+    double scale = _scaleChangeNotifier.scale;
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
@@ -82,7 +82,7 @@ class TableScaleSliderState extends State<TableScaleSlider> {
   }
 
   Widget buildSlider(BuildContext context) {
-    double scale = _scaleChangeNotifier.tableScale;
+    double scale = _scaleChangeNotifier.scale;
     final properties = widget.controller.lastViewModel().properties;
     final double min = properties.minTableScale;
     final double max = properties.maxTableScale;

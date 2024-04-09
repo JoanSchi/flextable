@@ -59,12 +59,18 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
     required this.tableChangeNotifiers,
     required this.properties,
     this.changedCellValue,
+    required this.scaleChangeNotifier,
   })  : _scrollChangeNotifier = scrollChangeNotifier,
         sharedTextControllersByIndex =
             oldPosition?.sharedTextControllersByIndex ??
                 SharedTextControllersByIndex() {
     ///
     ///
+    this.scaleChangeNotifier
+      ..addListener(changeScale)
+      ..scale = model.tableScale
+      ..min = properties.minTableScale
+      ..max = properties.maxTableScale;
 
     model
       ..calculatePositionsX()
@@ -98,6 +104,9 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
     }
 
     sliverScrollPosition?.addListener(notifyListeners);
+
+    ///
+    ///
 
     // ViewModel
     //
@@ -147,6 +156,11 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
   bool get mounted => _mounted;
 
   ChangedCellValueCallback? changedCellValue;
+  FtScaleChangeNotifier scaleChangeNotifier;
+
+  changeScale() {
+    setTableScale(scaleChangeNotifier.scale);
+  }
 
   // Scroll
   //
@@ -533,6 +547,8 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
 
   @override
   void dispose() {
+    scaleChangeNotifier.removeListener(changeScale);
+
     activity
         ?.dispose(); // it will be null if it got absorbed by another ScrollPosition
     _activity = null;
@@ -2276,13 +2292,19 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
     }
   }
 
+  /// Simple boundery for one panel use for the first layout
+  ///
+  ///
+  ///
   bool simpleYBoundery(int scrollIndexX, int scrollIndexY) {
     double scrollY = scrollPixelsY(scrollIndexX, scrollIndexY);
-    final m = minScrollExtentY(scrollIndexY);
-    final max = maxScrollExtentY(scrollIndexY);
+    const min = 0.0;
+    final lengthPanels = twoPanelViewPortDimensionY();
+
+    final max = model.sheetHeight * tableScale - lengthPanels;
     double scrollYClamped = clampDouble(
       scrollY,
-      m,
+      min,
       max,
     );
 

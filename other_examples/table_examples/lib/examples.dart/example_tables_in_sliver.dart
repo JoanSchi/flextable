@@ -56,8 +56,8 @@ class _ExampleSliverInTablesState extends State<ExampleSliverInTables> {
         {required String id,
         required DefaultFtModel ftModel,
         BasicTableBuilder? tableBuilder}) {
-      ScaleChangeNotifier scaleChangeNotifier =
-          ScaleChangeNotifier(tableScale: ftModel.tableScale);
+      FtScaleChangeNotifier scaleChangeNotifier =
+          FtScaleChangeNotifier(tableScale: ftModel.tableScale);
 
       final ftController =
           controllers.putIfAbsent(id, () => DefaultFtController());
