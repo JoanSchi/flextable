@@ -123,7 +123,7 @@ class _CellTextEditorState extends State<CellTextEditor> {
 
     TextCellStyle? textCellStyle;
 
-    if (cell.style case NumberCellStyle style) {
+    if (cell.style case TextCellStyle style) {
       textCellStyle = style;
     }
 
