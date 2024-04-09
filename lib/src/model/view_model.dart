@@ -2297,19 +2297,19 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
   ///
   ///
   bool simpleYBoundery(int scrollIndexX, int scrollIndexY) {
-    double scrollY = scrollPixelsY(scrollIndexX, scrollIndexY);
+    double scrollYscalled = mainScrollY * tableScale;
     const min = 0.0;
     final lengthPanels = twoPanelViewPortDimensionY();
 
     final max = model.sheetHeight * tableScale - lengthPanels;
-    double scrollYClamped = clampDouble(
-      scrollY,
+    double scrollYScalledClamped = clampDouble(
+      scrollYscalled,
       min,
       max,
     );
 
-    if (scrollY != scrollYClamped) {
-      mainScrollY = scrollY0pX0 = scrollYClamped;
+    if (scrollYscalled != scrollYScalledClamped) {
+      mainScrollY = scrollY0pX0 = scrollYScalledClamped / tableScale;
       return true;
     }
     return false;
