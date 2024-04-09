@@ -18,11 +18,25 @@ class FtScaleChangeNotifier extends ChangeNotifier {
   double scale;
   double min;
   double max;
+  bool end = false;
 
-  void changeScale(double value) {
-    value = clampDouble(value, min, max);
-    if (value != scale) {
-      scale = value;
+  void changeScale({double? scaleValue, bool scaleEnd = false}) {
+    bool notify = false;
+
+    if (scaleValue case double s when s != scale) {
+      s = clampDouble(s, min, max);
+      scale = s;
+      notify = true;
+    }
+
+    if (end != scaleEnd) {
+      end = scaleEnd;
+      if (scaleEnd) {
+        notify = true;
+      }
+    }
+
+    if (notify) {
       notifyListeners();
     }
   }

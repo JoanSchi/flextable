@@ -42,7 +42,7 @@ class _ExampleMortgageState extends State<ExampleMortgage>
     };
     this.scaleSlider = scaleSlider;
 
-    scaleChangeNotifier = FtScaleChangeNotifier(tableScale: tableScale);
+    scaleChangeNotifier = FtScaleChangeNotifier();
 
     super.initState();
   }
@@ -56,7 +56,7 @@ class _ExampleMortgageState extends State<ExampleMortgage>
   @override
   Widget build(BuildContext context) {
     Widget table = DefaultFlexTable(
-      tableChangeNotifiers: [scaleChangeNotifier],
+      scaleChangeNotifier: scaleChangeNotifier,
       controller: _ftController,
       backgroundColor: Colors.white,
       model: ftModel,

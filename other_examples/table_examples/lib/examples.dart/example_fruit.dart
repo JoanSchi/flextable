@@ -47,7 +47,7 @@ class _ExampleFruitState extends State<ExampleFruit> with SettingsBottomSheet {
 
     ftModel = DataModelFruit().makeTable(tableScale: tableScale);
 
-    scaleChangeNotifier = FtScaleChangeNotifier(tableScale: tableScale);
+    scaleChangeNotifier = FtScaleChangeNotifier();
 
     _ftController = FtController();
     super.initState();
@@ -64,7 +64,7 @@ class _ExampleFruitState extends State<ExampleFruit> with SettingsBottomSheet {
   Widget build(BuildContext context) {
     Widget table = DefaultFlexTable(
       controller: _ftController,
-      tableChangeNotifiers: [scaleChangeNotifier],
+      scaleChangeNotifier: scaleChangeNotifier,
       backgroundColor: Colors.grey[50],
       model: ftModel,
       tableBuilder: BasicTableBuilder(

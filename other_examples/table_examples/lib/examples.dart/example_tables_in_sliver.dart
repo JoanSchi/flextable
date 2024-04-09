@@ -56,14 +56,13 @@ class _ExampleSliverInTablesState extends State<ExampleSliverInTables> {
         {required String id,
         required DefaultFtModel ftModel,
         BasicTableBuilder? tableBuilder}) {
-      FtScaleChangeNotifier scaleChangeNotifier =
-          FtScaleChangeNotifier(tableScale: ftModel.tableScale);
+      FtScaleChangeNotifier scaleChangeNotifier = FtScaleChangeNotifier();
 
       final ftController =
           controllers.putIfAbsent(id, () => DefaultFtController());
 
       Widget table = DefaultFlexTable(
-        tableChangeNotifiers: [scaleChangeNotifier],
+        scaleChangeNotifier: scaleChangeNotifier,
         controller: ftController,
         model: ftModel,
         tableBuilder: BasicTableBuilder(),

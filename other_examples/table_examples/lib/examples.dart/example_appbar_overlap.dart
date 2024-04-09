@@ -43,7 +43,7 @@ class _ExampleAppBarOverlapState extends State<ExampleAppBarOverlap> {
   @override
   Widget build(BuildContext context) {
     Widget flexTable = DefaultFlexTable(
-      tableChangeNotifiers: [scaleChangeNotifier],
+      scaleChangeNotifier: scaleChangeNotifier,
       controller: ftController,
       tableBuilder: BasicTableBuilder(),
       backgroundColor: Colors.white,

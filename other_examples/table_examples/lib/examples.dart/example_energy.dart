@@ -48,7 +48,6 @@ class _ExampleEnergyState extends State<ExampleEnergy>
 
     ftModel = DataModelEngery.makeTable(tableScale: tableScale);
 
-    tableScaleChangeNotifier = FtScaleChangeNotifier(tableScale: tableScale);
     super.initState();
   }
 
@@ -63,7 +62,7 @@ class _ExampleEnergyState extends State<ExampleEnergy>
   Widget build(BuildContext context) {
     Widget table = DefaultFlexTable(
       controller: _ftController,
-      tableChangeNotifiers: [tableScaleChangeNotifier],
+      scaleChangeNotifier: tableScaleChangeNotifier,
       backgroundColor: Colors.grey[50],
       model: ftModel,
       tableBuilder: BasicTableBuilder(

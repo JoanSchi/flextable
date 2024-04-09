@@ -58,7 +58,7 @@ class _ExampleInternationalTradeState extends State<ExampleInternationalTrade>
       ],
     );
 
-    scaleChangeNotifier = FtScaleChangeNotifier(tableScale: tableScale);
+    scaleChangeNotifier = FtScaleChangeNotifier();
 
     super.initState();
   }
@@ -74,7 +74,7 @@ class _ExampleInternationalTradeState extends State<ExampleInternationalTrade>
   Widget build(BuildContext context) {
     Widget table = DefaultFlexTable(
       controller: _ftController,
-      tableChangeNotifiers: [scaleChangeNotifier],
+      scaleChangeNotifier: scaleChangeNotifier,
       model: ftModel,
       tableBuilder: BasicTableBuilder(),
     );

@@ -43,7 +43,7 @@ class _ExampleStressTestState extends State<ExampleStressTest>
       scrollUnlockY: true,
     );
 
-    scaleChangeNotifier = FtScaleChangeNotifier(tableScale: tableScale);
+    scaleChangeNotifier = FtScaleChangeNotifier();
 
     super.initState();
   }
@@ -58,7 +58,7 @@ class _ExampleStressTestState extends State<ExampleStressTest>
   @override
   Widget build(BuildContext context) {
     Widget table = DefaultFlexTable(
-      tableChangeNotifiers: [scaleChangeNotifier],
+      scaleChangeNotifier: scaleChangeNotifier,
       controller: _flexTableController,
       tableBuilder: BasicTableBuilder(),
       model: ftModel,

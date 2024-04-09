@@ -86,11 +86,12 @@ class TableScaleTouchState extends State<TableScaleTouch> {
 
   void _onScaleUpdate(ScaleUpdateDetails scaleUpdateDetails) {
     widget.viewModel.scaleChangeNotifier
-        .changeScale(scaleUpdateDetails.scale * tableScale);
+        .changeScale(scaleValue: scaleUpdateDetails.scale * tableScale);
   }
 
   void _onScaleEnd(ScaleEndDetails details) {
-    widget.viewModel.correctOffScroll(0, 0);
+    widget.viewModel.scaleChangeNotifier.changeScale(scaleEnd: true);
+
     // _tableModel.notifyScrollBarListeners();
   }
 }

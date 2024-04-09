@@ -159,7 +159,13 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
   FtScaleChangeNotifier scaleChangeNotifier;
 
   changeScale() {
-    setTableScale(scaleChangeNotifier.scale);
+    if (scaleChangeNotifier.scale case double s when model.tableScale != s) {
+      setTableScale(s);
+    }
+
+    if (scaleChangeNotifier.end) {
+      correctOffScroll(0, 0);
+    }
   }
 
   // Scroll
