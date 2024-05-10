@@ -2823,8 +2823,8 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
       case (_, SplitState.canceledAutoFreezeSplit):
         {
           calculateAutoFreezeY(height: height);
-          debugPrint(
-              'stateSplitY $stateSplitY  previousEditCell.isIndex ${previousEditCell.isIndex}');
+          // debugPrint(
+          //     'stateSplitY $stateSplitY  previousEditCell.isIndex ${previousEditCell.isIndex}');
           if (stateSplitY == SplitState.autoFreezeSplit &&
               previousEditCell.isIndex) {
             // restoreScroll = restoreScroll?.copyIf(useMainScrollY: true);
@@ -4145,13 +4145,13 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
       if (!skipX) {
         if (x1 > scrollX + widthPanel) {
           xTo = x1 - widthPanel + rightPadding;
-          debugPrint(
-              'x1:$x1 widthPanel:$widthPanel, horizontalPadding: $rightPadding');
-          debugPrint('scrollX $scrollX, xTo $xTo');
+          // debugPrint(
+          //     'x1:$x1 widthPanel:$widthPanel, horizontalPadding: $rightPadding');
+          // debugPrint('scrollX $scrollX, xTo $xTo');
           adjustScroll = true;
         } else if (x0 - leftPadding < scrollX) {
-          debugPrint(
-              'x1:$x1 widthPanel:$widthPanel, horizontalPadding: $leftPadding');
+          // debugPrint(
+          //     'x1:$x1 widthPanel:$widthPanel, horizontalPadding: $leftPadding');
           xTo = x0 - leftPadding;
           adjustScroll = true;
         }
@@ -4161,8 +4161,8 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
 
       if (!skipY) {
         if (y1 > scrollY + heightPanel) {
-          debugPrint(
-              'y1:$y1 heightPanel:$heightPanel, verticalPadding: $bottomPadding');
+          // debugPrint(
+          //     'y1:$y1 heightPanel:$heightPanel, verticalPadding: $bottomPadding');
           yTo = y1 - heightPanel + bottomPadding;
           adjustScroll = true; // y1 + verticalPadding - yTo < 0.01;
         } else if (y0 - topPadding < scrollY) {
