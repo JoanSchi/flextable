@@ -221,7 +221,7 @@ class RecordFtModel<C extends AbstractCell, Dto> extends AbstractFtModel<C> {
         } else {
           if (!insertIdRow.contains(rowRibbon)) {
             if (!updateIdRow.add(rowRibbon)) {
-              debugPrint('RowId alreade in updateIdRow :)');
+              debugPrint('RowId already in updateIdRow :)');
             }
           }
         }
