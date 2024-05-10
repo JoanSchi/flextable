@@ -237,11 +237,11 @@ class TableViewScrollableState<C extends AbstractCell,
       oldPhysics = oldPhysics?.parent;
     } while (newPhysics != null || oldPhysics != null);
 
-    debugPrint(
-        'FlexTable: model: ${widget.model != oldWidget.model} tableBuilder: ${widget.tableBuilder != oldWidget.tableBuilder} tableChangeNotifiers: ${widget.tableChangeNotifiers != oldWidget.tableChangeNotifiers}');
+    // debugPrint(
+    //     'FlexTable: model: ${widget.model != oldWidget.model} tableBuilder: ${widget.tableBuilder != oldWidget.tableBuilder} tableChangeNotifiers: ${widget.tableChangeNotifiers != oldWidget.tableChangeNotifiers}');
 
-    debugPrint(
-        'FlexTable: innerScrollChangeNotifier: ${widget.innerScrollChangeNotifier != oldWidget.innerScrollChangeNotifier} scaleChangeNotifier: ${widget.scaleChangeNotifier != oldWidget.scaleChangeNotifier} properties: ${widget.properties != oldWidget.properties}');
+    // debugPrint(
+    //     'FlexTable: innerScrollChangeNotifier: ${widget.innerScrollChangeNotifier != oldWidget.innerScrollChangeNotifier} scaleChangeNotifier: ${widget.scaleChangeNotifier != oldWidget.scaleChangeNotifier} properties: ${widget.properties != oldWidget.properties}');
 
     if (widget.model != oldWidget.model ||
         widget.tableBuilder != oldWidget.tableBuilder ||
@@ -427,10 +427,8 @@ class TableViewScrollableState<C extends AbstractCell,
     _hold = viewModel.hold(_disposeHold);
   }
 
-  // TODO TableScrollDirection
   TableScrollDirection _selectDragDirection(DragDownDetails details) =>
-      TableScrollDirection.both;
-  // viewModel.selectScrollDirection(details);
+      viewModel.selectScrollDirection(details);
 
   void _handleDragStart(DragStartDetails details) {
     // It's possible for _hold to become null between _handleDragDown and

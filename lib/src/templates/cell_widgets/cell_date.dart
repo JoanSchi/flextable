@@ -644,7 +644,7 @@ class _DateInputPickerState extends State<_DateInputPicker> {
       }
     }
 
-    debugPrint('day: $day, month: $month, year; $year');
+    // debugPrint('day: $day, month: $month, year; $year');
 
     if (day == -1 || month == -1 || year == -1) {
       return DateValidated(error: widget.formatHint);
@@ -658,7 +658,7 @@ class _DateInputPickerState extends State<_DateInputPicker> {
     } else {
       DateTime dateFromInput = DateTime(year, month, day);
 
-      debugPrint('dateFromInput to string $dateFromInput');
+      // debugPrint('dateFromInput to string $dateFromInput');
 
       if ((widget.firstDate != null &&
               DateUtils.monthDelta(widget.firstDate!, dateFromInput) < 0) ||

@@ -855,6 +855,9 @@ class AdjustScroll {
               _controller.value = 0.0;
               _controller.forward();
             }
+
+            // debugPrint(
+            //     'delta $delta distance s$distance opposite $opposite  scrollX $scrollX scrollY $scrollY');
           }
 
           break;

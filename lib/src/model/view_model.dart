@@ -3375,23 +3375,24 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
 
   @override
   TableScrollDirection get tableScrollDirection {
-    if (sliverScrollPosition == null) {
-      return TableScrollDirection.both;
-    } else {
-      switch (sliverScrollPosition!.axisDirection) {
-        case AxisDirection.down:
-        case AxisDirection.up:
-          assert(stateSplitY != SplitState.split,
-              'Split Y (vertical split) is not possible if sliver scroll direction is also vertical');
+    return TableScrollDirection.both;
+    // if (sliverScrollPosition == null) {
+    //   return TableScrollDirection.both;
+    // } else {
+    //   switch (sliverScrollPosition!.axisDirection) {
+    //     case AxisDirection.down:
+    //     case AxisDirection.up:
+    //       assert(stateSplitY != SplitState.split,
+    //           'Split Y (vertical split) is not possible if sliver scroll direction is also vertical');
 
-          return TableScrollDirection.horizontal;
-        case AxisDirection.left:
-        case AxisDirection.right:
-          assert((stateSplitX != SplitState.split),
-              'Split X (horizontal split) is not possible if sliver scroll direction is also horizontal');
-          return TableScrollDirection.vertical;
-      }
-    }
+    //       return TableScrollDirection.horizontal;
+    //     case AxisDirection.left:
+    //     case AxisDirection.right:
+    //       assert((stateSplitX != SplitState.split),
+    //           'Split X (horizontal split) is not possible if sliver scroll direction is also horizontal');
+    //       return TableScrollDirection.vertical;
+    //   }
+    // }
   }
 
   updateHorizonScrollBarTrack(var setRatio) {

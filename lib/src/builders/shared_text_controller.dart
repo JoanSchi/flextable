@@ -40,8 +40,8 @@ class SharedTextControllersByIndex {
         }
       }
     }
-    debugPrint(
-        'Map of SharedTextControllersByIndex after schedule remove: $map');
+    // debugPrint(
+    //     'Map of SharedTextControllersByIndex after schedule remove: $map');
     assert(map.length <= 2,
         'removeIndex: SharedTextControllersByIndex has more than 2 SharedTextEditController, does removeSharedTextEditController implement: viewModel.sharedTextControllersByIndex.removeIndex(tableCellIndex, viewModel.editCell)');
     // });

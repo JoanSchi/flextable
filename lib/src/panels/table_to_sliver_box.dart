@@ -94,12 +94,12 @@ class RenderFlexTableToSliverBox extends RenderSliverSingleBoxAdapter {
     assert(paintedChildSize.isFinite);
     assert(paintedChildSize >= 0.0);
 
-    debugPrint(
-        'sliverbox scrollY: ${constraints.scrollOffset + overlap} overlap $overlap');
+    // debugPrint(
+    //     'sliverbox scrollY: ${constraints.scrollOffset + overlap} overlap $overlap');
     viewModel.setScrollWithSliver(constraints.scrollOffset + overlap);
 
-    debugPrint(
-        'constraints.overlap ${constraints.overlap.toInt()} constraints.scrollOffset ${constraints.scrollOffset.toInt()}');
+    // debugPrint(
+    //     'constraints.overlap ${constraints.overlap.toInt()} constraints.scrollOffset ${constraints.scrollOffset.toInt()}');
 
     /// Not possible because is cause a layout loop
     ///
