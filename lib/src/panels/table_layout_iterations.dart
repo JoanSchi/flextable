@@ -118,6 +118,7 @@ class TableInterator<C extends AbstractCell, M extends AbstractFtModel<C>> {
         {
           editRowIndex = focusRowIndex =
               fr(panelIndexY, _viewModel.autoFreezeAreaY.freezeIndex, rowEdit);
+
           break;
         }
 
@@ -125,11 +126,13 @@ class TableInterator<C extends AbstractCell, M extends AbstractFtModel<C>> {
         {
           editRowIndex = focusRowIndex =
               fr(panelIndexEditY, _viewModel.model.topLeftCellPaneRow, rowEdit);
+
           break;
         }
       case (_, _, _, int rowEdit):
         {
           editRowIndex = focusRowIndex = rowEdit;
+
           break;
         }
     }

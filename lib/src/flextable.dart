@@ -7,6 +7,7 @@ import 'dart:async';
 import 'package:flextable/flextable.dart';
 import 'package:flextable/src/keys/escape.dart';
 import 'package:flextable/src/panels/flextable_context.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'adjust/select_cell/select_cell.dart';
 import 'adjust/split/adjust_table_split.dart';
@@ -32,7 +33,9 @@ FtViewModel<C, M> defaultCreateViewModel<C extends AbstractCell,
     List<TableChangeNotifier> tableChangeNotifiers,
     FtProperties properties,
     ChangedCellValueCallback? changedCellValue,
-    FtScaleChangeNotifier scaleChangeNotifier) {
+    FtScaleChangeNotifier scaleChangeNotifier,
+    ScrollableState? sliverScrollable,
+    bool softKeyboard) {
   return FtViewModel<C, M>(
       physics: physics,
       context: context,
@@ -43,7 +46,9 @@ FtViewModel<C, M> defaultCreateViewModel<C extends AbstractCell,
       tableChangeNotifiers: tableChangeNotifiers,
       properties: properties,
       changedCellValue: changedCellValue,
-      scaleChangeNotifier: scaleChangeNotifier);
+      scaleChangeNotifier: scaleChangeNotifier,
+      sliverScrollable: sliverScrollable,
+      softKeyboard: softKeyboard);
 }
 
 class FlexTable<C extends AbstractCell, M extends AbstractFtModel<C>>
@@ -61,7 +66,8 @@ class FlexTable<C extends AbstractCell, M extends AbstractFtModel<C>>
       List<TableChangeNotifier>? tableChangeNotifiers,
       this.changeCellValue,
       this.selectedCell,
-      this.scaleChangeNotifier})
+      this.scaleChangeNotifier,
+      this.softKeyboard})
       : tableChangeNotifiers = tableChangeNotifiers ?? [];
 
   final M model;
@@ -73,6 +79,7 @@ class FlexTable<C extends AbstractCell, M extends AbstractFtModel<C>>
   final List<TableChangeNotifier> tableChangeNotifiers;
   final ChangedCellValueCallback? changeCellValue;
   final SelectedCellCallback<C, M>? selectedCell;
+  final bool? softKeyboard;
 
   @override
   State<StatefulWidget> createState() => FlexTableState<C, M>();
@@ -153,6 +160,15 @@ class FlexTableState<C extends AbstractCell, M extends AbstractFtModel<C>>
 
   @override
   Widget build(BuildContext context) {
+    final softKeyboard = widget.softKeyboard ??
+        switch (defaultTargetPlatform) {
+          (TargetPlatform.iOS ||
+                TargetPlatform.android ||
+                TargetPlatform.fuchsia) =>
+            true,
+          (_) => false
+        };
+
     Widget table = TableViewScrollable<C, M>(
         model: widget.model,
         properties: widget.properties,
@@ -163,26 +179,23 @@ class FlexTableState<C extends AbstractCell, M extends AbstractFtModel<C>>
         tableChangeNotifiers: widget.tableChangeNotifiers,
         createViewModel: defaultCreateViewModel<C, M>,
         changeCellValue: widget.changeCellValue,
+        softKeyboard: softKeyboard,
         viewportBuilder: (BuildContext context, FtViewModel<C, M> viewModel) {
           final theme = Theme.of(context);
 
           Widget? tableZoom;
           switch (theme.platform) {
-            case TargetPlatform.iOS:
-            case TargetPlatform.android:
-            case TargetPlatform.fuchsia:
-              tableZoom = TableScaleTouch(
-                viewModel: viewModel,
-              );
-              break;
-            case TargetPlatform.macOS:
-            case TargetPlatform.linux:
-            case TargetPlatform.windows:
-            // tableZoom = TableScaleMouse(
-            //   combiKeyNotification: combiKeyNotification,
-            //   properties: TableMouseScaleProperties(),
-            //   viewModel: viewModel,
-            // );
+            case (TargetPlatform.iOS ||
+                  TargetPlatform.android ||
+                  TargetPlatform.fuchsia):
+              {
+                tableZoom = TableScaleTouch(
+                  viewModel: viewModel,
+                );
+                break;
+              }
+            default:
+              {}
           }
 
           final fo = widget.properties.adjustFreeze;
@@ -237,11 +250,6 @@ class FlexTableState<C extends AbstractCell, M extends AbstractFtModel<C>>
     //   );
     // }
 
-    return widget.backgroundColor == null
-        ? table
-        : Container(
-            color: widget.backgroundColor,
-            child: table,
-          );
+    return table;
   }
 }

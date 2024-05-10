@@ -97,10 +97,7 @@ class _ExampleAppBarOverlapState extends State<ExampleAppBarOverlap> {
           pinned: true,
           snap: true,
         ),
-        FlexTableToSliverBox(
-          ftController: ftController,
-          child: flexTable,
-        )
+        flexTable,
       ],
     ));
   }

@@ -1,4 +1,4 @@
-# text_edit_example
+# advanced_cell_example
 
 A new Flutter project.
 

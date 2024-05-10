@@ -81,7 +81,7 @@ class _ExampleSliverInTablesState extends State<ExampleSliverInTables> {
                   maxWidthSlider: 200.0))
         ]);
       }
-      return FlexTableToSliverBox(ftController: ftController, child: table);
+      return table;
     }
 
     final scrollView = Container(

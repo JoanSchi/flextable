@@ -6,6 +6,9 @@ import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import '../model/scroll_metrics.dart';
 import '../model/view_model.dart';
 import 'table_drag_details.dart';
@@ -57,6 +60,10 @@ abstract class TableScrollActivityDelegate {
 
   //Offset should be scalled
   Offset clampedOffset(int scrollIndexX, int scrollIndexY, Offset offset);
+
+  double clampedX(int scrollIndexX, int scrollIndexY, double pixelsX);
+
+  double clampedY(int scrollIndexX, int scrollIndexY, double pixelsY);
 
   /// Updates the scroll position by the given amount.
   ///
@@ -230,7 +237,7 @@ class TableDragScrollActivity extends TableScrollActivity {
     super.enableScrollNotification,
   ) : _controller = controller;
 
-  TableDrag? _controller;
+  final TableDrag _controller;
 
   @override
   bool get shouldIgnorePointer => true;
@@ -249,7 +256,7 @@ class TableDragScrollActivity extends TableScrollActivity {
 
   @override
   void dispose() {
-    _controller = null;
+    _controller.dispose();
     super.dispose();
   }
 
@@ -286,7 +293,8 @@ class TableScrollDragController implements TableDrag {
       this.motionStartDistanceThreshold,
       required this.scrollIndexX,
       required this.scrollIndexY,
-      required this.adjustScroll})
+      required this.adjustScroll,
+      this.sliverDrag})
       : assert(
             motionStartDistanceThreshold == null ||
                 motionStartDistanceThreshold > 0.0,
@@ -306,6 +314,7 @@ class TableScrollDragController implements TableDrag {
   TableScrollActivityDelegate get delegate => _delegate;
   TableScrollActivityDelegate _delegate;
   AdjustScroll adjustScroll;
+  Drag? sliverDrag;
 
   final int scrollIndexX, scrollIndexY;
 
@@ -372,11 +381,28 @@ class TableScrollDragController implements TableDrag {
     }
 
     if (!adjustScroll.scrollX) {
-      delegate.applyUserOffsetY(scrollIndexX, scrollIndexY, offset.dy);
+      if (sliverDrag case Drag drag) {
+        drag.update(DragUpdateDetails(
+            globalPosition: details.globalPosition,
+            delta: Offset(0.0, details.delta.dy),
+            localPosition: details.localPosition,
+            primaryDelta: details.delta.dy));
+      } else {
+        delegate.applyUserOffsetY(scrollIndexX, scrollIndexY, offset.dy);
+      }
     } else if (!adjustScroll.scrollY) {
       delegate.applyUserOffsetX(scrollIndexX, scrollIndexY, offset.dx);
     } else {
-      delegate.applyUserOffset(scrollIndexX, scrollIndexY, offset);
+      if (sliverDrag case Drag drag) {
+        delegate.applyUserOffsetX(scrollIndexX, scrollIndexY, offset.dx);
+        drag.update(DragUpdateDetails(
+            globalPosition: details.globalPosition,
+            delta: Offset(0.0, details.delta.dy),
+            localPosition: details.localPosition,
+            primaryDelta: details.delta.dy));
+      } else {
+        delegate.applyUserOffset(scrollIndexX, scrollIndexY, offset);
+      }
     }
   }
 
@@ -417,6 +443,14 @@ class TableScrollDragController implements TableDrag {
     delegate.goBallistic(scrollIndexX, scrollIndexY, xVelocity, yVelocity);
 
     adjustScroll.end();
+
+    if (sliverDrag case Drag drag) {
+      drag.end(DragEndDetails(
+          velocity: Velocity(
+              pixelsPerSecond:
+                  Offset(0.0, details.velocity.pixelsPerSecond.dy)),
+          primaryVelocity: details.yVelocity));
+    }
   }
 
   @override
@@ -429,7 +463,7 @@ class TableScrollDragController implements TableDrag {
   @mustCallSuper
   void dispose() {
     _lastDetails = null;
-    if (onDragCanceled != null) onDragCanceled!();
+    onDragCanceled?.call();
   }
 
   /// The most recently observed [DragStartDetails], [DragUpdateDetails], or
@@ -845,15 +879,16 @@ class AdjustScroll {
   }
 }
 
-class DrivenTableScrollActivity extends TableScrollActivity {
+class DrivenTableScrollActivity<T> extends TableScrollActivity {
   TickerProvider vsync;
   late AnimationController _controller;
-  late Animation<Offset> _animation;
-  Offset from;
-  Offset to;
-  Offset? previous;
+  late Animation<T> _animation;
+  T from;
+  T to;
+  T? previous;
   bool stop = false;
   bool correctOffset;
+  TableScrollDirection direction;
 
   DrivenTableScrollActivity(super.scrollIndexX, super.scrollIndexY,
       super.delegate, super.enableScrollNotification,
@@ -862,15 +897,61 @@ class DrivenTableScrollActivity extends TableScrollActivity {
       required this.to,
       required Duration duration,
       required Curve curve,
-      required this.correctOffset}) {
+      required this.correctOffset,
+      required this.direction}) {
+    assert((from is double && to is double) || (from is Offset && to is Offset),
+        'from and to should be both double or Offset');
+    assert(
+        from is! double ||
+            ((direction == TableScrollDirection.horizontal ||
+                direction == TableScrollDirection.vertical)),
+        'With TableScrollDirection horizontal or vertical a double is espected found: $from');
+
+    assert(from is! Offset || (direction == TableScrollDirection.both),
+        'With TableScrollDirection both a double is espected found: $from');
+
+    assert(direction != TableScrollDirection.unknown,
+        'Direction unknown is not supported, choice from horizontal, vertical or both');
+
     _controller = AnimationController(vsync: vsync, duration: duration)
       ..addListener(() {
-        Offset value = _animation.value;
-
-        delegate.clampedOffset(scrollIndexX, scrollIndexY, _animation.value);
+        final value = _animation.value;
 
         if (value != previous) {
-          delegate.setPixels(scrollIndexX, scrollIndexY, value);
+          switch (direction) {
+            case TableScrollDirection.horizontal:
+              {
+                if (value case double valueX) {
+                  if (delegate.clampedX(scrollIndexX, scrollIndexY, value)
+                      case double clamped when clamped != valueX) {
+                    delegate.setPixelsX(scrollIndexX, scrollIndexY, valueX);
+                  }
+                  break;
+                }
+              }
+            case TableScrollDirection.vertical:
+              {
+                if (value case double valueY) {
+                  if (delegate.clampedY(scrollIndexX, scrollIndexY, value)
+                      case double clamped when clamped != valueY) {
+                    delegate.setPixelsY(scrollIndexX, scrollIndexY, clamped);
+                  }
+                  break;
+                }
+              }
+            case TableScrollDirection.both:
+              {
+                if (value case Offset offset) {
+                  if (delegate.clampedOffset(scrollIndexX, scrollIndexY, offset)
+                      case Offset clamped) {
+                    delegate.setPixels(scrollIndexX, scrollIndexY, offset);
+                  }
+                  break;
+                }
+              }
+            default:
+              {}
+          }
         } else {
           _controller.stop();
         }
@@ -879,7 +960,7 @@ class DrivenTableScrollActivity extends TableScrollActivity {
     _completer = Completer<void>();
     _animation = _controller
         .drive<double>(CurveTween(curve: curve))
-        .drive<Offset>(Tween<Offset>(begin: from, end: to));
+        .drive<T>(Tween<T>(begin: from, end: to));
   }
 
   late final Completer<void> _completer;
@@ -914,10 +995,22 @@ class DrivenTableScrollActivity extends TableScrollActivity {
   bool get shouldIgnorePointer => false;
 
   @override
-  double get xVelocity => _controller.velocity * (to.dx - from.dx).abs();
+  double get xVelocity =>
+      _controller.velocity *
+      switch ((to, from)) {
+        (Offset to, Offset from) => (to.dx - from.dx).abs(),
+        (double to, double from) => (to - from).abs(),
+        (_) => 0.0
+      };
 
   @override
-  double get yVelocity => _controller.velocity * (to.dy - from.dy).abs();
+  double get yVelocity =>
+      _controller.velocity *
+      switch ((to, from)) {
+        (Offset to, Offset from) => (to.dy - from.dy).abs(),
+        (double to, double from) => (to - from).abs(),
+        (_) => 0.0
+      };
 }
 
 class DrivenMultiScrollActivity extends TableScrollActivity {

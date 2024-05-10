@@ -56,6 +56,7 @@ class _ExampleMortgageState extends State<ExampleMortgage>
   @override
   Widget build(BuildContext context) {
     Widget table = DefaultFlexTable(
+      properties: const FtProperties(alignment: Alignment.topLeft),
       scaleChangeNotifier: scaleChangeNotifier,
       controller: _ftController,
       backgroundColor: Colors.white,

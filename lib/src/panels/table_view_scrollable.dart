@@ -26,7 +26,9 @@ typedef CreateViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
         List<TableChangeNotifier> tableChangeNotifiers,
         FtProperties properties,
         ChangedCellValueCallback? changedCellValue,
-        FtScaleChangeNotifier scaleChangeNotifier);
+        FtScaleChangeNotifier scaleChangeNotifier,
+        ScrollableState? sliverScrollable,
+        bool softKeyboardDetected);
 
 const Set<PointerDeviceKind> kTouchLikeDeviceTypes = <PointerDeviceKind>{
   PointerDeviceKind.touch,
@@ -59,7 +61,8 @@ class TableViewScrollable<C extends AbstractCell, M extends AbstractFtModel<C>>
       this.changeCellValue,
       required this.tableChangeNotifiers,
       required this.properties,
-      required this.createViewModel})
+      required this.createViewModel,
+      required this.softKeyboard})
       : assert(semanticChildCount == null || semanticChildCount >= 0);
 
   final FtController<C, M> controller;
@@ -87,6 +90,8 @@ class TableViewScrollable<C extends AbstractCell, M extends AbstractFtModel<C>>
   final FtProperties properties;
 
   final CreateViewModel<C, M> createViewModel;
+
+  final bool softKeyboard;
 
   @override
   TableViewScrollableState<C, M> createState() => TableViewScrollableState();
@@ -165,6 +170,7 @@ class TableViewScrollableState<C extends AbstractCell,
   FtViewModel<C, M> get viewModel => _viewModel!;
   FtViewModel<C, M>? _viewModel;
   FtController<C, M>? _controller;
+  ScrollableState? sliverScrollable;
 
   @override
   AxisDirection get axisDirection => AxisDirection.down;
@@ -183,7 +189,9 @@ class TableViewScrollableState<C extends AbstractCell,
     final FtController<C, M>? oldController = _controller;
     _controller = widget.controller;
 
-    _viewModel ??= widget.createViewModel(
+    _viewModel?.dispose();
+
+    _viewModel = widget.createViewModel(
         _physics!,
         this,
         oldViewModel,
@@ -193,21 +201,25 @@ class TableViewScrollableState<C extends AbstractCell,
         widget.tableChangeNotifiers,
         widget.properties,
         widget.changeCellValue,
-        widget.scaleChangeNotifier);
+        widget.scaleChangeNotifier,
+        sliverScrollable,
+        widget.softKeyboard);
 
-    assert(_viewModel != null);
+    // assert(_viewModel != null);
 
-    if (oldController != _controller && oldViewModel != null) {
+    if (oldViewModel != null &&
+        (oldController != _controller || oldViewModel != viewModel)) {
       oldController?.detach(oldViewModel);
     }
 
-    if (oldController != _controller) {
+    if (oldController != _controller || oldViewModel != viewModel) {
       _controller?.attach(viewModel);
     }
   }
 
   @override
   void didChangeDependencies() {
+    sliverScrollable = context.findAncestorStateOfType<ScrollableState>();
     _mediaQueryGestureSettings = MediaQuery.maybeGestureSettingsOf(context);
     _devicePixelRatio = MediaQuery.maybeDevicePixelRatioOf(context) ??
         View.of(context).devicePixelRatio;
@@ -225,13 +237,20 @@ class TableViewScrollableState<C extends AbstractCell,
       oldPhysics = oldPhysics?.parent;
     } while (newPhysics != null || oldPhysics != null);
 
+    debugPrint(
+        'FlexTable: model: ${widget.model != oldWidget.model} tableBuilder: ${widget.tableBuilder != oldWidget.tableBuilder} tableChangeNotifiers: ${widget.tableChangeNotifiers != oldWidget.tableChangeNotifiers}');
+
+    debugPrint(
+        'FlexTable: innerScrollChangeNotifier: ${widget.innerScrollChangeNotifier != oldWidget.innerScrollChangeNotifier} scaleChangeNotifier: ${widget.scaleChangeNotifier != oldWidget.scaleChangeNotifier} properties: ${widget.properties != oldWidget.properties}');
+
     if (widget.model != oldWidget.model ||
         widget.tableBuilder != oldWidget.tableBuilder ||
         widget.tableChangeNotifiers != oldWidget.tableChangeNotifiers ||
         widget.innerScrollChangeNotifier !=
             oldWidget.innerScrollChangeNotifier ||
         widget.scaleChangeNotifier != oldWidget.scaleChangeNotifier ||
-        widget.properties != oldWidget.properties) {
+        widget.properties != oldWidget.properties ||
+        widget.softKeyboard != oldWidget.softKeyboard) {
       return true;
     }
 
@@ -249,7 +268,7 @@ class TableViewScrollableState<C extends AbstractCell,
 
   @override
   void dispose() {
-    widget.controller.detach(viewModel);
+    _controller?.detach(viewModel);
     viewModel.dispose();
     super.dispose();
   }
@@ -408,8 +427,10 @@ class TableViewScrollableState<C extends AbstractCell,
     _hold = viewModel.hold(_disposeHold);
   }
 
+  // TODO TableScrollDirection
   TableScrollDirection _selectDragDirection(DragDownDetails details) =>
-      viewModel.selectScrollDirection(details);
+      TableScrollDirection.both;
+  // viewModel.selectScrollDirection(details);
 
   void _handleDragStart(DragStartDetails details) {
     // It's possible for _hold to become null between _handleDragDown and
@@ -426,6 +447,7 @@ class TableViewScrollableState<C extends AbstractCell,
   void _handleDragUpdate(TableDragUpdateDetails details) {
     // _drag might be null if the drag activity ended and called _disposeDrag.
     assert(_hold == null || _drag == null);
+
     _drag?.update(details);
   }
 
@@ -529,7 +551,13 @@ class TableViewScrollableState<C extends AbstractCell,
     // }
 
     //return _configuration.buildViewportChrome(context, result, widget.axisDirection);
-    return result;
+
+    return sliverScrollable == null
+        ? result
+        : FlexTableToSliverBox(
+            viewModel: viewModel,
+            child: result,
+          );
   }
 
   @override

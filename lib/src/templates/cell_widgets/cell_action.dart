@@ -58,11 +58,8 @@ class CellActionWidget<C extends AbstractCell, M extends AbstractFtModel<C>, A>
       (_) => null
     };
 
-    return switch ((
-      value,
-      text,
-    )) {
-      (ActionCellItem<A> item, Object? _) => FtScaledCell(
+    return switch ((value, text, cell.style)) {
+      (ActionCellItem<A> item, Object? _, CellStyle? style) => FtScaledCell(
           scale: tableScale,
           child: BackgroundDrawer(
               style: cell.style,
@@ -70,13 +67,31 @@ class CellActionWidget<C extends AbstractCell, M extends AbstractFtModel<C>, A>
               useAccent: useAccent,
               child: SizedBox.expand(
                   child: IconButton(
+                color: style?.foreground,
                 iconSize: 24.0 * 1.0,
                 onPressed: () {
                   actionCallBack(viewModel, cell, tableCellIndex, item.action);
                 },
                 icon: item.widget!,
               )))),
-      (List<A> list, String? text) => PopupMenuButton<A>(
+      (List<ActionCellItem> items, Object? _, CellStyle? style) => FtScaledCell(
+          scale: tableScale,
+          child: BackgroundDrawer(
+              style: cell.style,
+              tableScale: 1.0,
+              useAccent: useAccent,
+              child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+                for (var i in items)
+                  IconButton(
+                    color: style?.foreground,
+                    iconSize: 24.0 * 1.0,
+                    onPressed: () {
+                      actionCallBack(viewModel, cell, tableCellIndex, i.action);
+                    },
+                    icon: i.widget!,
+                  )
+              ]))),
+      (List<A> list, String? text, CellStyle? _) => PopupMenuButton<A>(
           onOpened: () {
             viewModel.clearEditCell();
           },
@@ -101,7 +116,7 @@ class CellActionWidget<C extends AbstractCell, M extends AbstractFtModel<C>, A>
                     useAccent: useAccent,
                   ))
               : null),
-      (A a, String? text) => FtScaledCell(
+      (A a, String? text, TextCellStyle? style) => FtScaledCell(
           scale: tableScale,
           child: BackgroundDrawer(
               style: cell.style,
@@ -114,7 +129,7 @@ class CellActionWidget<C extends AbstractCell, M extends AbstractFtModel<C>, A>
                       actionCallBack(viewModel, cell, tableCellIndex, a);
                     },
                     child: Text(translateItem(text ?? ':{'),
-                        style: cell.style?.textStyle,
+                        style: style?.textStyle,
                         textScaler: const TextScaler.linear(1.0))),
               ))),
       (_) => const Center(child: Text(':('))

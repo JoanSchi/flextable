@@ -33,68 +33,53 @@ class CellSelectionWidget<C extends AbstractCell, M extends AbstractFtModel<C>>
 }
 
 class _CellSelectionWidgetState extends State<CellSelectionWidget> {
-  Object? selected;
   late SelectionCell cell;
 
   @override
   void initState() {
-    selected = widget.cell.value;
     cell = widget.cell;
     super.initState();
   }
 
   @override
   void didUpdateWidget(covariant CellSelectionWidget oldWidget) {
-    if (widget.cell != cell) {
-      setState(() {
-        cell = widget.cell;
-      });
+    if (cell != widget.cell) {
+      cell = widget.cell;
     }
+
     super.didUpdateWidget(oldWidget);
   }
 
-  /// Translate Value saves the translation
-  ///
-  ///
-  String translateValue() {
+  String valueToText(Object? value, SelectionCell cell) =>
+      switch ((value, cell.translate, widget.translate)) {
+        (Object object, true, FtTranslation t) => cell.translation =
+            t('$object'),
+        (Object object, false, _) => '$object',
+        (_, _, _) => ''
+      };
+
+  String cellToText(SelectionCell cell) {
     String text;
 
-    switch ((cell.value, cell.translate, cell.translation, widget.translate)) {
-      case (Object v, true, null, FtTranslation t):
+    switch ((cell.values, cell.value, cell.translate, widget.translate)) {
+      case (Map m, Object object, true, FtTranslation t):
         {
-          text = cell.translation = t('$v');
+          text = cell.translation = t(m[object]);
           break;
         }
-      case (_, true, String translation, _):
+
+      case (Map m, Object object, false, _):
         {
-          text = translation;
+          text = m[object];
           break;
         }
-      case (Object v, false, _, _):
-        {
-          text = '$v';
-          break;
-        }
-      default:
-        {
-          text = '';
-        }
-    }
-
-    return text;
-  }
-
-  String translateItem(Object? object) {
-    String text;
-
-    switch ((object, cell.translate, widget.translate)) {
-      case (Object object, true, FtTranslation t):
+      case (_, Object object, true, FtTranslation t):
         {
           text = cell.translation = t('$object');
           break;
         }
 
-      case (Object object, false, _):
+      case (_, Object object, false, _):
         {
           text = '$object';
           break;
@@ -114,11 +99,10 @@ class _CellSelectionWidgetState extends State<CellSelectionWidget> {
         ? FtScaledCell(
             scale: widget.tableScale,
             child: TextDrawer(
-              cell: cell,
-              tableScale: 1.0,
-              useAccent: widget.useAccent,
-              formatedValue: translateValue(),
-            ))
+                cell: cell,
+                tableScale: 1.0,
+                useAccent: widget.useAccent,
+                formatedValue: cellToText(cell)))
         : PopupMenuButton<Object>(
             onOpened: () {
               widget.viewModel.clearEditCell();
@@ -127,23 +111,34 @@ class _CellSelectionWidgetState extends State<CellSelectionWidget> {
             initialValue: cell.value,
             // Callback that sets the selected popup menu item.
             onSelected: (value) {
+              final prevousCell = cell;
+              cell = cell.copyWith(value: value);
+
               widget.viewModel.updateCell(
-                  previousCell: widget.cell,
-                  cell: cell.copyWith(value: value),
+                  previousCell: prevousCell,
+                  cell: cell,
                   ftIndex: widget.tableCellIndex);
             },
-            itemBuilder: (BuildContext context) =>
-                widget.cell.values.map<PopupMenuEntry<Object>>((value) {
-                  return PopupMenuItem<Object>(
-                      value: value, child: Text(translateItem(value)));
-                }).toList(),
+            itemBuilder: (BuildContext context) => switch (cell.values) {
+                  (List l) => [
+                      for (var v in l)
+                        PopupMenuItem<Object>(
+                            value: v, child: Text(valueToText(v, cell)))
+                    ],
+                  (Map m) => [
+                      for (var MapEntry(key: id, value: v) in m.entries)
+                        PopupMenuItem<Object>(
+                            value: id, child: Text(valueToText(v, cell)))
+                    ],
+                  (_) => throw Exception('Values should be a list or a map')
+                },
             child: FtScaledCell(
               scale: widget.tableScale,
               child: TextDrawer(
                 cell: cell,
                 tableScale: 1.0,
                 useAccent: widget.useAccent,
-                formatedValue: translateValue(),
+                formatedValue: cellToText(cell),
               ),
             ));
   }

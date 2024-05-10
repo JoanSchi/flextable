@@ -791,6 +791,17 @@ class TableMultiPanelRenderViewport<C extends AbstractCell,
     });
   }
 
+  //TODO Implement showOnScreen correct
+  @override
+  void showOnScreen({
+    RenderObject? descendant,
+    Rect? rect,
+    Duration duration = Duration.zero,
+    Curve curve = Curves.ease,
+  }) {
+    // viewModel.showCell();
+  }
+
   bool _debugAssertChildListLocked() =>
       childManager.debugAssertChildListLocked();
 

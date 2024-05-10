@@ -24,7 +24,7 @@ class _ExampleEnergyState extends State<ExampleEnergy>
     with SettingsBottomSheet {
   final _globalKey = const GlobalObjectKey<ScaffoldState>('energy');
   final _ftController = DefaultFtController();
-  late FtScaleChangeNotifier tableScaleChangeNotifier;
+  late FtScaleChangeNotifier tableScaleChangeNotifier = FtScaleChangeNotifier();
   late DefaultFtModel ftModel;
   bool scaleSlider = false;
 

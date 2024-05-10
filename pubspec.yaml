@@ -1,6 +1,6 @@
 name: flextable
 description: A flexible table with zoom, autofreeze, freeze, splitView, headers, merged cells, scrollbars
-version: 0.0.2
+version: 0.0.21
 homepage: https://js-lab.nl/flutter
 repository: https://github.com/JoanSchi/flextable
 

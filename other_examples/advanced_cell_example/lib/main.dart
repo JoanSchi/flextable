@@ -215,7 +215,7 @@ class _RowChangeExampleState extends State<TextEditExample>
       model.insertCell(
         ftIndex: FtIndex(row: r, column: column),
         cell: DateTimeCell(
-          value: DateTime.utc(2024, 1, 1).add(Duration(days: r)),
+          value: null,
           style: style,
         ),
       );
@@ -303,13 +303,16 @@ class _RowChangeExampleState extends State<TextEditExample>
     for (int r = 1; r < 3; r++) {
       model.insertCell(
         ftIndex: FtIndex(row: r, column: column),
-        cell: ActionCell(
-            value: const ActionCellItem(
-              action: 'actie blub',
-              widget: Icon(Icons.delete_outline),
-            ),
-            style: style,
-            cellValue: 'Action :)'),
+        cell: ActionCell(value: [
+          const ActionCellItem(
+            action: 'actie blub',
+            widget: Icon(Icons.delete_outline),
+          ),
+          const ActionCellItem(
+            action: 'actie blub 2',
+            widget: Icon(Icons.architecture),
+          ),
+        ], style: style, cellValue: 'Action :)'),
       );
     }
 

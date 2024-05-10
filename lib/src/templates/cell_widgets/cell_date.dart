@@ -96,35 +96,25 @@ class _CellDateEditor<C extends AbstractCell, M extends AbstractFtModel<C>>
 
 class _CellDateEditorState extends State<_CellDateEditor> {
   FtTextEditInputType textEditInputType = FtTextEditInputType.text;
+  late DateTimeCell cell;
 
   @override
   void initState() {
+    cell = widget.cell;
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
     final viewModel = widget.viewModel;
-    final cell = widget.cell;
+
     final nextFocus = viewModel
         .nextCell(
             PanelCellIndex.from(ftIndex: widget.tableCellIndex, cell: cell))
         .ftIndex
         .isIndex;
 
-    TextCellStyle? textCellStyle;
-
-    if (cell.style case NumberCellStyle style) {
-      textCellStyle = style;
-    }
-
     final valueKey = widget.valueKey;
-
-    /// Without resizer:
-    ///        MediaQuery(
-    ///     data: MediaQuery.of(context)
-    ///         .copyWith(textScaler: TextScaler.linear(widget.tableScale)),child:...
-    /// }
 
     Widget child = Center(
         child: _DateInputPicker(
@@ -150,8 +140,7 @@ class _CellDateEditorState extends State<_CellDateEditor> {
       date: cell.value,
       firstDate: cell.minDate,
       lastDate: cell.maxDate,
-      requestFocus: widget
-          .requestFocus, // viewModel.editCell.samePanel(widget.layoutPanelIndex),
+      requestFocus: widget.requestFocus,
       requestNextFocus: true,
       requestNextFocusCallback: (DateTime? date) {
         ///
@@ -218,10 +207,14 @@ class _CellDateEditorState extends State<_CellDateEditor> {
       return;
     }
 
-    viewModel.updateCell(
-        previousCell: widget.cell,
-        cell: widget.cell.copyWith(value: dateTime, valueCanBeNull: true),
-        ftIndex: widget.tableCellIndex);
+    if (dateTime != cell.value) {
+      final previousCell = cell;
+      cell = widget.cell.copyWith(value: dateTime, valueCanBeNull: true);
+      viewModel.updateCell(
+          previousCell: previousCell,
+          cell: cell,
+          ftIndex: widget.tableCellIndex);
+    }
   }
 }
 
@@ -677,7 +670,15 @@ class _DateInputPickerState extends State<_DateInputPicker> {
       } else {
         final formated = dateToText(dateFromInput);
         if (formated != value) {
-          _dateController.text = previousValidation = formated;
+          /// If the TextField is going to keep alive _dateController.text gives a error, while widget is still mounted.
+          /// By waiting with microtask, the widget is unmounted and _dateController.text is skipped
+          ///
+          scheduleMicrotask(() {
+            previousValidation = formated;
+            if (mounted) {
+              _dateController.text = formated;
+            }
+          });
         }
 
         return DateValidated(date: dateFromInput);

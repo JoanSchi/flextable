@@ -40,6 +40,7 @@ class CellTextWidget<C extends AbstractCell, M extends AbstractFtModel<C>>
         layoutPanelIndex: layoutPanelIndex,
         tableCellIndex: tableCellIndex,
         useAccent: useAccent,
+        requestFocus: cellStatus.hasFocus,
       );
     } else {
       String text;
@@ -75,6 +76,7 @@ class CellTextEditor<M extends AbstractFtModel<C>, C extends AbstractCell>
       required this.layoutPanelIndex,
       required this.tableCellIndex,
       required this.useAccent,
+      required this.requestFocus,
       this.valueKey});
 
   final FtViewModel<C, M> viewModel;
@@ -85,6 +87,7 @@ class CellTextEditor<M extends AbstractFtModel<C>, C extends AbstractCell>
   final FtIndex tableCellIndex;
   final bool useAccent;
   final ValueKey? valueKey;
+  final bool requestFocus;
 
   @override
   State<CellTextEditor> createState() => _CellTextEditorState();
@@ -93,10 +96,12 @@ class CellTextEditor<M extends AbstractFtModel<C>, C extends AbstractCell>
 class _CellTextEditorState extends State<CellTextEditor> {
   String value = '';
   FtTextEditInputType textEditInputType = FtTextEditInputType.text;
+  late Cell cell;
 
   @override
   void initState() {
-    switch (widget.cell) {
+    cell = widget.cell;
+    switch (cell) {
       case (TextCell v):
         {
           value = v.value == null ? '' : '${v.value}';
@@ -114,7 +119,7 @@ class _CellTextEditorState extends State<CellTextEditor> {
   @override
   Widget build(BuildContext context) {
     final viewModel = widget.viewModel;
-    final cell = widget.cell;
+
     final nextFocus = viewModel
         .nextCell(
             PanelCellIndex.from(ftIndex: widget.tableCellIndex, cell: cell))
@@ -152,7 +157,7 @@ class _CellTextEditorState extends State<CellTextEditor> {
           : null,
       editInputType: textEditInputType,
       text: value,
-      requestFocus: viewModel.editCell.samePanel(widget.layoutPanelIndex),
+      requestFocus: widget.requestFocus,
       textAlign: TextAlign.center,
       requestNextFocus: true,
       requestNextFocusCallback: (String text) {
@@ -218,14 +223,18 @@ class _CellTextEditorState extends State<CellTextEditor> {
       return;
     }
 
-    switch (widget.cell) {
-      case (TextCell v):
+    switch (cell) {
+      case (TextCell c):
         {
-          viewModel.updateCell(
-              previousCell: widget.cell,
-              cell: v.copyWith(value: text, valueCanBeNull: true),
-              ftIndex: widget.tableCellIndex);
-          break;
+          if (cell.value != text) {
+            final previousCell = cell;
+            cell = c.copyWith(value: text, valueCanBeNull: true);
+            viewModel.updateCell(
+                previousCell: previousCell,
+                cell: cell,
+                ftIndex: widget.tableCellIndex);
+            break;
+          }
         }
       default:
         {}

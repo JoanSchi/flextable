@@ -91,9 +91,12 @@ class _CellNumberEditor<C extends AbstractCell, M extends AbstractFtModel<C>>
 class _CellNumberEditorState extends State<_CellNumberEditor> {
   String value = '';
   FtTextEditInputType textEditInputType = FtTextEditInputType.text;
+  late Cell cell;
   @override
   void initState() {
-    switch (widget.cell) {
+    cell = widget.cell;
+
+    switch (cell) {
       case (DecimalCell v):
         {
           value = v.value == null
@@ -121,7 +124,7 @@ class _CellNumberEditorState extends State<_CellNumberEditor> {
   @override
   Widget build(BuildContext context) {
     final viewModel = widget.viewModel;
-    final cell = widget.cell;
+
     final nextFocus = viewModel
         .nextCell(
             PanelCellIndex.from(ftIndex: widget.tableCellIndex, cell: cell))
@@ -175,8 +178,7 @@ class _CellNumberEditorState extends State<_CellNumberEditor> {
           : null,
       editInputType: textEditInputType,
       text: value,
-      requestFocus: widget
-          .requestFocus, //viewModel.editCell.samePanel(widget.layoutPanelIndex),
+      requestFocus: widget.requestFocus,
       textAlign: TextAlign.center,
       requestNextFocus: true,
       requestNextFocusCallback: (String text) {
@@ -243,22 +245,30 @@ class _CellNumberEditorState extends State<_CellNumberEditor> {
       return;
     }
 
-    switch (widget.cell) {
-      case (DecimalCell v):
+    switch (cell) {
+      case (DecimalCell c):
         {
-          viewModel.updateCell(
-              previousCell: widget.cell,
-              cell: v.copyWith(
-                  value: double.tryParse(text), valueCanBeNull: true),
-              ftIndex: widget.tableCellIndex);
+          if (double.tryParse(text) case double? v when c.value != v) {
+            final previousCell = cell;
+            cell = c.copyWith(value: v, valueCanBeNull: true);
+
+            viewModel.updateCell(
+                previousCell: previousCell,
+                cell: cell,
+                ftIndex: widget.tableCellIndex);
+          }
           break;
         }
-      case (DigitCell v):
+      case (DigitCell c):
         {
-          viewModel.updateCell(
-              previousCell: widget.cell,
-              cell: v.copyWith(value: int.tryParse(text), valueCanBeNull: true),
-              ftIndex: widget.tableCellIndex);
+          if (int.tryParse(text) case int? v when c.value != v) {
+            final previousCell = cell;
+            cell = c.copyWith(value: v, valueCanBeNull: true);
+            viewModel.updateCell(
+                previousCell: previousCell,
+                cell: cell,
+                ftIndex: widget.tableCellIndex);
+          }
           break;
         }
 

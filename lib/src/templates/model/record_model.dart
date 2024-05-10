@@ -7,7 +7,12 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flextable/flextable.dart';
 
-class RecordFtModel<C extends AbstractCell> extends AbstractFtModel<C> {
+typedef UpdateRecordDto<Dto, C> = Dto? Function(
+    {Dto? object, C? previousCell, C? cell});
+
+enum RecordToIterate { update, insert, all }
+
+class RecordFtModel<C extends AbstractCell, Dto> extends AbstractFtModel<C> {
   RecordFtModel({
     super.tableColumns,
     super.tableRows,
@@ -38,23 +43,25 @@ class RecordFtModel<C extends AbstractCell> extends AbstractFtModel<C> {
     Map<int, MergedRows>? mergedRows,
     super.calculationPositionsNeededX,
     super.calculationPositionsNeededY,
+    this.updateDto,
   })  : mergedColumns = mergedColumns ?? HashMap<int, MergedColumns>(),
         mergedRows = mergedRows ?? HashMap<int, MergedRows>(),
         //TODO with mutableNumber
-        linkedRowRibbons = LinkedRowRibbons<C>();
+        linkedRowRibbons = LinkedRowRibbons<C, Dto>();
 
   final Map<int, MergedColumns> mergedColumns;
   final Map<int, MergedRows> mergedRows;
-  LinkedRowRibbons<C> linkedRowRibbons;
-  LinkedRowRibbons<C>? _unFilteredLinkedRowRibbons;
+  LinkedRowRibbons<C, Dto> linkedRowRibbons;
+  LinkedRowRibbons<C, Dto>? _unFilteredLinkedRowRibbons;
   int lastImutableIndex = 0;
   List<int> unUsedImutableRowIndexes = [];
   // RearrangeCells rearrange = const NoRearrangeCells();
 
-  Set<RecordRowRibbon> updateIdRow = {};
-  Set<RecordRowRibbon> insertIdRow = {};
-  Set<RecordRowRibbon> deletedIdRow = {};
+  Set<RecordRowRibbon<C, Dto>> updateIdRow = {};
+  Set<RecordRowRibbon<C, Dto>> insertIdRow = {};
+  Set<RecordRowRibbon<C, Dto>> deletedIdRow = {};
   // HashMap<int, int> uniqueRowNumber = HashMap<int, int>();
+  UpdateRecordDto<Dto, C>? updateDto;
 
   void insertCell(
       {required FtIndex ftIndex,
@@ -82,7 +89,7 @@ class RecordFtModel<C extends AbstractCell> extends AbstractFtModel<C> {
 
         linkedRowRibbons.insertRow(
             i,
-            RecordRowRibbon<C>(
+            RecordRowRibbon<C, Dto>(
                 immutableRowIndex: u, rowId: ftIndex.row == i ? rowId : null));
       }
     }
@@ -186,7 +193,8 @@ class RecordFtModel<C extends AbstractCell> extends AbstractFtModel<C> {
     /// Check updateBackend
     ///
     ///
-    if (linkedRowRibbons.indexed[ftIndex.row] case RecordRowRibbon rowRibbon) {
+    if (linkedRowRibbons.indexed[ftIndex.row]
+        case RecordRowRibbon<C, Dto> rowRibbon) {
       bool unKnownRowId = rowRibbon.rowId == null;
       String? rowIdFromCell;
 
@@ -218,10 +226,21 @@ class RecordFtModel<C extends AbstractCell> extends AbstractFtModel<C> {
           }
         }
       }
+
+      /// Update Dto
+      ///
+      if ((user, updateDto) case (true, UpdateRecordDto<Dto, C> update)) {
+        rowRibbon.dto = update(
+            object: rowRibbon.dto, previousCell: previousCell, cell: cell);
+      }
     }
 
     _placeCell(ftIndex, cell);
 
+    /// Evaluate reference (calculation cell)
+    ///
+    ///
+    ///
     switch (cell) {
       case (Cell c):
         {
@@ -243,7 +262,7 @@ class RecordFtModel<C extends AbstractCell> extends AbstractFtModel<C> {
       linkedRowRibbons.removeCell(ftIndex);
     }
 
-    if (_unFilteredLinkedRowRibbons case LinkedRowRibbons<C> unfiltered) {
+    if (_unFilteredLinkedRowRibbons case LinkedRowRibbons<C, Dto> unfiltered) {
       int? index;
       if (linkedRowRibbons.imRowIndex(ftIndex.row) case int imIndex) {
         index = unfiltered.rowIndex(imIndex);
@@ -423,9 +442,11 @@ class RecordFtModel<C extends AbstractCell> extends AbstractFtModel<C> {
     //     changeRows: [ChangeRange(start: startRow, last: endRow, insert: true)]);
 
     for (int i = startRow; i <= (endRow ?? startRow); i++) {
-      final rb = RecordRowRibbon<C>(immutableRowIndex: uniqueImmutableRowIndex);
+      final rb =
+          RecordRowRibbon<C, Dto>(immutableRowIndex: uniqueImmutableRowIndex);
 
-      if (_unFilteredLinkedRowRibbons case LinkedRowRibbons<C> unFiltered) {
+      if (_unFilteredLinkedRowRibbons
+          case LinkedRowRibbons<C, Dto> unFiltered) {
         int? index;
         if (linkedRowRibbons.imRowIndex(i) case int imIndex) {
           index = unFiltered.rowIndex(imIndex);
@@ -470,7 +491,7 @@ class RecordFtModel<C extends AbstractCell> extends AbstractFtModel<C> {
       }
       tableRows--;
     }
-    if (_unFilteredLinkedRowRibbons case LinkedRowRibbons<C> unfiltered) {
+    if (_unFilteredLinkedRowRibbons case LinkedRowRibbons<C, Dto> unfiltered) {
       unfiltered.removeImIdexes(removedImIdex);
     }
   }
@@ -519,13 +540,13 @@ class RecordFtModel<C extends AbstractCell> extends AbstractFtModel<C> {
     if (rowId case String rowId) {
       for (RecordRowRibbon r in linkedRowRibbons.indexed) {
         if (r.rowId == rowId) {
-          return recordToMap(r.column, (_, __) => true);
+          return recordToMap(r.columns, (_, __) => true);
         }
       }
     } else if (immutableIndex case int imIdex) {
       for (RecordRowRibbon r in linkedRowRibbons.indexed) {
         if (r.immutableRowIndex == imIdex) {
-          return recordToMap(r.column, (_, __) => true);
+          return recordToMap(r.columns, (_, __) => true);
         }
       }
     } else if (rowIndex case int rIndex when rIndex < linkedRowRibbons.length) {
@@ -534,80 +555,227 @@ class RecordFtModel<C extends AbstractCell> extends AbstractFtModel<C> {
     return {};
   }
 
-  saveInserts({
+  validateSave({
+    required bool Function(
+            RecordRowRibbon<C, Dto> rr,
+            Set<FtIndex> Function(Set<String> columnIds, String validation)
+                setValidation)
+        cellValidation,
     required Future<bool> Function(
-            String rowId,
-            Map<String, dynamic> map,
+            Dto? dto,
             Set<FtIndex> Function(Set<String> columnIds, String validation)
                 setValidation)
         save,
-    bool Function(int, FtCellIdentifier c)? include,
-    required Function(List<CellValidation> list) problems,
-    bool cellWarning = true,
+    required RecordToIterate recordToIterate,
   }) async {
-    include ??= (_, __) => true;
+    Set<RecordRowRibbon<C, Dto>> set;
+    Set<RecordRowRibbon<C, Dto>> temp;
 
-    Set<RecordRowRibbon> temp = Set.from(insertIdRow);
+    switch (recordToIterate) {
+      case RecordToIterate.update:
+        {
+          temp = Set.from(updateIdRow);
+          set = updateIdRow..clear();
+          break;
+        }
+      case RecordToIterate.insert:
+        {
+          temp = Set.from(insertIdRow);
+          set = insertIdRow..clear();
+          break;
+        }
+      case RecordToIterate.all:
+        {
+          throw Exception(
+              'All records not supported only RecordToIterate.insert & RecordToIterate.update');
+        }
+    }
 
-    insertIdRow.clear();
-
-    for (RecordRowRibbon rr in temp) {
-      if (rr.rowId case String rowId) {
-        List<CellValidation> listProblem =
-            checkCellsForProblems(rr, include, cellWarning);
-        if (listProblem.isNotEmpty) {
-          problems(listProblem);
-
-          /// Found problem insert RowRibbon back, instead to Insert to database
+    for (RecordRowRibbon<C, Dto> rr in temp) {
+      if (rr.rowId != null) {
+        if (cellValidation(rr, (Set<String> columnIds, String validation) {
+          return setValidation(
+              rowRibbon: rr, columnIds: columnIds, validation: validation);
+        })) {
+          /// Found problem insert RowRibbon back, instead to update to database
           ///
-          insertIdRow.add(rr);
+          set.add(rr);
         } else {
-          if (!(await save(rowId, recordToMap(rr.column, include),
-              (Set<String> columnIds, String validation) {
+          if (!(await save(rr.dto, (Set<String> columnIds, String validation) {
             return setValidation(
                 rowRibbon: rr, columnIds: columnIds, validation: validation);
           }))) {
-            insertIdRow.add(rr);
+            set.add(rr);
           }
         }
       }
     }
   }
 
-  saveUpdates(
-      {required Future<bool> Function(
-              String rowId,
-              Map<String, dynamic> map,
-              Set<FtIndex> Function(Set<String> columnIds, String validation)
-                  setValidation)
-          save,
-      bool Function(int, FtCellIdentifier c)? include,
-      required Function(List<CellValidation> list) problems,
-      bool cellWarning = true}) async {
+  bool validate2(
+      {required bool Function(
+        RecordRowRibbon<C, Dto> rr,
+        Set<FtIndex> Function(Set<String> columnIds, String validation)
+            setValidation,
+      ) cellValidation,
+      required RecordToIterate recordsToValidate}) {
+    Iterable rowRibbons = switch (recordsToValidate) {
+      RecordToIterate.update => updateIdRow,
+      RecordToIterate.insert => insertIdRow,
+      (_) => linkedRowRibbons.indexed
+    };
+
+    bool cellsValidated = true;
+    for (RecordRowRibbon<C, Dto> rr in rowRibbons) {
+      if (rr.rowId != null) {
+        cellsValidated = cellsValidated ||
+            cellValidation(rr, (Set<String> columnIds, String validation) {
+              return setValidation(
+                  rowRibbon: rr, columnIds: columnIds, validation: validation);
+            });
+      }
+    }
+    return cellsValidated;
+  }
+
+  bool validate(
+      {required bool Function(
+        int rowId,
+        RecordRowRibbon<C, Dto> rr,
+      ) cellValidation,
+      required RecordToIterate recordsToValidate}) {
+    Iterable rowRibbons = switch (recordsToValidate) {
+      RecordToIterate.update => updateIdRow,
+      RecordToIterate.insert => insertIdRow,
+      (_) => linkedRowRibbons.indexed
+    };
+
+    bool passed = true;
+    for (RecordRowRibbon<C, Dto> rr in rowRibbons) {
+      if (linkedRowRibbons.rowIndex(rr.immutableRowIndex) case int rowIndex) {
+        passed = cellValidation(rowIndex, rr) && passed;
+      }
+    }
+    return passed;
+  }
+
+  @Deprecated('Use ValidateSaveInserts')
+  saveInserts({
+    ///save
+    ///
+    ///
+    required Future<bool> Function(
+            String rowId,
+            Map<String, dynamic> map,
+            Set<FtIndex> Function(Set<String> columnIds, String validation)
+                setValidation)
+        save,
+
+    ///Include
+    ///
+    ///
+    bool Function(int, FtCellIdentifier c)? include,
+
+    ///Check for problems
+    ///
+    ///
+    bool Function(
+            RecordRowRibbon<AbstractCell, Dto> rowRibbon,
+            int rowIndex,
+            List<AbstractCell?> cells,
+            Set<FtIndex> Function(Set<String> columnIds, String validation)
+                setValidation)?
+        cellValidation,
+  }) async {
+    include ??= (_, __) => true;
+    Set<RecordRowRibbon<C, Dto>> temp = Set.from(insertIdRow);
+
+    insertIdRow.clear();
+
+    for (RecordRowRibbon<C, Dto> rr in temp) {
+      if (rr.rowId case String rowId) {
+        if (cellValidation != null) {
+          int rowIndex = linkedRowRibbons.rowIndex(rr.immutableRowIndex) ?? -1;
+
+          if (!cellValidation.call(rr, rowIndex, rr.columns,
+              (Set<String> columnIds, String validation) {
+            return setValidation(
+                rowRibbon: rr, columnIds: columnIds, validation: validation);
+          })) {
+            /// Found problem insert RowRibbon back, instead to update to database
+            ///
+            insertIdRow.add(rr);
+            continue;
+          }
+        }
+
+        if (!(await save(rowId, recordToMap(rr.columns, include),
+            (Set<String> columnIds, String validation) {
+          return setValidation(
+              rowRibbon: rr, columnIds: columnIds, validation: validation);
+        }))) {
+          insertIdRow.add(rr);
+        }
+      }
+    }
+  }
+
+  @Deprecated('Use ValidateUpdateInserts')
+  saveUpdates({
+    ///save
+    ///
+    ///
+    required Future<bool> Function(
+            String rowId,
+            Map<String, dynamic> map,
+            Set<FtIndex> Function(Set<String> columnIds, String validation)
+                setValidation)
+        save,
+
+    ///Include
+    ///
+    ///
+    bool Function(int, FtCellIdentifier c)? include,
+
+    ///Check for problems
+    ///
+    ///
+    bool Function(
+            RecordRowRibbon<AbstractCell, Dto> rowRibbon,
+            int rowIndex,
+            List<AbstractCell?> cells,
+            Set<FtIndex> Function(Set<String> columnIds, String validation)
+                setValidation)?
+        cellValidation,
+  }) async {
+    include ??= (_, __) => true;
     Set temp = Set.from(updateIdRow);
 
     updateIdRow.clear();
 
-    include ??= (_, __) => true;
-
-    for (RecordRowRibbon rr in temp) {
+    for (RecordRowRibbon<C, Dto> rr in temp) {
       if (rr.rowId case String rowId) {
-        List<CellValidation> problemList =
-            checkCellsForProblems(rr, include, cellWarning);
-        if (problemList.isNotEmpty) {
-          problems(problemList);
+        if (cellValidation != null) {
+          int rowIndex = linkedRowRibbons.rowIndex(rr.immutableRowIndex) ?? -1;
 
-          /// Found problem insert RowRibbon back, instead to update to database
-          ///
-          updateIdRow.add(rr);
-        } else {
-          if (!(await save(rowId, recordToMap(rr.column, include),
+          if (!cellValidation.call(rr, rowIndex, rr.columns,
               (Set<String> columnIds, String validation) {
             return setValidation(
                 rowRibbon: rr, columnIds: columnIds, validation: validation);
-          }))) {
+          })) {
+            /// Found problem insert RowRibbon back, instead to update to database
+            ///
             updateIdRow.add(rr);
+            continue;
           }
+        }
+
+        if (!(await save(rowId, recordToMap(rr.columns, include),
+            (Set<String> columnIds, String validation) {
+          return setValidation(
+              rowRibbon: rr, columnIds: columnIds, validation: validation);
+        }))) {
+          updateIdRow.add(rr);
         }
       }
     }
@@ -622,19 +790,26 @@ class RecordFtModel<C extends AbstractCell> extends AbstractFtModel<C> {
 
     include ??= (_, __) => true;
 
-    for (RecordRowRibbon rr in temp) {
+    for (RecordRowRibbon<C, Dto> rr in temp) {
       if (rr.rowId case String rowId) {
-        if (!(await save(rowId, recordToMap(rr.column, include)))) {
+        if (!(await save(rowId, recordToMap(rr.columns, include)))) {
           deletedIdRow.add(rr);
         }
       }
     }
   }
 
-  Map<String, dynamic> recordToMap(HashMap<int, AbstractCell> columns,
+  Map<String, dynamic> recordToMap(List<AbstractCell?> columns,
       bool Function(int, FtCellIdentifier c) include) {
     Map<String, dynamic> map = {};
-    for (var MapEntry(key: column, value: c) in columns.entries) {
+    int length = columns.length;
+    for (int column = 0; column < length; column++) {
+      final c = columns[column];
+
+      if (c == null) {
+        continue;
+      }
+
       String columnId = '';
       if (c.identifier case FtCellIdentifier c) {
         if (include(column, c)) {
@@ -686,18 +861,22 @@ class RecordFtModel<C extends AbstractCell> extends AbstractFtModel<C> {
   ///
   ///
   ///
-
+  @Deprecated('Use setValidation')
   List<CellValidation> checkCellsForProblems(
-      RecordRowRibbon<AbstractCell> rowRibbon,
+      RecordRowRibbon<AbstractCell, Dto> rowRibbon,
       bool Function(int, FtCellIdentifier c) include,
       bool cellWarning) {
     int rowIndex = linkedRowRibbons.rowIndex(rowRibbon.immutableRowIndex) ?? -1;
     List<CellValidation> problem = [];
 
-    final columns = rowRibbon.column;
-    HashMap<int, AbstractCell> temp = HashMap.from(columns);
+    final columns = rowRibbon.columns;
 
-    for (var MapEntry(key: column, value: c) in temp.entries) {
+    for (int column = 0; column < columns.length; column++) {
+      final c = columns[column];
+      if (c == null) {
+        continue;
+      }
+
       if (c.identifier case FtCellIdentifier ci) {
         if (!include(column, ci)) {
           continue;
@@ -730,7 +909,7 @@ class RecordFtModel<C extends AbstractCell> extends AbstractFtModel<C> {
   ///
 
   Set<FtIndex> setValidation(
-      {required RecordRowRibbon<AbstractCell> rowRibbon,
+      {required RecordRowRibbon<AbstractCell, Dto> rowRibbon,
       required Set<String> columnIds,
       required String validation}) {
     Set<FtIndex> updatedFtIndexes = {};
@@ -738,8 +917,10 @@ class RecordFtModel<C extends AbstractCell> extends AbstractFtModel<C> {
     final rowIndex =
         linkedRowRibbons.rowIndex(rowRibbon.immutableRowIndex) ?? -1;
 
-    for (var MapEntry(key: column, value: cell) in rowRibbon.column.entries) {
-      if ((cell, cell.identifier) case (Cell c, FtCellIdentifier ci)
+    final columns = rowRibbon.columns;
+    for (int column = 0; column < columns.length; column++) {
+      final cell = columns[column];
+      if ((cell, cell?.identifier) case (Cell c, FtCellIdentifier ci)
           when columnIds.contains(ci.columnId)) {
         if (c.validate != validation) {
           c.validate = validation;
@@ -886,39 +1067,88 @@ class RecordFtModel<C extends AbstractCell> extends AbstractFtModel<C> {
     }
   }
 
-  setFilteredList(List<RecordRowRibbon<C>> filteredRibbon) {
+  setFilteredList(List<RecordRowRibbon<C, Dto>> filteredRibbon) {
     _unFilteredLinkedRowRibbons ??= linkedRowRibbons;
     linkedRowRibbons = LinkedRowRibbons(indexed: filteredRibbon);
     tableRows = filteredRibbon.length;
   }
 
   undoFilter() {
-    if (_unFilteredLinkedRowRibbons case LinkedRowRibbons<C> unFiltered) {
+    if (_unFilteredLinkedRowRibbons case LinkedRowRibbons<C, Dto> unFiltered) {
       linkedRowRibbons = unFiltered;
       _unFilteredLinkedRowRibbons = null;
       tableRows = linkedRowRibbons.length;
     }
   }
 
-  List<RecordRowRibbon<C>> get unFilteredRowRibbons =>
+  List<RecordRowRibbon<C, Dto>> get unFilteredRowRibbons =>
       (_unFilteredLinkedRowRibbons ?? linkedRowRibbons).indexed;
 
   bool get filterInUse => _unFilteredLinkedRowRibbons != null;
+
+  RecordRowRibbon<C, Dto>? rowRibbonFromIndex(int index) {
+    return linkedRowRibbons.indexed.elementAtOrNull(index);
+  }
+
+  List<Dto> dtoToList({int startRow = 0, int? endRow}) {
+    List<RecordRowRibbon<C, Dto>> list = linkedRowRibbons.indexed;
+    if (startRow >= list.length) {
+      return [];
+    }
+    if (endRow == null || endRow >= list.length) {
+      endRow = list.length;
+    }
+    return [
+      for (int i = startRow; i < endRow; i++)
+        if (list[i].dto case Dto object) object
+    ];
+  }
+
+  Map<String, Dto> dtoToMap({int startRow = 0, int? endRow}) {
+    List<RecordRowRibbon<C, Dto>> list = linkedRowRibbons.indexed;
+    if (endRow == null || endRow >= list.length) {
+      endRow = list.length;
+    }
+    return {
+      for (int i = startRow; i < endRow; i++)
+        if (list[i] case RecordRowRibbon<C, Dto> r)
+          if ((r.rowId, r.dto) case (String id, Dto o)) id: o
+    };
+  }
+
+  Dto? dtoFromIndex(FtIndex index) => linkedRowRibbons.indexed[index.row].dto;
 }
 
-class RecordRowRibbon<C extends AbstractCell> {
+class RecordRowRibbon<C extends AbstractCell, Dto> {
   int immutableRowIndex;
   String? rowId;
+  Dto? dto;
 
   RecordRowRibbon({required this.immutableRowIndex, this.rowId});
 
-  HashMap<int, C> column = HashMap<int, C>();
+  insertColumn(int index, C? cell) {
+    if (index >= columns.length) {
+      int i = columns.length;
+      while (i < index) {
+        columns.insert(i++, null);
+      }
+      columns.insert(index, cell);
+    } else {
+      columns[index] = cell;
+    }
+  }
+
+  removeColumn(int index) {
+    columns[index] = null;
+  }
+
+  List<C?> columns = [];
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
 
-    return other is RecordRowRibbon<C> &&
+    return other is RecordRowRibbon<C, Dto> &&
         other.immutableRowIndex == immutableRowIndex;
   }
 
@@ -927,7 +1157,7 @@ class RecordRowRibbon<C extends AbstractCell> {
 
   @override
   String toString() =>
-      'RecordRowRibbon(immutableRowIndex: $immutableRowIndex, rowId: $rowId column: $column)';
+      'RecordRowRibbon(immutableRowIndex: $immutableRowIndex, rowId: $rowId column: $columns)';
 }
 
 abstract class RearrangeCells {
@@ -1036,33 +1266,33 @@ class NoRearrangeCells extends RearrangeCells {
 //   FtIndex obtainNewIndex(FtIndex index) => const FtIndex();
 // }
 
-class LinkedRowRibbons<C extends AbstractCell> {
-  List<RecordRowRibbon<C>> indexed;
+class LinkedRowRibbons<C extends AbstractCell, Dto> {
+  List<RecordRowRibbon<C, Dto>> indexed;
   HashMap<int, int> uniqueRowNumber = HashMap<int, int>();
   bool reImIndex = false;
 
-  LinkedRowRibbons({List<RecordRowRibbon<C>>? indexed})
+  LinkedRowRibbons({List<RecordRowRibbon<C, Dto>>? indexed})
       : indexed = indexed ?? [],
         reImIndex = indexed?.isNotEmpty ?? false;
 
   int get length => indexed.length;
 
-  insertCell(FtIndex ftIndex, C cell) {
-    indexed[ftIndex.row].column[ftIndex.column] = cell;
+  insertCell(FtIndex ftIndex, C? cell) {
+    indexed[ftIndex.row].insertColumn(ftIndex.column, cell);
   }
 
   removeCell(FtIndex ftIndex) {
-    indexed[ftIndex.row].column.remove(ftIndex.column);
+    indexed[ftIndex.row].columns.remove(ftIndex.column);
   }
 
-  insertRow(int rowIndex, RecordRowRibbon<C> ribbon) {
+  insertRow(int rowIndex, RecordRowRibbon<C, Dto> ribbon) {
     if (!reImIndex) {
       reImIndex = true;
     }
     indexed.insert(rowIndex, ribbon);
   }
 
-  RecordRowRibbon<C> removeRow(int rowIndex) {
+  RecordRowRibbon<C, Dto> removeRow(int rowIndex) {
     if (!reImIndex) {
       reImIndex = true;
     }
@@ -1070,7 +1300,10 @@ class LinkedRowRibbons<C extends AbstractCell> {
   }
 
   C? cell(FtIndex ftIndex) {
-    return indexed.elementAtOrNull(ftIndex.row)?.column[ftIndex.column];
+    return indexed
+        .elementAtOrNull(ftIndex.row)
+        ?.columns
+        .elementAtOrNull(ftIndex.column);
   }
 
   int? rowIndex(int imIndex) {
@@ -1098,5 +1331,5 @@ class LinkedRowRibbons<C extends AbstractCell> {
     reImIndex = true;
   }
 
-  HashMap<int, C> column(int rowIndex) => indexed[rowIndex].column;
+  List<C?> column(int rowIndex) => indexed[rowIndex].columns;
 }

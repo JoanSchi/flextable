@@ -1,6 +1,6 @@
 {
-    "name": "text_edit_example",
-    "short_name": "text_edit_example",
+    "name": "advanced_cell_example",
+    "short_name": "advanced_cell_example",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

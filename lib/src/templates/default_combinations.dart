@@ -14,12 +14,12 @@ typedef DefaultFtController<I>
 typedef DefaultTableBuilder<I, A>
     = BasicTableBuilder<AbstractCell, BasicFtModel<AbstractCell>, A>;
 
-typedef DefaultRecordFlexTable<I>
-    = FlexTable<AbstractCell, RecordFtModel<AbstractCell>>;
-typedef DefaultRecordFtModel<I> = RecordFtModel<AbstractCell>;
-typedef DefaultRecordFtViewModel<I>
-    = FtViewModel<AbstractCell, RecordFtModel<AbstractCell>>;
-typedef DefaultRecordFtController<I>
-    = FtController<AbstractCell, RecordFtModel<AbstractCell>>;
-typedef DefaultRecordTableBuilder<I, A>
-    = BasicTableBuilder<AbstractCell, RecordFtModel<AbstractCell>, A>;
+typedef DefaultRecordFlexTable<Dto>
+    = FlexTable<AbstractCell, RecordFtModel<AbstractCell, Dto>>;
+typedef DefaultRecordFtModel<Dto> = RecordFtModel<AbstractCell, Dto>;
+typedef DefaultRecordFtViewModel<Dto>
+    = FtViewModel<AbstractCell, RecordFtModel<AbstractCell, Dto>>;
+typedef DefaultRecordFtController<Dto>
+    = FtController<AbstractCell, RecordFtModel<AbstractCell, Dto>>;
+typedef DefaultRecordTableBuilder<Dto, A>
+    = BasicTableBuilder<AbstractCell, RecordFtModel<AbstractCell, Dto>, A>;

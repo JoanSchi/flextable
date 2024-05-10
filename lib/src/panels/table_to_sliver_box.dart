@@ -3,6 +3,7 @@
 // license that can be found in the LICENSE file.
 
 import 'package:flextable/flextable.dart';
+import 'package:flextable/src/model/view_model.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -14,33 +15,32 @@ class FlexTableToSliverBox extends SingleChildRenderObjectWidget {
   const FlexTableToSliverBox({
     super.key,
     super.child,
-    required this.ftController,
+    required this.viewModel,
     this.maxOverlap,
   });
 
-  final FtController ftController;
+  final FtViewModel viewModel;
   final double? maxOverlap;
 
   @override
   void updateRenderObject(
       BuildContext context, RenderFlexTableToSliverBox renderObject) {
     renderObject
-      ..flexTableController = ftController
+      ..viewModel = viewModel
       ..maxOverlap = maxOverlap;
   }
 
   @override
   RenderFlexTableToSliverBox createRenderObject(BuildContext context) =>
-      RenderFlexTableToSliverBox(
-          flexTableController: ftController, maxOverlap: maxOverlap);
+      RenderFlexTableToSliverBox(viewModel: viewModel, maxOverlap: maxOverlap);
 }
 
 class RenderFlexTableToSliverBox extends RenderSliverSingleBoxAdapter {
   RenderFlexTableToSliverBox(
-      {super.child, required this.flexTableController, double? maxOverlap})
+      {super.child, required this.viewModel, double? maxOverlap})
       : _maxOverlap = maxOverlap;
 
-  FtController flexTableController;
+  FtViewModel viewModel;
   double? _maxOverlap;
 
   set maxOverlap(double? value) {
@@ -68,8 +68,6 @@ class RenderFlexTableToSliverBox extends RenderSliverSingleBoxAdapter {
     //     'Only one viewModel should be present in flexTableController, ${flexTableController.viewModels.length} found.'
     //     ' It is however possible that the dettach of the previous is delayed by the microschedule task!');
 
-    final viewModel = flexTableController.lastViewModel();
-
     if (viewModel.correctSliverOffset != null &&
         viewModel.correctSliverOffset != 0.0) {
       geometry =
@@ -96,10 +94,17 @@ class RenderFlexTableToSliverBox extends RenderSliverSingleBoxAdapter {
     assert(paintedChildSize.isFinite);
     assert(paintedChildSize >= 0.0);
 
+    debugPrint(
+        'sliverbox scrollY: ${constraints.scrollOffset + overlap} overlap $overlap');
     viewModel.setScrollWithSliver(constraints.scrollOffset + overlap);
 
-    // debugPrint(
-    //     'constraints.overlap ${constraints.overlap.toInt()} constraints.scrollOffset ${constraints.scrollOffset.toInt()}');
+    debugPrint(
+        'constraints.overlap ${constraints.overlap.toInt()} constraints.scrollOffset ${constraints.scrollOffset.toInt()}');
+
+    /// Not possible because is cause a layout loop
+    ///
+    ///
+    // child!.layout(BoxConstraints.tight(Size.zero), parentUsesSize: true);
 
     child!.layout(
         constraints.asBoxConstraints(
@@ -123,7 +128,7 @@ class RenderFlexTableToSliverBox extends RenderSliverSingleBoxAdapter {
     );
 
     //Do not apply setChildParentData, by default child is layout at scrollOffset!!
-    // setChildParentData(child!, constraints, geometry!);
+    //  setChildParentData(child!, constraints, geometry!);
   }
 
   @override

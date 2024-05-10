@@ -57,9 +57,12 @@ class _ShortExampleState extends State<ShortExample> {
             textStyle: const TextStyle(
                 fontSize: 20, color: Color.fromARGB(255, 70, 78, 38)));
 
-        model.updateCell(
+        model.insertCell(
             ftIndex: FtIndex(row: r, column: c),
-            cell: Cell(value: '${numberToCharacter(c)}$r', style: style),
+            cell: TextCell(
+                editable: true,
+                value: '${numberToCharacter(c)}$r',
+                style: style),
             rows: rows);
       }
     }

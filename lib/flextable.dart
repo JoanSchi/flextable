@@ -8,7 +8,7 @@ library flextable;
 export 'src/model/model.dart' show AbstractFtModel, SplitState;
 export 'src/templates/model/basic_model.dart' show BasicFtModel, RowRibbon;
 export 'src/templates/model/record_model.dart'
-    show RecordFtModel, RecordRowRibbon;
+    show RecordFtModel, RecordRowRibbon, UpdateRecordDto, RecordToIterate;
 export 'src/templates/model/validation.dart'
     show ModelValidation, CellValidation;
 export 'src/templates/model/cell_identifier.dart'

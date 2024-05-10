@@ -334,6 +334,7 @@ abstract class MyDragGestureRecognizer extends OneSequenceGestureRecognizer {
               untransformedEndPosition: event.localPosition,
             ).distance *
             (getPrimaryValueFromOffset(movedLocally) ?? 1).sign;
+
         if (hasSufficientGlobalDistanceToAccept(event.kind)) {
           resolve(GestureDisposition.accepted);
         }

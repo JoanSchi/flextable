@@ -444,7 +444,7 @@ class SelectionCell<T, I> extends Cell<T, I, TextCellStyle> {
   });
 
   final bool translate;
-  final List<T> values;
+  final dynamic values;
   @override
   final bool editable;
 
@@ -454,7 +454,7 @@ class SelectionCell<T, I> extends Cell<T, I, TextCellStyle> {
   SelectionCell<T, I> copyWith(
       {TextCellStyle? style,
       T? value,
-      List<T>? values,
+      dynamic values,
       bool? translate,
       FtCellGroupState? groupState,
       Merged? merged,
@@ -478,26 +478,30 @@ class SelectionCell<T, I> extends Cell<T, I, TextCellStyle> {
         ref: ref ?? this.ref);
   }
 
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
+  // @override
+  // bool operator ==(Object other) {
+  //   if (identical(this, other)) return true;
 
-    return other is SelectionCell<T, I> &&
-        super == other &&
-        other.translate == translate &&
-        listEquals(other.values, values) &&
-        other.editable == editable &&
-        setEquals(other.ref, ref);
-  }
+  //   return other is SelectionCell<T, I> &&
+  //       super == other &&
+  //       other.translate == translate &&
+  //       switch ((other.values, values)) {
+  //         (Map o, Map v) => mapEquals(o, v),
+  //         (List o, List v) => listEquals(o, v),
+  //         (_, _) => false
+  //       } &&
+  //       other.editable == editable &&
+  //       setEquals(other.ref, ref);
+  // }
 
-  @override
-  int get hashCode {
-    return super.hashCode ^
-        translate.hashCode ^
-        values.hashCode ^
-        editable.hashCode ^
-        ref.hashCode;
-  }
+  // @override
+  // int get hashCode {
+  //   return super.hashCode ^
+  //       translate.hashCode ^
+  //       values.hashCode ^
+  //       editable.hashCode ^
+  //       ref.hashCode;
+  // }
 }
 
 class ActionCellItem<A> {
@@ -513,7 +517,7 @@ class ActionCellItem<A> {
   });
 }
 
-class ActionCell<T, I> extends Cell<T, I, TextCellStyle> {
+class ActionCell<T, I> extends Cell<T, I, CellStyle> {
   ActionCell({
     super.style,
     super.value,
@@ -537,7 +541,7 @@ class ActionCell<T, I> extends Cell<T, I, TextCellStyle> {
 
   @override
   ActionCell<T, I> copyWith({
-    TextCellStyle? style,
+    CellStyle? style,
     T? value,
     bool? translate,
     FtCellGroupState? groupState,

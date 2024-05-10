@@ -31,6 +31,7 @@ class DataModelFruit {
         ftIndex: const FtIndex(row: 0, column: 0),
         columns: 5,
         cell: TextCell(
+            editable: true,
             value:
                 'Fruitteelt open grond en onder glas; \n teeltoppervlakte, soort fruit',
             style: TextCellStyle(
@@ -44,6 +45,7 @@ class DataModelFruit {
         ftIndex: const FtIndex(row: 1, column: 1),
         columns: 4,
         cell: TextCell(
+            editable: true,
             value: 'Perioden (ha/J)',
             style: TextCellStyle(
               background: Colors.lime[500],
@@ -70,7 +72,7 @@ class DataModelFruit {
 
         ftModel.insertCell(
             ftIndex: FtIndex(row: row, column: tempColumn),
-            cell: Cell(value: value, style: style));
+            cell: TextCell(value: value.toString(), style: style));
 
         tempColumn++;
       }
