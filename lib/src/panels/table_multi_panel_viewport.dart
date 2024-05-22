@@ -88,6 +88,13 @@ class _SplitIterator implements Iterator<int> {
           ? delegate.panelIndex(_row, _column)
           : -1;
 
+      // _current = (delegate.rowVisible(_row) &&
+      //             delegate.columnVisible(_column) ||
+      //         delegate.editCell
+      //             .samePanel(LayoutPanelIndex(xIndex: _column, yIndex: _row)))
+      //     ? delegate.panelIndex(_row, _column)
+      //     : -1;
+
       if (_column < 3) {
         _column += 1;
       } else {
@@ -551,8 +558,8 @@ class TableMultiPanelRenderViewport<C extends AbstractCell,
           child: child,
           x: layoutX.gridPosition,
           y: layoutY.gridPosition,
-          width: layoutX.gridLength,
-          height: layoutY.gridLength);
+          width: layoutX.gridLength < 0.0 ? 0.0 : layoutX.gridLength,
+          height: layoutY.gridLength < 0.0 ? 0.0 : layoutY.gridLength);
     }
 
     // scrollPosition.applyTableDimensions(layoutX: tableModel.widthLayoutList, layoutY: tableModel.heightLayoutList);
@@ -781,8 +788,11 @@ class TableMultiPanelRenderViewport<C extends AbstractCell,
             _viewModel.layoutPanelIndex(parentData.tablePanelIndex);
         final nextChild = childAfter(child);
 
-        if (!(viewModel.rowVisible(layoutIndex.yIndex) &&
-            viewModel.columnVisible(layoutIndex.xIndex))) {
+        if (!parentData.keepAlive &&
+            (viewModel.panelIndexX != layoutIndex.xIndex &&
+                viewModel.panelIndexY != layoutIndex.yIndex) &&
+            !(viewModel.rowVisible(layoutIndex.yIndex) &&
+                viewModel.columnVisible(layoutIndex.xIndex))) {
           childManager.removeChild(child);
         }
 
@@ -791,7 +801,6 @@ class TableMultiPanelRenderViewport<C extends AbstractCell,
     });
   }
 
-  //TODO Implement showOnScreen correct
   @override
   void showOnScreen({
     RenderObject? descendant,
@@ -799,7 +808,7 @@ class TableMultiPanelRenderViewport<C extends AbstractCell,
     Duration duration = Duration.zero,
     Curve curve = Curves.ease,
   }) {
-    // viewModel.showCell();
+    viewModel.showCell(viewModel.editCell);
   }
 
   bool _debugAssertChildListLocked() =>
@@ -862,6 +871,10 @@ class TablePanelParentData extends ContainerBoxParentData<RenderBox> {
   double topMargin = 0.0;
   double rightMargin = 0.0;
   double bottomMargin = 0.0;
+
+  ///
+  ///
+  bool keepAlive = false;
 }
 
 class LayoutPanelIndex implements Comparable<LayoutPanelIndex> {

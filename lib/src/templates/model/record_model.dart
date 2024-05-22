@@ -428,7 +428,7 @@ class RecordFtModel<C extends AbstractCell, Dto> extends AbstractFtModel<C> {
 
   @override
   insertRowRange({
-    required int startRow,
+    int? startRow,
     int? endRow,
   }) {
     // assert(rearrange is NoRearrangeCells,
@@ -441,7 +441,16 @@ class RecordFtModel<C extends AbstractCell, Dto> extends AbstractFtModel<C> {
     // rearrange = InsertDeleteRow(
     //     changeRows: [ChangeRange(start: startRow, last: endRow, insert: true)]);
 
-    for (int i = startRow; i <= (endRow ?? startRow); i++) {
+    assert(tableRows == linkedRowRibbons.indexed.length,
+        'TableRows $tableRows not equal to linkedRowRibbons.indexed.length ${linkedRowRibbons.indexed.length}');
+
+    startRow ??= tableRows;
+    endRow ??= startRow;
+
+    assert(startRow <= endRow,
+        'StartRow $startRow is not smaller or equal to endRow $endRow');
+
+    for (int i = startRow; i <= endRow; i++) {
       final rb =
           RecordRowRibbon<C, Dto>(immutableRowIndex: uniqueImmutableRowIndex);
 

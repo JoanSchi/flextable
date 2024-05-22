@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+import 'dart:async';
+
 import 'package:flextable/flextable.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -33,7 +35,7 @@ class _ExampleSliverInTablesState extends State<ExampleSliverInTables> {
       (TargetPlatform.macOS ||
             TargetPlatform.linux ||
             TargetPlatform.windows) =>
-        (1.5, true),
+        (1.5, false),
       (_) => (1.0, false)
     };
     this.tableScale = tableScale;
@@ -114,6 +116,44 @@ class _ExampleSliverInTablesState extends State<ExampleSliverInTables> {
                 title: 'Mortgage',
                 info: 'Autofreeze\nVertical split\nzoom',
               ),
+              SliverToBoxAdapter(child: Builder(builder: (context) {
+                return const Column(
+                  children: [
+                    SizedBox(
+                      height: 72,
+                      child: Row(children: [
+                        Expanded(
+                            child: TextField(
+                                textInputAction: TextInputAction.next)),
+                        SizedBox(
+                          width: 8.0,
+                        ),
+                        Expanded(child: TextField()),
+                      ]),
+                    ),
+                    // TextButton(
+                    //   child: const Text('Scroll'),
+                    //   onPressed: () {
+                    //     final position = Scrollable.of(context).position;
+                    //     final to = position.pixels + 200;
+                    //     final time = DateTime.now();
+                    //     for (int i = 0; i < 20; i++) {
+                    //       Future.delayed(Duration(milliseconds: 100 * i))
+                    //           .then((value) {
+                    //         scheduleMicrotask(() {
+                    //           debugPrint(
+                    //               'blub ${position.pixels} ${DateTime.now().difference(time).inMilliseconds}');
+                    //           position.animateTo(to,
+                    //               duration: const Duration(milliseconds: 2000),
+                    //               curve: Curves.ease);
+                    //         });
+                    //       });
+                    //     }
+                    //   },
+                    // ),
+                  ],
+                );
+              })),
               makeTable(
                   id: 'Mortgage',
                   ftModel: MortgageTableModel(horizontalTables: 2).makeTable(

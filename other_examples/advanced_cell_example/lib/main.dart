@@ -1,6 +1,7 @@
 import 'package:flextable/flextable.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:intl/intl.dart';
 
 void main() {
@@ -31,7 +32,7 @@ class _RowChangeExampleState extends State<TextEditExample>
 
   @override
   void initState() {
-    model = makeModel(tableRows: 4, tableColumns: 10);
+    model = makeModel(tableRows: 20, tableColumns: 10);
     super.initState();
   }
 
@@ -59,18 +60,28 @@ class _RowChangeExampleState extends State<TextEditExample>
         shortcuts: <LogicalKeySet, Intent>{
           LogicalKeySet(LogicalKeyboardKey.escape): const EscapeIntent(),
         },
-        child: DefaultRecordFlexTable(
-            backgroundColor: Colors.white,
-            controller: _ftController,
-            model: model,
-            selectedCell: selectedCellCallBack,
-            tableBuilder: DefaultRecordTableBuilder<dynamic, String>(
-                formatCellDate: (format, date) {
-              return DateFormat(format).format(date);
-            }, actionCallBack: (v, i, c, String a) {
-              debugPrint('Specific action: $a');
-              return true;
-            })),
+        child: LayoutBuilder(builder: (context, t) {
+          return CustomScrollView(
+            slivers: [
+              SliverToBoxAdapter(
+                  child: Container(
+                height: 500.0,
+              )),
+              DefaultRecordFlexTable(
+                  backgroundColor: Colors.white,
+                  controller: _ftController,
+                  model: model,
+                  selectedCell: selectedCellCallBack,
+                  tableBuilder: DefaultRecordTableBuilder<dynamic, String>(
+                      formatCellDate: (format, date) {
+                    return DateFormat(format).format(date);
+                  }, actionCallBack: (v, i, c, String a) {
+                    debugPrint('Specific action: $a');
+                    return true;
+                  }))
+            ],
+          );
+        }),
       ),
       floatingActionButton: FloatingActionButton(onPressed: () {
         setState(() {
@@ -97,18 +108,19 @@ class _RowChangeExampleState extends State<TextEditExample>
 
   makeModel({required int tableRows, required int tableColumns}) {
     final model = DefaultRecordFtModel(
-        columnHeader: true,
-        rowHeader: true,
-        defaultWidthCell: 120.0,
-        defaultHeightCell: 50.0,
-        tableColumns: tableColumns,
-        tableRows: tableRows,
-        autoFreezeAreasX: [
-          AutoFreezeArea(startIndex: 0, freezeIndex: 1, endIndex: 10000)
-        ],
-        autoFreezeAreasY: [
-          AutoFreezeArea(startIndex: 0, freezeIndex: 1, endIndex: 10000)
-        ]);
+      columnHeader: true,
+      rowHeader: true,
+      defaultWidthCell: 120.0,
+      defaultHeightCell: 50.0,
+      tableColumns: tableColumns,
+      tableRows: tableRows,
+      // autoFreezeAreasX: [
+      //   AutoFreezeArea(startIndex: 0, freezeIndex: 1, endIndex: 10000)
+      // ],
+      // autoFreezeAreasY: [
+      //   AutoFreezeArea(startIndex: 0, freezeIndex: 1, endIndex: 10000)
+      // ]
+    );
 
     const line = Line(width: 0.5, color: Color.fromARGB(255, 70, 78, 38));
     const color2 = Color.fromARGB(255, 249, 250, 245);
@@ -170,7 +182,7 @@ class _RowChangeExampleState extends State<TextEditExample>
       cell: TextCell(value: 'Select', style: style, editable: false),
     );
 
-    const values = ['pig', 'chicken', 'cow', 'dog'];
+    const values = ['pig', 'chicken', 'cow', 'dog', 'vis', 'egel', 'vogel'];
 
     for (int r = 1; r < tableRows; r++) {
       model.insertCell(

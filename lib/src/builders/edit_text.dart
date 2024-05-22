@@ -101,7 +101,7 @@ class _FtEditTextState extends State<FtEditText> {
     // scheduleRequestFocus();
     // focusNode.requestFocus();
     if (widget.requestFocus) {
-      focusNode.requestFocus();
+      // focusNode.requestFocus();
     }
     focusNode.safetyStop = false;
     super.didUpdateWidget(oldWidget);

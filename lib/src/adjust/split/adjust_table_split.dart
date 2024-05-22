@@ -90,7 +90,7 @@ class SplitPosition implements HitAndDragDelegate {
       details: details,
       onDragCanceled: dragCancelCallback,
       xSplitchanger:
-          viewModel.tableScrollDirection == TableScrollDirection.vertical
+          viewModel.scrollDirectionByTable == TableScrollDirection.vertical
               ? SplitHandler()
               : SplitChanger(
                   position: localPosition.dx,
@@ -105,7 +105,7 @@ class SplitPosition implements HitAndDragDelegate {
                       viewModel.ratioSizeAnimatedSplitChangeX = ratio,
                   split: () => viewModel.splitX),
       ySplitchanger:
-          viewModel.tableScrollDirection == TableScrollDirection.horizontal
+          viewModel.scrollDirectionByTable == TableScrollDirection.horizontal
               ? SplitHandler()
               : SplitChanger(
                   position: localPosition.dy,

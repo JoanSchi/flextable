@@ -22,6 +22,9 @@ class FtProperties {
     this.alignment = Alignment.topCenter,
     this.panelPadding = const EdgeInsets.all(2.0),
     this.editPadding = const EdgeInsets.all(10.0),
+    this.thumbColor,
+    this.trackColor,
+    this.highlightedThumbColor,
   });
 
   final double minTableScale;
@@ -38,4 +41,7 @@ class FtProperties {
   final Alignment alignment;
   final EdgeInsets panelPadding;
   final EdgeInsets editPadding;
+  final Color? thumbColor;
+  final Color? trackColor;
+  final Color? highlightedThumbColor;
 }

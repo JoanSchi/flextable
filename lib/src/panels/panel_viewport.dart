@@ -3,11 +3,8 @@
 // license that can be found in the LICENSE file.
 
 import 'dart:collection';
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-
 import '../builders/abstract_table_builder.dart';
 import '../builders/cells.dart';
 import '../model/model.dart';
@@ -692,6 +689,10 @@ class TablePanelRenderViewport<C extends AbstractCell,
         editCellIndex: iterator.editCellIndex,
         editCellStatus: iterator.editCellStatus);
 
+    // if (constraints.biggest.shortestSide == 0.0) {
+    //   return;
+    // }
+
     child = firstChild;
     bool foundFocusedCell = false;
     while (iterator.next) {
@@ -821,6 +822,8 @@ class TablePanelRenderViewport<C extends AbstractCell,
         return true;
       }(),
     );
+    (parentData as TablePanelParentData).keepAlive =
+        _keepAliveBucket.isNotEmpty;
 
     childManager.didFinishLayout();
   }

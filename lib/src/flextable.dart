@@ -9,6 +9,7 @@ import 'package:flextable/src/keys/escape.dart';
 import 'package:flextable/src/panels/flextable_context.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'adjust/scale/combi_key.dart';
 import 'adjust/select_cell/select_cell.dart';
 import 'adjust/split/adjust_table_split.dart';
 import 'adjust/freeze/adjust_table_freeze.dart';
@@ -105,11 +106,6 @@ class FlexTableState<C extends AbstractCell, M extends AbstractFtModel<C>>
   FtScaleChangeNotifier? _scaleChangeNotifier;
   FtScaleChangeNotifier get scaleChangeNotifier =>
       _scaleChangeNotifier ??= FtScaleChangeNotifier();
-
-  // CombiKeyNotification? _combiKeyNotification;
-
-  // CombiKeyNotification get combiKeyNotification =>
-  //     _combiKeyNotification ??= CombiKeyNotification();
 
   @override
   void initState() {
@@ -240,15 +236,6 @@ class FlexTableState<C extends AbstractCell, M extends AbstractFtModel<C>>
 
           return m;
         });
-
-    // TODO CombiKey builds everything from the ground instead of a performrebuild
-
-    // if (_combiKeyNotification != null) {
-    //   table = CombiKey(
-    //     combiKeyNotification: combiKeyNotification,
-    //     child: table,
-    //   );
-    // }
 
     return table;
   }

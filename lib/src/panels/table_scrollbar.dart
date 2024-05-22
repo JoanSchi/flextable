@@ -59,7 +59,6 @@ class TableScrollbar extends StatefulWidget {
   final bool platformIndependent;
   final double? paddingTrackOutside;
   final double? paddingTrackInside;
-
   @override
   State<TableScrollbar> createState() => _TableScrollbarState();
 }
@@ -70,8 +69,9 @@ class _TableScrollbarState extends State<TableScrollbar>
       const <Type, GestureRecognizerFactory>{};
   TableScrollDirection _lastScrollDirection = TableScrollDirection.unknown;
   bool _lastCanDrag = false;
-  Color _thumbColor = Colors.blue;
-  Color _trackColor = const Color.fromARGB(255, 245, 245, 245);
+  late Color _thumbColor;
+  late Color _trackColor;
+  late Color _highligtedThumbColor;
   late AnimationController _fadeoutAnimationController;
   late Animation<double> _fadeoutOpacityAnimation;
   late ScrollbarPainter _scrollbarPainter;
@@ -89,6 +89,7 @@ class _TableScrollbarState extends State<TableScrollbar>
   late FtViewModel _viewModel;
   late InnerScrollChangeNotifier _scrollChangeNotifier;
   bool scrolling = false;
+  bool initialize = true;
 
   @override
   void initState() {
@@ -109,7 +110,6 @@ class _TableScrollbarState extends State<TableScrollbar>
       curve: Curves.fastOutSlowIn,
     );
 
-    _scrollbarPainter = _buildMaterialScrollbarPainter();
     super.initState();
   }
 
@@ -117,8 +117,12 @@ class _TableScrollbarState extends State<TableScrollbar>
   void didChangeDependencies() {
     _mediaQueryGestureSettings = MediaQuery.maybeGestureSettingsOf(context);
     updateValues();
-    updateScrollBarPainter();
-
+    if (initialize) {
+      _scrollbarPainter = _buildMaterialScrollbarPainter();
+      initialize = false;
+    } else {
+      updateScrollBarPainter();
+    }
     super.didChangeDependencies();
   }
 
@@ -164,13 +168,17 @@ class _TableScrollbarState extends State<TableScrollbar>
       if (widget.roundedCorners) {
         radius = widget.radius ?? Radius.circular(_thumbSize / 2.0);
       }
-
-      _thumbColor = Colors.grey[500]!.withOpacity(0.8);
+      _trackColor =
+          _viewModel.properties.trackColor ?? theme.colorScheme.surfaceVariant;
+      _thumbColor = _viewModel.properties.thumbColor ??
+          theme.colorScheme.onSurfaceVariant.withOpacity(0.5);
+      _highligtedThumbColor = _viewModel.properties.highlightedThumbColor ??
+          theme.colorScheme.primary;
     } else {
       switch (theme.platform) {
-        case TargetPlatform.iOS:
-        case TargetPlatform.android:
-        case TargetPlatform.fuchsia:
+        case TargetPlatform.iOS ||
+              TargetPlatform.android ||
+              TargetPlatform.fuchsia:
           {
             _fadeoutAnimationController.value = 0.0;
             _isAlwaysShown = false;
@@ -186,15 +194,20 @@ class _TableScrollbarState extends State<TableScrollbar>
             if (widget.roundedCorners) {
               radius = widget.radius ?? Radius.circular(_thumbSize / 2.0);
             }
+            _trackColor = _viewModel.properties.trackColor ??
+                theme.colorScheme.surfaceVariant;
 
-            _thumbColor = Colors.grey[500]!.withOpacity(0.8);
-
+            _thumbColor = _viewModel.properties.thumbColor ??
+                theme.colorScheme.onSurfaceVariant.withOpacity(0.5);
+            _highligtedThumbColor =
+                _viewModel.properties.highlightedThumbColor ??
+                    theme.colorScheme.primary;
             break;
           }
 
-        case TargetPlatform.linux:
-        case TargetPlatform.macOS:
-        case TargetPlatform.windows:
+        case TargetPlatform.linux ||
+              TargetPlatform.macOS ||
+              TargetPlatform.windows:
           {
             _isAlwaysShown = true;
             _thumbSize = _viewModel.thumbSize;
@@ -211,8 +224,13 @@ class _TableScrollbarState extends State<TableScrollbar>
 
             _fadeoutAnimationController.animateTo(1.0);
 
-            _trackColor = const Color.fromARGB(255, 245, 245, 245);
-            _thumbColor = Colors.grey[500]!.withOpacity(1.0);
+            _trackColor = _viewModel.properties.trackColor ??
+                theme.colorScheme.surfaceVariant;
+            _thumbColor = _viewModel.properties.thumbColor ??
+                theme.colorScheme.onSurfaceVariant.withOpacity(0.5);
+            _highligtedThumbColor =
+                _viewModel.properties.highlightedThumbColor ??
+                    theme.colorScheme.primary;
           }
           break;
       }
@@ -221,7 +239,8 @@ class _TableScrollbarState extends State<TableScrollbar>
 
   updateScrollBarPainter() {
     _scrollbarPainter
-      ..color = _thumbColor
+      ..thumbColor = _thumbColor
+      ..highligtedThumbColor = _highligtedThumbColor
       ..trackColor = _trackColor
       ..thickness = _thumbSize
       ..padding = _paddingOutside
@@ -259,6 +278,7 @@ class _TableScrollbarState extends State<TableScrollbar>
   ScrollbarPainter _buildMaterialScrollbarPainter() {
     return ScrollbarPainter(
       color: _thumbColor,
+      highligtedThumbColor: _highligtedThumbColor,
       trackColor: _trackColor,
       thickness: _thumbSize,
       padding: _paddingOutside,
@@ -310,7 +330,11 @@ class _TableScrollbarState extends State<TableScrollbar>
 
   _handleDragDown(DragDownDetails details) {
     assert(_drag == null);
-    scrollBarSelection.dragDownDetails = details;
+
+    scrollBarSelection
+      ..dragDownDetails = details
+      ..active = true;
+    _scrollbarPainter.repaintScrollbar();
   }
 
   _handleDragStart(DragStartDetails details) {
@@ -439,6 +463,7 @@ class ScrollbarPainter extends ChangeNotifier implements CustomPainter {
   ScrollbarPainter({
     required FtViewModel viewModel,
     required Color color,
+    required Color highligtedThumbColor,
     required Color trackColor,
     required this.thickness,
     required this.padding,
@@ -452,7 +477,8 @@ class ScrollbarPainter extends ChangeNotifier implements CustomPainter {
     required this.hitThickness,
     double? minOverscrollLength,
   })  : _viewModel = viewModel,
-        _color = color,
+        _thumbColor = color,
+        _highligtedThumbColor = highligtedThumbColor,
         _trackColor = trackColor,
         minOverscrollLength = minOverscrollLength ?? minThumbLength {
     fadeoutOpacityAnimation.addListener(notifyListeners);
@@ -467,17 +493,27 @@ class ScrollbarPainter extends ChangeNotifier implements CustomPainter {
   }
 
   /// [Color] of the thumb. Mustn't be null.
-  Color get color => _color;
-  Color _color;
 
-  Color get trackColor => _trackColor;
-  Color _trackColor;
+  Color _thumbColor;
+  Color get thumbColor => _thumbColor;
 
-  set color(Color value) {
-    if (color == value) return;
-    _color = value;
+  set thumbColor(Color value) {
+    if (_thumbColor == value) return;
+    _thumbColor = value;
     notifyListeners();
   }
+
+  Color _highligtedThumbColor;
+  Color get highligtedThumbColor => _highligtedThumbColor;
+
+  set highligtedThumbColor(Color value) {
+    if (_highligtedThumbColor == value) return;
+    _highligtedThumbColor = value;
+    notifyListeners();
+  }
+
+  Color _trackColor;
+  Color get trackColor => _trackColor;
 
   set trackColor(Color value) {
     if (_trackColor == value) return;
@@ -570,8 +606,10 @@ class ScrollbarPainter extends ChangeNotifier implements CustomPainter {
 
   Paint _paint(bool highligted) {
     return Paint()
-      ..color = (highligted ? Colors.blue[700]! : color)
-          .withOpacity(color.opacity * fadeoutOpacityAnimation.value);
+      ..color = (highligted
+          ? _highligtedThumbColor
+          : _thumbColor.withOpacity(
+              _thumbColor.opacity * fadeoutOpacityAnimation.value));
   }
 
   Paint get _paintTrack {
@@ -830,7 +868,9 @@ class ScrollbarPainter extends ChangeNotifier implements CustomPainter {
   @override
   bool shouldRepaint(ScrollbarPainter old) {
     // Should repaint if any properties changed.
-    return color != old.color ||
+    return thumbColor != old.thumbColor ||
+        highligtedThumbColor != old.highligtedThumbColor ||
+        trackColor != old.trackColor ||
         // textDirection != old.textDirection ||
         thickness != old.thickness ||
         fadeoutOpacityAnimation != old.fadeoutOpacityAnimation ||

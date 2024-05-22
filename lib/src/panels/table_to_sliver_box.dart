@@ -4,6 +4,7 @@
 
 import 'package:flextable/flextable.dart';
 import 'package:flextable/src/model/view_model.dart';
+import 'package:flextable/src/panels/panel_viewport.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -67,7 +68,20 @@ class RenderFlexTableToSliverBox extends RenderSliverSingleBoxAdapter {
     //     flexTableController.viewModels.length == 1,
     //     'Only one viewModel should be present in flexTableController, ${flexTableController.viewModels.length} found.'
     //     ' It is however possible that the dettach of the previous is delayed by the microschedule task!');
+    invokeLayoutCallback((constraints) {
+      deepVisit(RenderObject r) {
+        r.markNeedsLayout();
+        if (r is! TablePanelRenderViewport) {
+          r.visitChildren((child) {
+            deepVisit(child);
+          });
+        }
+      }
 
+      visitChildren((child) {
+        deepVisit(child);
+      });
+    });
     if (viewModel.correctSliverOffset != null &&
         viewModel.correctSliverOffset != 0.0) {
       geometry =
@@ -96,6 +110,7 @@ class RenderFlexTableToSliverBox extends RenderSliverSingleBoxAdapter {
 
     // debugPrint(
     //     'sliverbox scrollY: ${constraints.scrollOffset + overlap} overlap $overlap');
+
     viewModel.setScrollWithSliver(constraints.scrollOffset + overlap);
 
     // debugPrint(

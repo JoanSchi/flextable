@@ -60,82 +60,86 @@ class TableInterator<C extends AbstractCell, M extends AbstractFtModel<C>> {
 
     //EditCell
 
-    final ec = _viewModel.editCell;
-    editColumnIndex = ec.column;
-    editRowIndex = ec.row;
+    editRowIndex = focusRowIndex =
+        _viewModel.panelIndexY == tpli.yIndex ? _viewModel.editRowIndex : -1;
+    editColumnIndex = focusColumnIndex =
+        _viewModel.panelIndexX == tpli.xIndex ? _viewModel.editColumnIndex : -1;
+    // final ec = _viewModel.editCell;
+    // editColumnIndex = ec.column;
+    // editRowIndex = ec.row;
+    // switch ((_viewModel.stateSplitX, tpli.xIndex, ec.panelIndexX, ec.column)) {
+    //   case (
+    //       SplitState.split,
+    //       int panelIndexX,
+    //       int panelIndexEditX,
+    //       int columnEdit
+    //     ):
+    //     {
+    //       editColumnIndex = columnEdit;
+    //       focusColumnIndex = (panelIndexX == panelIndexEditX) ? columnEdit : -1;
+    //       break;
+    //     }
+    //   case (
+    //       SplitState.autoFreezeSplit,
+    //       int panelIndexEditX,
+    //       int _,
+    //       int columnEdit
+    //     ):
+    //     {
+    //       editColumnIndex = focusColumnIndex = fr(panelIndexEditX,
+    //           _viewModel.autoFreezeAreaX.freezeIndex, columnEdit);
+    //       break;
+    //     }
+    //   case (SplitState.freezeSplit, int panelIndexEditX, int _, int columnEdit):
+    //     {
+    //       editColumnIndex = focusColumnIndex = fr(panelIndexEditX,
+    //           _viewModel.model.topLeftCellPaneColumn, columnEdit);
 
-    switch ((_viewModel.stateSplitX, tpli.xIndex, ec.panelIndexX, ec.column)) {
-      case (
-          SplitState.split,
-          int panelIndexX,
-          int panelIndexEditX,
-          int columnEdit
-        ):
-        {
-          editColumnIndex = columnEdit;
-          focusColumnIndex = (panelIndexX == panelIndexEditX) ? columnEdit : -1;
-          break;
-        }
-      case (
-          SplitState.autoFreezeSplit,
-          int panelIndexEditX,
-          int _,
-          int columnEdit
-        ):
-        {
-          editColumnIndex = focusColumnIndex = fr(panelIndexEditX,
-              _viewModel.autoFreezeAreaX.freezeIndex, columnEdit);
-          break;
-        }
-      case (SplitState.freezeSplit, int panelIndexEditX, int _, int columnEdit):
-        {
-          editColumnIndex = focusColumnIndex = fr(panelIndexEditX,
-              _viewModel.model.topLeftCellPaneColumn, columnEdit);
+    //       break;
+    //     }
+    //   case (_, _, int _, int columnEdit):
+    //     {
+    //       editColumnIndex = focusColumnIndex = columnEdit;
+    //       break;
+    //     }
+    // }
 
-          break;
-        }
-      case (_, _, int _, int columnEdit):
-        {
-          editColumnIndex = focusColumnIndex = columnEdit;
-          break;
-        }
-    }
+    // switch ((_viewModel.stateSplitY, tpli.yIndex, ec.panelIndexY, ec.row)) {
+    //   case (
+    //       SplitState.split,
+    //       int panelIndexY,
+    //       int panelIndexEditY,
+    //       int rowEdit
+    //     ):
+    //     {
+    //       editRowIndex = rowEdit;
+    //       focusRowIndex = (panelIndexY == panelIndexEditY) ? rowEdit : -1;
+    //       break;
+    //     }
 
-    switch ((_viewModel.stateSplitY, tpli.yIndex, ec.panelIndexY, ec.row)) {
-      case (
-          SplitState.split,
-          int panelIndexY,
-          int panelIndexEditY,
-          int rowEdit
-        ):
-        {
-          editRowIndex = rowEdit;
-          focusRowIndex = (panelIndexY == panelIndexEditY) ? rowEdit : -1;
-          break;
-        }
+    //   case (SplitState.autoFreezeSplit, int panelIndexY, _, int rowEdit):
+    //     {
+    //       editRowIndex = focusRowIndex =
+    //           fr(panelIndexY, _viewModel.autoFreezeAreaY.freezeIndex, rowEdit);
 
-      case (SplitState.autoFreezeSplit, int panelIndexY, _, int rowEdit):
-        {
-          editRowIndex = focusRowIndex =
-              fr(panelIndexY, _viewModel.autoFreezeAreaY.freezeIndex, rowEdit);
+    //       break;
+    //     }
 
-          break;
-        }
+    //   case (SplitState.freezeSplit, int panelIndexEditY, _, int rowEdit):
+    //     {
+    //       editRowIndex = focusRowIndex =
+    //           fr(panelIndexEditY, _viewModel.model.topLeftCellPaneRow, rowEdit);
 
-      case (SplitState.freezeSplit, int panelIndexEditY, _, int rowEdit):
-        {
-          editRowIndex = focusRowIndex =
-              fr(panelIndexEditY, _viewModel.model.topLeftCellPaneRow, rowEdit);
+    //       break;
+    //     }
+    //   case (_, _, _, int rowEdit):
+    //     {
+    //       editRowIndex = focusRowIndex = rowEdit;
 
-          break;
-        }
-      case (_, _, _, int rowEdit):
-        {
-          editRowIndex = focusRowIndex = rowEdit;
-
-          break;
-        }
-    }
+    //       break;
+    //     }
+    // }
+    // debugPrint('tpli $tpli $editRowIndex $editColumnIndex');
   }
 
   int fr(int panel, int freeze, int index) {

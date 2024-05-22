@@ -43,9 +43,7 @@ class _CellSelectionWidgetState extends State<CellSelectionWidget> {
 
   @override
   void didUpdateWidget(covariant CellSelectionWidget oldWidget) {
-    if (cell != widget.cell) {
-      cell = widget.cell;
-    }
+    cell = widget.cell;
 
     super.didUpdateWidget(oldWidget);
   }

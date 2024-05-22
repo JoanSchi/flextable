@@ -573,15 +573,13 @@ class TableViewScrollableState<C extends AbstractCell,
       //   return;
       // }
 
-      if (_viewModel!.tableScrollDirection != TableScrollDirection.horizontal) {
-        final Offset delta = _pointerSignalEventDelta(event);
-        // final double targetScrollOffset = _targetScrollOffsetForPointerScroll(delta);
-        // Only express interest in the event if it would actually result in a scroll.
+      final Offset delta = _pointerSignalEventDelta(event);
+      // final double targetScrollOffset = _targetScrollOffsetForPointerScroll(delta);
+      // Only express interest in the event if it would actually result in a scroll.
 
-        if (delta != Offset.zero) {
-          GestureBinding.instance.pointerSignalResolver
-              .register(event, _handlePointerScroll);
-        }
+      if (delta != Offset.zero) {
+        GestureBinding.instance.pointerSignalResolver
+            .register(event, _handlePointerScroll);
       }
     }
   }
@@ -597,11 +595,39 @@ class TableViewScrollableState<C extends AbstractCell,
     final scrollIndexY =
         viewModel.stateSplitY == SplitState.freezeSplit ? 1 : si.yIndex;
 
-    final Offset targetScrollOffset =
-        _targetScrollOffsetForPointerScroll(delta, scrollIndexX, scrollIndexY);
+    if (sliverScrollable?.position case ScrollPosition position) {
+      ///
+      ///
+      ///
+      ///
+      final deltaY = delta.dy;
+      final double targetScrollOffsetY =
+          _targetSliverScrollOffsetForPointerScroll(position, deltaY);
 
-    if (delta != Offset.zero) {
-      viewModel.setPixels(scrollIndexX, scrollIndexY, targetScrollOffset);
+      if (deltaY != 0.0 && targetScrollOffsetY != position.pixels) {
+        position.pointerScroll(deltaY);
+      }
+
+      ///
+      ///
+      ///
+      ///
+
+      final deltaX = delta.dx;
+      final targetScrollOffsetX = _targetScrollOffsetForPointerScrollX(
+          deltaX, scrollIndexX, scrollIndexY);
+
+      if (deltaX != 0.0 &&
+          deltaX != viewModel.getScrollX(scrollIndexX, scrollIndexY)) {
+        viewModel.setPixelsX(scrollIndexX, scrollIndexY, targetScrollOffsetX);
+      }
+    } else {
+      final Offset targetScrollOffset = _targetScrollOffsetForPointerScroll(
+          delta, scrollIndexX, scrollIndexY);
+
+      if (delta != Offset.zero) {
+        viewModel.setPixels(scrollIndexX, scrollIndexY, targetScrollOffset);
+      }
     }
   }
 
@@ -635,6 +661,25 @@ class TableViewScrollableState<C extends AbstractCell,
     );
 
     return Offset(x, y);
+  }
+
+  double _targetScrollOffsetForPointerScrollX(
+          double delta, int scrollIndexX, int scrollIndexY) =>
+      math.min(
+        math.max(
+            viewModel.getScrollScaledX(scrollIndexX, scrollIndexY,
+                    scrollActivity: true) +
+                delta,
+            viewModel.minScrollExtentX(scrollIndexX)),
+        viewModel.maxScrollExtentX(scrollIndexX),
+      );
+
+  double _targetSliverScrollOffsetForPointerScroll(
+      ScrollPosition position, double delta) {
+    return math.min(
+      math.max(position.pixels + delta, position.minScrollExtent),
+      position.maxScrollExtent,
+    );
   }
 
   void rebuildTable() {
