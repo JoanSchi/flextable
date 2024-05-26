@@ -220,7 +220,8 @@ class _CellNumberEditorState extends State<_CellNumberEditor> {
             viewModel.clearEditCell(cellIndex: widget.tableCellIndex);
           }
         } else {
-          if (!escape && !viewModel.editCell.sameIndex(widget.tableCellIndex)) {
+          if (!escape &&
+              !viewModel.currentEditCell.sameIndex(widget.tableCellIndex)) {
             onValueChange(value);
           }
           if (disposition == UnfocusDisposition.scope) {

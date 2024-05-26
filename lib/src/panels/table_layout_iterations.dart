@@ -59,11 +59,12 @@ class TableInterator<C extends AbstractCell, M extends AbstractFtModel<C>> {
     }
 
     //EditCell
+    if (_viewModel.currentEditCell case PanelCellIndex pci
+        when pci.samePanel(tpli)) {
+      editRowIndex = focusRowIndex = pci.row;
+      editColumnIndex = focusColumnIndex = pci.column;
+    }
 
-    editRowIndex = focusRowIndex =
-        _viewModel.panelIndexY == tpli.yIndex ? _viewModel.editRowIndex : -1;
-    editColumnIndex = focusColumnIndex =
-        _viewModel.panelIndexX == tpli.xIndex ? _viewModel.editColumnIndex : -1;
     // final ec = _viewModel.editCell;
     // editColumnIndex = ec.column;
     // editRowIndex = ec.row;
@@ -142,60 +143,60 @@ class TableInterator<C extends AbstractCell, M extends AbstractFtModel<C>> {
     // debugPrint('tpli $tpli $editRowIndex $editColumnIndex');
   }
 
-  int fr(int panel, int freeze, int index) {
-    if (panel == 1 && index < freeze) {
-      return index;
-    } else if (panel == 2 && freeze <= index) {
-      return index;
-    } else {
-      return -1;
-    }
-  }
+  // int fr(int panel, int freeze, int index) {
+  //   if (panel == 1 && index < freeze) {
+  //     return index;
+  //   } else if (panel == 2 && freeze <= index) {
+  //     return index;
+  //   } else {
+  //     return -1;
+  //   }
+  // }
 
-  FtIndex tt(LayoutPanelIndex tpli) {
-    int row;
-    switch (_viewModel.stateSplitY) {
-      case SplitState.autoFreezeSplit:
-        {
-          row = fr(tpli.yIndex, _viewModel.autoFreezeAreaY.freezeIndex,
-              editRowIndex);
-          break;
-        }
-      case SplitState.freezeSplit:
-        {
-          row = fr(
-              tpli.yIndex, _viewModel.model.topLeftCellPaneRow, editRowIndex);
-          break;
-        }
-      default:
-        {
-          row = editRowIndex;
-        }
-    }
+  // FtIndex tt(LayoutPanelIndex tpli) {
+  //   int row;
+  //   switch (_viewModel.stateSplitY) {
+  //     case SplitState.autoFreezeSplit:
+  //       {
+  //         row = fr(tpli.yIndex, _viewModel.autoFreezeAreaY.freezeIndex,
+  //             editRowIndex);
+  //         break;
+  //       }
+  //     case SplitState.freezeSplit:
+  //       {
+  //         row = fr(
+  //             tpli.yIndex, _viewModel.model.topLeftCellPaneRow, editRowIndex);
+  //         break;
+  //       }
+  //     default:
+  //       {
+  //         row = editRowIndex;
+  //       }
+  //   }
 
-    int column;
+  //   int column;
 
-    switch (_viewModel.stateSplitX) {
-      case SplitState.autoFreezeSplit:
-        {
-          column = fr(tpli.xIndex, _viewModel.autoFreezeAreaX.freezeIndex,
-              editColumnIndex);
-          break;
-        }
-      case SplitState.freezeSplit:
-        {
-          column = fr(tpli.xIndex, _viewModel.model.topLeftCellPaneColumn,
-              editColumnIndex);
-          break;
-        }
-      default:
-        {
-          column = editColumnIndex;
-        }
-    }
+  //   switch (_viewModel.stateSplitX) {
+  //     case SplitState.autoFreezeSplit:
+  //       {
+  //         column = fr(tpli.xIndex, _viewModel.autoFreezeAreaX.freezeIndex,
+  //             editColumnIndex);
+  //         break;
+  //       }
+  //     case SplitState.freezeSplit:
+  //       {
+  //         column = fr(tpli.xIndex, _viewModel.model.topLeftCellPaneColumn,
+  //             editColumnIndex);
+  //         break;
+  //       }
+  //     default:
+  //       {
+  //         column = editColumnIndex;
+  //       }
+  //   }
 
-    return FtIndex(row: row, column: column);
-  }
+  //   return FtIndex(row: row, column: column);
+  // }
 
   bool get next {
     if (count < length) {

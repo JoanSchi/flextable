@@ -93,62 +93,115 @@ class _TableExamplesState extends State<TableExamples> {
     final titleSmall =
         theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.primary);
 
-    int i = 0;
-
-    final scaffold = Scaffold(
-      key: scaffoldKey,
-
-      body: exampleDestinations[screenIndex].example,
-      drawer: NavigationDrawer(
-        onDestinationSelected: handleScreenChanged,
-        selectedIndex: screenIndex,
-        children: <Widget>[
-          Padding(
-            padding: const EdgeInsets.fromLTRB(28, 16, 16, 10),
-            child: Text(
-              'Tables',
-              style: titleSmall,
+    final scaffold = LayoutBuilder(builder: (context, constraints) {
+      int i = 0;
+      debugPrint('layout build ${constraints.biggest}');
+      return Scaffold(
+        key: scaffoldKey,
+        body: exampleDestinations[screenIndex].example,
+        drawer: NavigationDrawer(
+          onDestinationSelected: handleScreenChanged,
+          selectedIndex: screenIndex,
+          children: <Widget>[
+            Padding(
+              padding: const EdgeInsets.fromLTRB(28, 16, 16, 10),
+              child: Text(
+                'Tables',
+                style: titleSmall,
+              ),
             ),
-          ),
-          ...exampleDestinations.sublist(i, i += 5).map(
-            (ExampleInfo destination) {
-              return NavigationDrawerDestination(
-                label: Text(destination.label),
-                icon: const Icon(Icons.table_rows),
-              );
-            },
-          ),
-          const Divider(
-            indent: 8.0,
-            endIndent: 8.0,
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(28, 16, 16, 10),
-            child: Text(
-              'Tables in ScrollView',
-              style: titleSmall,
+            ...exampleDestinations.sublist(i, i += 5).map(
+              (ExampleInfo destination) {
+                return NavigationDrawerDestination(
+                  label: Text(destination.label),
+                  icon: const Icon(Icons.table_rows),
+                );
+              },
             ),
-          ),
-          ...exampleDestinations.sublist(i, i += 2).map(
-            (ExampleInfo destination) {
-              return NavigationDrawerDestination(
-                label: Text(destination.label),
-                icon: const Icon(Icons.table_rows_outlined),
-              );
-            },
-          ),
-          const Divider(
-            indent: 8.0,
-            endIndent: 8.0,
-          ),
-          NavigationDrawerDestination(
-            label: Text(exampleDestinations[i++].label),
-            icon: const Icon(Icons.info),
-          )
-        ],
-      ),
-      // This trailing comma makes auto-formatting nicer for build methods.
-    );
+            const Divider(
+              indent: 8.0,
+              endIndent: 8.0,
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(28, 16, 16, 10),
+              child: Text(
+                'Tables in ScrollView',
+                style: titleSmall,
+              ),
+            ),
+            ...exampleDestinations.sublist(i, i += 2).map(
+              (ExampleInfo destination) {
+                return NavigationDrawerDestination(
+                  label: Text(destination.label),
+                  icon: const Icon(Icons.table_rows_outlined),
+                );
+              },
+            ),
+            const Divider(
+              indent: 8.0,
+              endIndent: 8.0,
+            ),
+            NavigationDrawerDestination(
+              label: Text(exampleDestinations[i++].label),
+              icon: const Icon(Icons.info),
+            )
+          ],
+        ),
+      );
+    });
+    // int i = 0;
+    // final scaffold = Scaffold(
+    //   key: scaffoldKey,
+    //   body: exampleDestinations[screenIndex].example,
+    //   drawer: NavigationDrawer(
+    //     onDestinationSelected: handleScreenChanged,
+    //     selectedIndex: screenIndex,
+    //     children: <Widget>[
+    //       Padding(
+    //         padding: const EdgeInsets.fromLTRB(28, 16, 16, 10),
+    //         child: Text(
+    //           'Tables',
+    //           style: titleSmall,
+    //         ),
+    //       ),
+    //       ...exampleDestinations.sublist(i, i += 5).map(
+    //         (ExampleInfo destination) {
+    //           return NavigationDrawerDestination(
+    //             label: Text(destination.label),
+    //             icon: const Icon(Icons.table_rows),
+    //           );
+    //         },
+    //       ),
+    //       const Divider(
+    //         indent: 8.0,
+    //         endIndent: 8.0,
+    //       ),
+    //       Padding(
+    //         padding: const EdgeInsets.fromLTRB(28, 16, 16, 10),
+    //         child: Text(
+    //           'Tables in ScrollView',
+    //           style: titleSmall,
+    //         ),
+    //       ),
+    //       ...exampleDestinations.sublist(i, i += 2).map(
+    //         (ExampleInfo destination) {
+    //           return NavigationDrawerDestination(
+    //             label: Text(destination.label),
+    //             icon: const Icon(Icons.table_rows_outlined),
+    //           );
+    //         },
+    //       ),
+    //       const Divider(
+    //         indent: 8.0,
+    //         endIndent: 8.0,
+    //       ),
+    //       NavigationDrawerDestination(
+    //         label: Text(exampleDestinations[i++].label),
+    //         icon: const Icon(Icons.info),
+    //       )
+    //     ],
+    //   ),
+    // );
 
     return ScrollConfiguration(
         behavior: const MyMaterialScrollBehavior(), child: scaffold);

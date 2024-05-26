@@ -39,7 +39,8 @@ class _SelectCellState<C extends AbstractCell, M extends AbstractFtModel<C>>
         if (!(widget.selectedCell?.call(
                 viewModel, indexAndCell.panelCellIndex, indexAndCell.cell) ??
             false)) {
-          if (!viewModel.editCell.sameIndex(indexAndCell.panelCellIndex)) {
+          if (!viewModel.currentEditCell
+              .sameIndex(indexAndCell.panelCellIndex)) {
             final editable = viewModel.model
                 .isCellEditable(indexAndCell.panelCellIndex)
                 .ftIndex

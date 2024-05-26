@@ -86,14 +86,10 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
       previousEditCell = vm.previousEditCell;
       restoreScroll = vm.restoreScroll;
       scrollToEditCell = vm.scrollToEditCell;
-
-      _editCell = vm.editCell;
+      _editCell = vm.currentEditCell;
       modifySplit = vm.modifySplit;
 
       if (_editCell.isIndex) {
-        if (scrollToEditCell) {
-          // showCell(_editCell);
-        }
       } else if (previousEditCell.isIndex) {
         animateRestoreScroll();
       }
@@ -236,7 +232,7 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
     if (value.isIndex) {
       scrollToEditCell = true;
       store(value.scrollIndexX, value.scrollIndexY);
-      showCell(value);
+      // showCell(value);
     }
 
     // if (previousEditCell.isIndex && !value.isIndex) {}
@@ -611,6 +607,7 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
   @override
   void dispose() {
     scaleChangeNotifier.removeListener(changeScale);
+    _endScrollToEditCell?.cancel();
 
     activity
         ?.dispose(); // it will be null if it got absorbed by another ScrollPosition
@@ -970,12 +967,13 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
           correctOffset: correctOffset,
           direction: TableScrollDirection.both);
     } else if (toScaledX != null) {
-      final from = getScrollScaledX(scrollIndexX, scrollIndexY);
+      final from =
+          getScrollScaledX(scrollIndexX, scrollIndexY, scrollActivity: true);
       final delta = (from - toScaledX);
 
-      if (delta < physics.toleranceFor(devicePixelRatio).distance) {
+      if (delta.abs() < physics.toleranceFor(devicePixelRatio).distance) {
         // Skip the animation, go straight to the position as we are already close.
-        jumpTo(scrollIndexX, scrollIndexY, scrollY: toScaledX);
+        jumpTo(scrollIndexX, scrollIndexY, scrollX: toScaledX);
         return Future<void>.value();
       }
       activity = DrivenTableScrollActivity(
@@ -988,10 +986,11 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
           correctOffset: correctOffset,
           direction: TableScrollDirection.horizontal);
     } else if (toScaledY != null) {
-      final from = getScrollScaledY(scrollIndexX, scrollIndexY);
+      final from =
+          getScrollScaledY(scrollIndexX, scrollIndexY, scrollActivity: true);
       final delta = (from - toScaledY);
 
-      if (delta < physics.toleranceFor(devicePixelRatio).distance) {
+      if (delta.abs() < physics.toleranceFor(devicePixelRatio).distance) {
         // Skip the animation, go straight to the position as we are already close.
         jumpTo(scrollIndexX, scrollIndexY, scrollY: toScaledY);
         return Future<void>.value();
@@ -2364,20 +2363,11 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
       _checkFirstLayout(width, height);
     }
 
-    if (scrollToEditCell &&
-        (deltaHeight > 0.0 || deltaWidth > 0.0) &&
-        _editCell.isIndex) {
-      if (deltaHeight < 0.0 || deltaWidth < 0.0) {
-        correctOffScroll(0, 0);
-      }
-      showCell(_editCell);
-    } else if ((widthChanged || heightChanged) &&
-        !(activity is TableDragScrollActivity ||
-            activity is BallisticScrollActivity ||
-            activity is DrivenMultiScrollActivity)) {
-      scheduleCorrectOffScroll = false;
-      correctOffScroll(0, 0);
-    }
+    _checkScroll(
+        widthChanged: widthChanged,
+        heightChanged: heightChanged,
+        deltaHeight: deltaHeight,
+        deltaWidth: deltaWidth);
 
     if (widthChanged ||
         heightChanged ||
@@ -2391,63 +2381,54 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
     refreshEditPanel();
   }
 
-  int editColumnIndex = -1;
-  int panelIndexX = -1;
-  int editRowIndex = -1;
-  int panelIndexY = -1;
+  PanelCellIndex currentEditCell = const PanelCellIndex();
   bool focusJump = false;
 
   refreshEditPanel() {
-    final previousPanelIndexX = panelIndexX;
-    final previousPanelIndexY = panelIndexY;
-
     if (!_editCell.isIndex) {
-      panelIndexX = -1;
-      panelIndexY = -1;
-      editColumnIndex = -1;
-      editRowIndex = -1;
+      currentEditCell = const PanelCellIndex();
       return;
     }
 
+    final previousPanelIndexX = currentEditCell.panelIndexX;
+    final previousPanelIndexY = currentEditCell.panelIndexY;
+
+    int panelIndexX = -1;
+    int panelIndexY = -1;
+
     switch ((stateSplitX, _editCell.panelIndexX, _editCell.column)) {
-      case (SplitState.split, int panelIndexEditX, int columnEdit):
+      case (SplitState.split, int panelIndexEditX, _):
         {
-          editColumnIndex = columnEdit;
           panelIndexX = panelIndexEditX;
           break;
         }
       case (SplitState.freezeSplit, int panelIndexEditX, int columnEdit):
         {
-          editColumnIndex = columnEdit;
           panelIndexX = determineFreezePanel(
               panelIndexEditX, model.topLeftCellPaneColumn, columnEdit);
           break;
         }
       case (SplitState.autoFreezeSplit, int panelIndexEditX, int columnEdit):
         {
-          editColumnIndex = columnEdit;
           panelIndexX = determineFreezePanel(
               panelIndexEditX, autoFreezeAreaX.freezeIndex, columnEdit);
 
           break;
         }
-      case (_, _, int columnEdit):
+      case (_, _, _):
         {
-          editColumnIndex = columnEdit;
           panelIndexX = 1;
         }
     }
 
     switch ((stateSplitY, _editCell.panelIndexY, _editCell.row)) {
-      case (SplitState.split, int panelIndexEditY, int rowEdit):
+      case (SplitState.split, int panelIndexEditY, _):
         {
-          editRowIndex = rowEdit;
           panelIndexY = panelIndexEditY;
           break;
         }
       case (SplitState.freezeSplit, int panelIndexEditY, int rowEdit):
         {
-          editRowIndex = rowEdit;
           panelIndexY = determineFreezePanel(
               panelIndexEditY, model.topLeftCellPaneRow, rowEdit);
 
@@ -2455,22 +2436,20 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
         }
       case (SplitState.autoFreezeSplit, int panelIndexEditY, int rowEdit):
         {
-          editRowIndex = rowEdit;
           panelIndexY = determineFreezePanel(
               panelIndexEditY, autoFreezeAreaY.freezeIndex, rowEdit);
 
           break;
         }
-      case (_, _, int rowEdit):
+      case (_, _, _):
         {
-          editRowIndex = rowEdit;
           panelIndexY = 1;
           break;
         }
     }
 
-    // debugPrint(
-    //     'bbbb editRowIndex $editRowIndex editColumnIndex": $editColumnIndex');
+    currentEditCell =
+        _editCell.copyWith(panelIndexX: panelIndexX, panelIndexY: panelIndexY);
 
     if (panelIndexX != -1 &&
         previousPanelIndexX != panelIndexX &&
@@ -4156,21 +4135,28 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
 
   bool showCellScheduled = false;
 
-  Timer? _timer;
+  Timer? _endScrollToEditCell;
 
-  int i = 0;
-  void showCell(PanelCellIndex index) {
-    if (!index.isIndex || !scrollToEditCell) {
+  showCell() {
+    if (scrollToEditCell) {
+      if (sliverScrollPosition != null) {
+        _showCellVertical();
+        _showCellHorizontal();
+      } else {
+        _showCell(_editCell);
+      }
+
+      _endScrollToEditCell ??= Timer(const Duration(milliseconds: 300), () {
+        _endScrollToEditCell = null;
+        scrollToEditCell = true;
+      });
+    }
+  }
+
+  void _showCell(PanelCellIndex index) {
+    if (!index.isIndex) {
       return;
     }
-
-    _timer ??= Timer(const Duration(milliseconds: 300), () {
-      _timer = null;
-      scrollToEditCell = false;
-    });
-
-    int moveToRequests = 0;
-    int numberOfAnimatedScrolls = 0;
 
     scheduleAnimatedScroll() {
       int scrollIndexX = switch (stateSplitX) {
@@ -4320,64 +4306,15 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
         final yNearEqual = nearEqual(
             scrollY, yTo, physics.toleranceFor(devicePixelRatio).distance);
 
-        if (sliverScrollPosition != null) {
-          if (adjustScrollX) {
-            if (xNearEqual) {
-              setScrollScaledX(scrollIndexX, scrollIndexY, xTo);
-              markNeedsLayout();
-            } else {
-              animateTo(scrollIndexX, scrollIndexY,
-                  toScaledX: xTo, correctOffset: true);
-            }
-          }
-
-          ///
-          /// C:\src\flutter\packages\flutter\lib\src\widgets\editable_text.dart
-          /// Regel 4001
-          ///
-          ///
-          ///
-
-          if (adjustScrollY) {
-            sliverScrollPosition =
-                Scrollable.of((context.vsync as State).context).position;
-
-            final toSliverPosition =
-                sliverScrollPosition!.pixels - scrollY + yTo;
-
-            // debugPrint(
-            //     'sliver pixels ${sliverScrollPosition!.pixels} scrollY $scrollY yTo $yTo  toSliverPosition $toSliverPosition');
-            moveToRequests++;
-
-            sliverScrollPosition!
-                .moveTo(
-              toSliverPosition,
-              duration: const Duration(milliseconds: 200),
-            )
-                .then((_) {
-              moveToRequests--;
-
-              debugPrint(
-                  'numberOfAnimatedScrolls $numberOfAnimatedScrolls ${sliverScrollPosition!.pixels}');
-              if (moveToRequests == 0) {
-                if (mounted &&
-                    scrollToEditCell &&
-                    numberOfAnimatedScrolls < 12) {
-                  numberOfAnimatedScrolls++;
-                  // scheduleMicrotask(() {
-                  //   scheduleAnimatedScroll();
-                  // });
-                }
-              }
-            });
-          }
-        } else if (xNearEqual && yNearEqual) {
+        if (xNearEqual && yNearEqual) {
           setScrollScaledX(scrollIndexX, scrollIndexY, xTo);
           setScrollScaledY(scrollIndexX, scrollIndexY, yTo);
           markNeedsLayout();
         } else {
           animateTo(scrollIndexX, scrollIndexY,
-              toScaledOffset: Offset(xTo, yTo), correctOffset: true);
+              toScaledOffset: Offset(xTo, yTo),
+              correctOffset: true,
+              duration: const Duration(milliseconds: 100));
         }
         return;
       }
@@ -4397,6 +4334,267 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
         showCellScheduled = false;
       });
     }
+  }
+
+  ///
+  /// C:\src\flutter\packages\flutter\lib\src\widgets\editable_text.dart
+  /// Regel 4001
+  ///
+  ///
+  ///
+
+  _checkScroll(
+      {required bool widthChanged,
+      required bool heightChanged,
+      required double deltaHeight,
+      required double deltaWidth}) {
+    if (scrollToEditCell) {
+      if (sliverScrollPosition != null) {
+        _showCellVertical();
+
+        _showCellHorizontal();
+      } else {
+        showCell();
+      }
+      _endScrollToEditCell ??= Timer(const Duration(milliseconds: 400), () {
+        _endScrollToEditCell = null;
+        scrollToEditCell = false;
+
+        if (scheduleCorrectOffScroll) {
+          tryCorrectOffscroll();
+        }
+      });
+    } else if (widthChanged || heightChanged) {
+      tryCorrectOffscroll();
+    }
+  }
+
+  tryCorrectOffscroll() {
+    if (!(activity is TableDragScrollActivity ||
+        activity is BallisticScrollActivity ||
+        activity is DrivenMultiScrollActivity)) {
+      scheduleCorrectOffScroll = false;
+      correctOffScroll(0, 0);
+    }
+  }
+
+  bool scheduledShowHorizontalCell = false;
+  double previousToX = double.nan;
+  _showCellHorizontal() {
+    if (scheduledShowHorizontalCell) {
+      return;
+    }
+    go() {
+      var (fromX, toX) = calculateScrollToX();
+
+      if (fromX == toX || previousToX == toX) {
+        return;
+      }
+
+      final xNearEqual = nearEqual(
+          fromX, toX, physics.toleranceFor(devicePixelRatio).distance);
+
+      int scrollIndexX = currentEditCell.scrollIndexX;
+      int scrollIndexY = currentEditCell.scrollIndexY;
+
+      if (xNearEqual) {
+        setScrollScaledX(scrollIndexX, scrollIndexY, toX);
+        markNeedsLayout();
+      } else {
+        animateTo(scrollIndexX, scrollIndexY,
+                toScaledX: toX, correctOffset: true)
+            .then((_) {
+          previousToX = double.nan;
+        });
+      }
+      previousToX = toX;
+    }
+
+    scheduleMicrotask(() {
+      go();
+      scheduledShowHorizontalCell = false;
+    });
+    scheduledShowHorizontalCell = true;
+  }
+
+  double previousToY = double.nan;
+  bool scheduledShowVerticalCell = false;
+
+  _showCellVertical() {
+    if (scheduledShowVerticalCell) {
+      return;
+    }
+    go() {
+      var (fromY, toY) = calculateScrollToY();
+
+      sliverScrollPosition =
+          Scrollable.of((context.vsync as State).context).position;
+
+      final toSliverPosition = sliverScrollPosition!.pixels - fromY + toY;
+
+      if (fromY == toY || toSliverPosition == previousToY) {
+        return;
+      }
+
+      sliverScrollPosition!
+          .moveTo(
+        toSliverPosition,
+        duration: const Duration(milliseconds: 50),
+      )
+          .then((_) {
+        previousToY = double.nan;
+      });
+      previousToY = toSliverPosition;
+    }
+
+    scheduleMicrotask(() {
+      go();
+      scheduledShowVerticalCell = false;
+    });
+    scheduledShowVerticalCell = true;
+  }
+
+  (double, double) calculateScrollToX() {
+    //  int scrollIndexX = switch (stateSplitX) {
+    //     (SplitState.split || SplitState.freezeSplit) => index.scrollIndexX,
+    //     (_) => 0
+    //   };
+
+    //   int scrollIndexY = switch (stateSplitY) {
+    //     (SplitState.split || SplitState.freezeSplit) => index.scrollIndexY,
+    //     (_) => 0
+    //   };
+
+    int scrollIndexX = currentEditCell.scrollIndexX;
+    int scrollIndexY = currentEditCell.scrollIndexY;
+
+    double scrollX =
+        getScrollScaledX(scrollIndexX, scrollIndexY, scrollActivity: true);
+
+    double widthPanel = viewportDimensionX(scrollIndexX);
+
+    double x0 = getX(currentEditCell.column) * tableScale;
+    double x1 =
+        getX(currentEditCell.column + currentEditCell.columns) * tableScale;
+
+    double widthCell = x1 - x0;
+    double leftPadding =
+        math.min((widthPanel - widthCell) / 2.0, properties.editPadding.left);
+    double rightPadding =
+        math.min((widthPanel - widthCell) / 2.0, properties.editPadding.right);
+    double xTo = scrollX;
+    bool skipX = false;
+
+    switch (stateSplitX) {
+      case SplitState.autoFreezeSplit:
+        {
+          if (autoFreezeAreaX.freeze) {
+            if (currentEditCell.column >= autoFreezeAreaX.startIndex &&
+                currentEditCell.column < autoFreezeAreaX.freezeIndex) {
+              skipX = true;
+            } else if (currentEditCell.column >= autoFreezeAreaX.freezeIndex &&
+                currentEditCell.column < autoFreezeAreaX.endIndex) {
+              leftPadding = (autoFreezeAreaX.freezePosition -
+                      autoFreezeAreaX.startPosition) *
+                  tableScale;
+            }
+          }
+          break;
+        }
+      case SplitState.freezeSplit:
+        {
+          skipX = currentEditCell.column < model.topLeftCellPaneColumn;
+          break;
+        }
+      default:
+        {}
+    }
+
+    if (!skipX) {
+      if (x1 > scrollX + widthPanel) {
+        xTo = x1 - widthPanel + rightPadding;
+      } else if (x0 - leftPadding < scrollX) {
+        xTo = x0 - leftPadding;
+      }
+    }
+
+    xTo = clampedX(
+        currentEditCell.scrollIndexX, currentEditCell.scrollIndexY, xTo);
+
+    return (scrollX, xTo);
+  }
+
+  (double, double) calculateScrollToY() {
+//  int scrollIndexX = switch (stateSplitX) {
+//         (SplitState.split || SplitState.freezeSplit) => index.scrollIndexX,
+//         (_) => 0
+//       };
+
+//       int scrollIndexY = switch (stateSplitY) {
+//         (SplitState.split || SplitState.freezeSplit) => index.scrollIndexY,
+//         (_) => 0
+//       };
+
+    int scrollIndexX = currentEditCell.scrollIndexX;
+    int scrollIndexY = currentEditCell.scrollIndexY;
+
+    double scrollY =
+        getScrollScaledY(scrollIndexX, scrollIndexY, scrollActivity: true);
+
+    double heightPanel = viewportDimensionY(scrollIndexY);
+
+    double y0 = getY(currentEditCell.row) * tableScale;
+    double y1 = getY(currentEditCell.row + currentEditCell.rows) * tableScale;
+
+    double heightCell = y1 - y0;
+
+    double topPadding =
+        math.min((heightPanel - heightCell) / 2.0, properties.editPadding.top);
+    double bottomPadding = math.min(
+        (heightPanel - heightCell) / 2.0, properties.editPadding.bottom);
+
+    double yTo = scrollY;
+
+    bool skipY = false;
+
+    switch (stateSplitY) {
+      case SplitState.autoFreezeSplit:
+        {
+          if (autoFreezeAreaY.freeze) {
+            if (currentEditCell.row >= autoFreezeAreaY.startIndex &&
+                currentEditCell.row < autoFreezeAreaY.freezeIndex) {
+              skipY = true;
+            } else if (currentEditCell.row >= autoFreezeAreaY.freezeIndex &&
+                currentEditCell.row <= autoFreezeAreaY.endIndex) {
+              topPadding = (autoFreezeAreaY.freezePosition -
+                      autoFreezeAreaY.startPosition) *
+                  tableScale;
+            }
+          }
+
+          break;
+        }
+      case SplitState.freezeSplit:
+        {
+          skipY = currentEditCell.row < model.topLeftCellPaneRow;
+          break;
+        }
+      default:
+        {}
+    }
+
+    if (!skipY) {
+      if (y1 > scrollY + heightPanel) {
+        yTo = y1 - heightPanel + bottomPadding;
+      } else if (y0 - topPadding < scrollY) {
+        yTo = y0 - topPadding;
+      }
+    }
+
+    yTo = clampedY(
+        currentEditCell.scrollIndexX, currentEditCell.scrollIndexY, yTo);
+
+    return (scrollY, yTo);
   }
 
   ///
@@ -4539,7 +4737,7 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
 
     if (!keepEdit) {
       change();
-      editCell = const PanelCellIndex();
+      currentEditCell = const PanelCellIndex();
       return;
     }
 

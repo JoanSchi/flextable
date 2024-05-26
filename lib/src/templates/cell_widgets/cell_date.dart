@@ -179,7 +179,8 @@ class _CellDateEditorState extends State<_CellDateEditor> {
             viewModel.clearEditCell(cellIndex: widget.tableCellIndex);
           }
         } else {
-          if (!escape && !viewModel.editCell.sameIndex(widget.tableCellIndex)) {
+          if (!escape &&
+              !viewModel.currentEditCell.sameIndex(widget.tableCellIndex)) {
             onDateChange(dateTime);
           }
           if (disposition == UnfocusDisposition.scope) {

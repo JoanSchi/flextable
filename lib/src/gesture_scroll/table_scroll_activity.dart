@@ -925,9 +925,9 @@ class DrivenTableScrollActivity<T> extends TableScrollActivity {
             case TableScrollDirection.horizontal:
               {
                 if (value case double valueX) {
-                  if (delegate.clampedX(scrollIndexX, scrollIndexY, value)
-                      case double clamped when clamped != valueX) {
-                    delegate.setPixelsX(scrollIndexX, scrollIndexY, valueX);
+                  if (delegate.clampedX(scrollIndexX, scrollIndexY, valueX)
+                      case double clamped) {
+                    delegate.setPixelsX(scrollIndexX, scrollIndexY, clamped);
                   }
                   break;
                 }
@@ -935,8 +935,8 @@ class DrivenTableScrollActivity<T> extends TableScrollActivity {
             case TableScrollDirection.vertical:
               {
                 if (value case double valueY) {
-                  if (delegate.clampedY(scrollIndexX, scrollIndexY, value)
-                      case double clamped when clamped != valueY) {
+                  if (delegate.clampedY(scrollIndexX, scrollIndexY, valueY)
+                      case double clamped) {
                     delegate.setPixelsY(scrollIndexX, scrollIndexY, clamped);
                   }
                   break;
@@ -947,7 +947,7 @@ class DrivenTableScrollActivity<T> extends TableScrollActivity {
                 if (value case Offset offset) {
                   if (delegate.clampedOffset(scrollIndexX, scrollIndexY, offset)
                       case Offset clamped) {
-                    delegate.setPixels(scrollIndexX, scrollIndexY, offset);
+                    delegate.setPixels(scrollIndexX, scrollIndexY, clamped);
                   }
                   break;
                 }

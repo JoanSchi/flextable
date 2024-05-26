@@ -82,6 +82,8 @@ class RenderFlexTableToSliverBox extends RenderSliverSingleBoxAdapter {
         deepVisit(child);
       });
     });
+
+    // debugPrint('parentData ${parentData}');
     if (viewModel.correctSliverOffset != null &&
         viewModel.correctSliverOffset != 0.0) {
       geometry =
@@ -91,6 +93,7 @@ class RenderFlexTableToSliverBox extends RenderSliverSingleBoxAdapter {
     }
 
     final SliverConstraints constraints = this.constraints;
+
     // double min = child!.getMinIntrinsicHeight(0);
 
     double overlap = _overlap;

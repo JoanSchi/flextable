@@ -789,8 +789,7 @@ class TableMultiPanelRenderViewport<C extends AbstractCell,
         final nextChild = childAfter(child);
 
         if (!parentData.keepAlive &&
-            (viewModel.panelIndexX != layoutIndex.xIndex &&
-                viewModel.panelIndexY != layoutIndex.yIndex) &&
+            !viewModel.currentEditCell.samePanel(layoutIndex) &&
             !(viewModel.rowVisible(layoutIndex.yIndex) &&
                 viewModel.columnVisible(layoutIndex.xIndex))) {
           childManager.removeChild(child);
@@ -808,7 +807,10 @@ class TableMultiPanelRenderViewport<C extends AbstractCell,
     Duration duration = Duration.zero,
     Curve curve = Curves.ease,
   }) {
-    viewModel.showCell(viewModel.editCell);
+    debugPrint('layout build tt $rect ');
+    // super.showOnScreen(
+    //     rect: rect, descendant: descendant, duration: duration, curve: curve);
+    //  viewModel._c(viewModel.currentEditCell);
   }
 
   bool _debugAssertChildListLocked() =>
