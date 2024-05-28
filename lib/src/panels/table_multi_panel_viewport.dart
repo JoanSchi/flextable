@@ -807,9 +807,11 @@ class TableMultiPanelRenderViewport<C extends AbstractCell,
     Duration duration = Duration.zero,
     Curve curve = Curves.ease,
   }) {
-    debugPrint('layout build tt $rect ');
-    // super.showOnScreen(
-    //     rect: rect, descendant: descendant, duration: duration, curve: curve);
+    // debugPrint('layout build tt $rect ');
+    if (viewModel.scrollToEditCell) {
+      super.showOnScreen(
+          rect: rect, descendant: descendant, duration: duration, curve: curve);
+    }
     //  viewModel._c(viewModel.currentEditCell);
   }
 

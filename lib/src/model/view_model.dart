@@ -272,6 +272,7 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
       previousEditCell = _editCell;
 
       _editCell = const PanelCellIndex();
+      currentEditCell = const PanelCellIndex();
       cellsToUpdate.add(_editCell);
       markNeedsLayout();
     }
@@ -1535,6 +1536,7 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
   }
 
   double adapterOffset = 0.0;
+  double remainingExtent = 0.0;
   void setScrollWithSliver(double scaledScroll) {
     adapterOffset = scaledScroll;
 
@@ -1542,6 +1544,18 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
       setScrollScaledY(0, 1, scaledScroll + getMinScrollScaledY(1));
     } else {
       setScrollScaledY(0, 0, scaledScroll);
+    }
+  }
+
+  void setSliverConstraints(SliverConstraints sliverConstraints) {
+    adapterOffset = sliverConstraints.scrollOffset;
+    remainingExtent = sliverConstraints.remainingPaintExtent;
+    print('remainingExtent $sliverConstraints');
+
+    if (stateSplitY == SplitState.freezeSplit) {
+      setScrollScaledY(0, 1, adapterOffset + getMinScrollScaledY(1));
+    } else {
+      setScrollScaledY(0, 0, adapterOffset);
     }
   }
 
@@ -2311,6 +2325,10 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
   }
 
   void calculate({required double width, required double height}) {
+    // if (sliverScrollPosition != null &&
+    //     remainingExtent < height - adapterOffset) {
+    //   height = remainingExtent;
+    // }
     final oldStateSplitX = stateSplitX;
     final oldStateSplitY = stateSplitY;
 
@@ -4140,15 +4158,15 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
   showCell() {
     if (scrollToEditCell) {
       if (sliverScrollPosition != null) {
-        _showCellVertical();
+        //  _showCellVertical();
         _showCellHorizontal();
       } else {
         _showCell(_editCell);
       }
 
-      _endScrollToEditCell ??= Timer(const Duration(milliseconds: 300), () {
+      _endScrollToEditCell ??= Timer(const Duration(milliseconds: 600), () {
         _endScrollToEditCell = null;
-        scrollToEditCell = true;
+        scrollToEditCell = false;
       });
     }
   }
@@ -4350,7 +4368,7 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
       required double deltaWidth}) {
     if (scrollToEditCell) {
       if (sliverScrollPosition != null) {
-        _showCellVertical();
+        // _showCellVertical();
 
         _showCellHorizontal();
       } else {

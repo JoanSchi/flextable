@@ -63,6 +63,9 @@ class TableInterator<C extends AbstractCell, M extends AbstractFtModel<C>> {
         when pci.samePanel(tpli)) {
       editRowIndex = focusRowIndex = pci.row;
       editColumnIndex = focusColumnIndex = pci.column;
+    } else {
+      editRowIndex = focusRowIndex = -1;
+      editColumnIndex = focusColumnIndex = -1;
     }
 
     // final ec = _viewModel.editCell;
