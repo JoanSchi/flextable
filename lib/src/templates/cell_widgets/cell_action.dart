@@ -128,9 +128,10 @@ class CellActionWidget<C extends AbstractCell, M extends AbstractFtModel<C>, A>
                       viewModel.clearEditCell();
                       actionCallBack(viewModel, cell, tableCellIndex, a);
                     },
-                    child: Text(translateItem(text ?? ':{'),
-                        style: style?.textStyle,
-                        textScaler: const TextScaler.linear(1.0))),
+                    child: Text(
+                      translateItem(text ?? ':{'),
+                      style: style?.textStyle,
+                    )),
               ))),
       (_) => const Center(child: Text(':('))
     };

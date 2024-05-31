@@ -28,10 +28,13 @@ class TextDrawer extends StatelessWidget {
       textCellStyle = style;
     }
 
-    Widget text = Text(
-      formatedValue ?? '${cell.value ?? ''}',
-      textAlign: textCellStyle?.textAlign,
-      style: textCellStyle?.textStyle,
+    Widget text = RichText(
+      text: TextSpan(
+        text: formatedValue ?? '${cell.value ?? ''}',
+        style: textCellStyle?.textStyle,
+      ),
+      softWrap: true,
+      textAlign: textCellStyle?.textAlign ?? TextAlign.start,
       textScaler: TextScaler.linear(tableScale),
     );
 
@@ -41,8 +44,7 @@ class TextDrawer extends StatelessWidget {
     }
 
     Widget child = Container(
-        padding: const EdgeInsets.symmetric(vertical: 2.0, horizontal: 5.0) *
-            tableScale,
+        padding: (textCellStyle?.padding ?? EdgeInsets.zero) * tableScale,
         alignment: textCellStyle?.alignment ?? Alignment.center,
         color: useAccent
             ? (textCellStyle?.backgroundAccent ?? textCellStyle?.background)

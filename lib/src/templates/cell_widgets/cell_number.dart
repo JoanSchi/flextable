@@ -344,10 +344,12 @@ class _CellNumber extends StatelessWidget {
         ),
       (_) => (cell.value, null)
     };
-    Widget child = Text(
-      value ?? '',
-      textAlign: numberCellStyle?.textAlign,
-      style: numberCellStyle?.textStyle,
+    Widget child = RichText(
+      text: TextSpan(
+        text: value ?? '',
+        style: numberCellStyle?.textStyle,
+      ),
+      textAlign: numberCellStyle?.textAlign ?? TextAlign.start,
       textScaler: TextScaler.linear(tableScale),
     );
 
