@@ -620,7 +620,7 @@ class _DateInputPickerState extends State<_DateInputPicker> {
       } else if ((o == 'd' || o == 'dd') && dayMissing) {
         day = dateNow.day;
         continue;
-      } else if (o == 'yyyy' || o == 'yy' && yearMissing) {
+      } else if ((o == 'yyyy' || o == 'yy') && yearMissing) {
         year = dateNow.year;
         continue;
       } else if ((o == 'M' || o == 'MM') && monthMissing) {
