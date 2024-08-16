@@ -47,7 +47,7 @@ class _ExampleFruitState extends State<ExampleFruit> with SettingsBottomSheet {
 
     ftModel = DataModelFruit().makeTable(tableScale: tableScale);
 
-    scaleChangeNotifier = FtScaleChangeNotifier();
+    scaleChangeNotifier = FtScaleChangeNotifier(scale: 1.0, min: 0.5, max: 4.0);
 
     _ftController = FtController();
     super.initState();

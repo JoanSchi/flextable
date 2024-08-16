@@ -43,7 +43,7 @@ class _ExampleStressTestState extends State<ExampleStressTest>
       scrollUnlockY: true,
     );
 
-    scaleChangeNotifier = FtScaleChangeNotifier();
+    scaleChangeNotifier = FtScaleChangeNotifier(scale: 1.0, min: 0.5, max: 4.0);
 
     super.initState();
   }

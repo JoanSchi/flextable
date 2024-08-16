@@ -13,19 +13,57 @@ mixin TableChangeNotifier {
 }
 
 class FtScaleChangeNotifier extends ChangeNotifier {
-  FtScaleChangeNotifier({this.scale = 1.0, this.min = 1.0, this.max = 1.0});
+  FtScaleChangeNotifier(
+      {double scale = 1.0, double min = 1.0, double max = 1.0})
+      : _scale = scale,
+        _min = min,
+        _max = max;
 
-  double scale;
-  double min;
-  double max;
+  double _scale;
+
+  double get scale => _scale;
+
+  set scale(double value) {
+    if (clampDouble(value, _min, _max) case double s when s != _scale) {
+      _scale = s;
+      notifyListeners();
+    }
+  }
+
+  double get min => _min;
+
+  set min(double value) {
+    if (value != _min) {
+      _min = value;
+      if (_scale < value) {
+        _scale = value;
+      }
+      notifyListeners();
+    }
+  }
+
+  double get max => _max;
+
+  set max(double value) {
+    if (value != _max) {
+      _max = value;
+      if (value < _scale) {
+        _scale = value;
+      }
+      notifyListeners();
+    }
+  }
+
+  double _min;
+  double _max;
   bool end = false;
 
   void changeScale({double? scaleValue, bool scaleEnd = false}) {
     bool notify = false;
 
-    if (scaleValue case double s when s != scale) {
-      s = clampDouble(s, min, max);
-      scale = s;
+    if (scaleValue case double s when s != _scale) {
+      s = clampDouble(s, _min, _max);
+      _scale = s;
       notify = true;
     }
 

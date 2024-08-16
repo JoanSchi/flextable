@@ -42,7 +42,7 @@ class _ExampleMortgageState extends State<ExampleMortgage>
     };
     this.scaleSlider = scaleSlider;
 
-    scaleChangeNotifier = FtScaleChangeNotifier();
+    scaleChangeNotifier = FtScaleChangeNotifier(scale: 1.0, min: 0.5, max: 4.0);
 
     super.initState();
   }

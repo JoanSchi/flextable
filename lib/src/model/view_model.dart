@@ -69,11 +69,8 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
                 SharedTextControllersByIndex() {
     ///
     ///
-    this.scaleChangeNotifier
-      ..addListener(changeScale)
-      ..scale = model.tableScale
-      ..min = properties.minTableScale
-      ..max = properties.maxTableScale;
+    model.tableScale = this.scaleChangeNotifier.scale;
+    this.scaleChangeNotifier.addListener(changeScale);
 
     model
       ..calculatePositionsX()

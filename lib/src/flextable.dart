@@ -105,7 +105,10 @@ class FlexTableState<C extends AbstractCell, M extends AbstractFtModel<C>>
       InnerScrollChangeNotifier();
   FtScaleChangeNotifier? _scaleChangeNotifier;
   FtScaleChangeNotifier get scaleChangeNotifier =>
-      _scaleChangeNotifier ??= FtScaleChangeNotifier();
+      _scaleChangeNotifier ??= FtScaleChangeNotifier(
+          scale: widget.model.tableScale,
+          min: widget.properties.minTableScale,
+          max: widget.properties.maxTableScale);
 
   @override
   void initState() {

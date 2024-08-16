@@ -49,6 +49,12 @@ class TableScaleTouchState extends State<TableScaleTouch> {
   }
 
   @override
+  void didChangeDependencies() {
+    _mediaQueryGestureSettings = MediaQuery.maybeGestureSettingsOf(context);
+    super.didChangeDependencies();
+  }
+
+  @override
   void didUpdateWidget(TableScaleTouch oldWidget) {
     _mediaQueryGestureSettings = MediaQuery.maybeGestureSettingsOf(context);
     super.didUpdateWidget(oldWidget);
