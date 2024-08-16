@@ -72,8 +72,7 @@ class _ExampleStressTestState extends State<ExampleStressTest>
             measureHeight: true,
             squeezeRatio: 1.0,
             child: TableScaleSlider(
-                scaleChangeNotifier: scaleChangeNotifier,
-                maxWidthSlider: 200.0))
+                scaleChangeNotifier: scaleChangeNotifier, maxWidthSlider: null))
       ]);
     }
 

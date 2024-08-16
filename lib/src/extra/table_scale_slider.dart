@@ -5,10 +5,12 @@ class TableScaleSlider extends StatefulWidget {
   const TableScaleSlider(
       {super.key,
       required this.scaleChangeNotifier,
-      this.maxWidthSlider = 200.0});
+      this.maxWidthSlider,
+      this.showScaleValue = true});
 
   final FtScaleChangeNotifier scaleChangeNotifier;
-  final double maxWidthSlider;
+  final double? maxWidthSlider;
+  final bool showScaleValue;
 
   @override
   State<TableScaleSlider> createState() => _TableScaleSliderState();
@@ -43,18 +45,40 @@ class _TableScaleSliderState extends State<TableScaleSlider> {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-        width: widget.maxWidthSlider,
-        child: Slider(
-          min: scaleChangeNotifier.min,
-          max: scaleChangeNotifier.max,
-          value: scale,
-          onChanged: (double value) {
-            scaleChangeNotifier.changeScale(scaleValue: value);
-          },
-          onChangeEnd: (double value) {
-            scaleChangeNotifier.changeScale(scaleValue: value, scaleEnd: true);
-          },
-        ));
+    final slider = Slider(
+      min: scaleChangeNotifier.min,
+      max: scaleChangeNotifier.max,
+      value: scale,
+      onChanged: (double value) {
+        scaleChangeNotifier.changeScale(scaleValue: value);
+      },
+      onChangeEnd: (double value) {
+        scaleChangeNotifier.changeScale(scaleValue: value, scaleEnd: true);
+      },
+    );
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        switch (widget.maxWidthSlider) {
+          (double width) => SizedBox(
+              width: width,
+              child: slider,
+            ),
+          (_) => Expanded(
+              child: slider,
+            )
+        },
+        if (widget.showScaleValue)
+          Container(
+              alignment: Alignment.centerRight,
+              width: 35.0,
+              child: Text('${(scale * 100).round()}%')),
+        if (widget.showScaleValue)
+          const SizedBox(
+            width: 8.0,
+          )
+      ],
+    );
   }
 }
