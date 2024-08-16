@@ -88,7 +88,6 @@ class _ExampleInternationalTradeState extends State<ExampleInternationalTrade>
             squeezeRatio: 1.0,
             child: TableScaleSlider(
                 scaleChangeNotifier: scaleChangeNotifier,
-                controller: _ftController,
                 maxWidthSlider: 200.0))
       ]);
     }

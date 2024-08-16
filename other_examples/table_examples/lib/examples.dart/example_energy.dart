@@ -79,7 +79,6 @@ class _ExampleEnergyState extends State<ExampleEnergy>
             squeezeRatio: 1.0,
             child: TableScaleSlider(
                 scaleChangeNotifier: tableScaleChangeNotifier,
-                controller: _ftController,
                 maxWidthSlider: 200.0))
       ]);
     }

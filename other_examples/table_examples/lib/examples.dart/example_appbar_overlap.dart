@@ -67,7 +67,6 @@ class _ExampleAppBarOverlapState extends State<ExampleAppBarOverlap> {
             squeezeRatio: 1.0,
             child: TableScaleSlider(
                 scaleChangeNotifier: scaleChangeNotifier,
-                controller: ftController,
                 maxWidthSlider: 200.0))
       ]);
     }

@@ -83,7 +83,6 @@ class _ExampleFruitState extends State<ExampleFruit> with SettingsBottomSheet {
             squeezeRatio: 1.0,
             child: TableScaleSlider(
                 scaleChangeNotifier: scaleChangeNotifier,
-                controller: _ftController,
                 maxWidthSlider: 200.0))
       ]);
     }

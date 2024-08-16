@@ -73,7 +73,6 @@ class _ExampleMortgageState extends State<ExampleMortgage>
             measureHeight: true,
             child: TableScaleSlider(
                 scaleChangeNotifier: scaleChangeNotifier,
-                controller: _ftController,
                 maxWidthSlider: 200.0))
       ]);
     }

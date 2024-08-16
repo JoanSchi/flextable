@@ -80,7 +80,6 @@ class _ExampleSliverInTablesState extends State<ExampleSliverInTables> {
               measureHeight: true,
               child: TableScaleSlider(
                   scaleChangeNotifier: scaleChangeNotifier,
-                  controller: ftController,
                   maxWidthSlider: 200.0))
         ]);
       }

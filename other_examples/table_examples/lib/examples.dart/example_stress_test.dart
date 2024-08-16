@@ -73,7 +73,6 @@ class _ExampleStressTestState extends State<ExampleStressTest>
             squeezeRatio: 1.0,
             child: TableScaleSlider(
                 scaleChangeNotifier: scaleChangeNotifier,
-                controller: _flexTableController,
                 maxWidthSlider: 200.0))
       ]);
     }

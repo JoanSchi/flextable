@@ -1,122 +1,60 @@
-// Copyright 2023 Joan Schipper. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
-import 'package:flextable/flextable.dart';
 import 'package:flutter/material.dart';
+import '../../flextable.dart';
 
 class TableScaleSlider extends StatefulWidget {
-  const TableScaleSlider({
-    super.key,
-    required this.scaleChangeNotifier,
-    required this.controller,
-    this.showScaleValue = true,
-    this.maxWidthSlider,
-    this.trackHeight = 2.0,
-    this.thumbRadius = 5.0,
-    this.overlayRadius = 10.0,
-  });
+  const TableScaleSlider(
+      {super.key,
+      required this.scaleChangeNotifier,
+      this.maxWidthSlider = 200.0});
 
-  final FtController controller;
-  final bool showScaleValue;
-  final double? maxWidthSlider;
-  final double trackHeight;
-  final double thumbRadius;
-  final double overlayRadius;
   final FtScaleChangeNotifier scaleChangeNotifier;
+  final double maxWidthSlider;
 
   @override
-  State<StatefulWidget> createState() => TableScaleSliderState();
+  State<TableScaleSlider> createState() => _TableScaleSliderState();
 }
 
-class TableScaleSliderState extends State<TableScaleSlider> {
-  late FtScaleChangeNotifier _scaleChangeNotifier;
-
+class _TableScaleSliderState extends State<TableScaleSlider> {
+  late FtScaleChangeNotifier scaleChangeNotifier;
+  double scale = 1.0;
   @override
   void initState() {
-    _scaleChangeNotifier = widget.scaleChangeNotifier..addListener(scaleChange);
+    scaleChangeNotifier = widget.scaleChangeNotifier..addListener(changeScale);
+    scale = scaleChangeNotifier.scale;
 
     super.initState();
   }
 
   @override
   void didUpdateWidget(TableScaleSlider oldWidget) {
-    super.didUpdateWidget(oldWidget);
-
-    if (_scaleChangeNotifier != widget.scaleChangeNotifier) {
-      _scaleChangeNotifier.removeListener(scaleChange);
-      _scaleChangeNotifier = widget.scaleChangeNotifier
-        ..addListener(scaleChange);
+    if (scaleChangeNotifier != widget.scaleChangeNotifier) {
+      scaleChangeNotifier.removeListener(changeScale);
+      scaleChangeNotifier = widget.scaleChangeNotifier
+        ..addListener(changeScale);
     }
+    super.didUpdateWidget(oldWidget);
   }
 
-  @override
-  void dispose() {
-    _scaleChangeNotifier.removeListener(scaleChange);
-    super.dispose();
-  }
-
-  setScale(double value) {
-    setState(() {});
+  changeScale() {
+    setState(() {
+      scale = widget.scaleChangeNotifier.scale;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    double scale = _scaleChangeNotifier.scale;
-
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.end,
-      children: [
-        widget.maxWidthSlider != null
-            ? SizedBox(
-                width: widget.maxWidthSlider, child: buildSlider(context))
-            : Expanded(child: buildSlider(context)),
-        if (widget.showScaleValue)
-          Container(
-              alignment: Alignment.centerRight,
-              padding: const EdgeInsets.only(right: 5.0),
-              width: 45.0,
-              child: Text('${(scale * 100).round()}%')),
-      ],
-    );
-  }
-
-  Widget buildSlider(BuildContext context) {
-    double scale = _scaleChangeNotifier.scale;
-    final properties = widget.controller.lastViewModel().properties;
-    final double min = properties.minTableScale;
-    final double max = properties.maxTableScale;
-
-    return SliderTheme(
-      data: SliderTheme.of(context).copyWith(
-        // activeTrackColor: Colors.red,
-        // inactiveTrackColor: Colors.orange,
-        trackHeight: widget.trackHeight,
-        // thumbColor: Colors.yellow,
-        thumbShape:
-            RoundSliderThumbShape(enabledThumbRadius: widget.thumbRadius),
-        // overlayColor: Colors.purple.withAlpha(32),
-        overlayShape:
-            RoundSliderOverlayShape(overlayRadius: widget.overlayRadius),
-      ),
-      child: Slider(
-        value: scale < 1.0 ? 2.0 - 1.0 / scale : scale,
-        min: min < 1.0 ? 2.0 - 1.0 / min : min,
-        max: max,
-        onChanged: (double value) {
-          final newScale = (value < 1.0) ? 1.0 / (2.0 - value) : value;
-          _scaleChangeNotifier.changeScale(
-            scaleValue: value,
-          );
-        },
-        onChangeEnd: (double value) {
-          _scaleChangeNotifier.changeScale(scaleValue: value, scaleEnd: true);
-        },
-      ),
-    );
-  }
-
-  void scaleChange() {
-    setState(() {});
+    return SizedBox(
+        width: widget.maxWidthSlider,
+        child: Slider(
+          min: scaleChangeNotifier.min,
+          max: scaleChangeNotifier.max,
+          value: scale,
+          onChanged: (double value) {
+            scaleChangeNotifier.changeScale(scaleValue: value);
+          },
+          onChangeEnd: (double value) {
+            scaleChangeNotifier.changeScale(scaleValue: value, scaleEnd: true);
+          },
+        ));
   }
 }
