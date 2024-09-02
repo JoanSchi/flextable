@@ -1411,6 +1411,10 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
     }
   }
 
+  void updateState(VoidCallback fn) {
+    context.setState(fn);
+  }
+
   set rowHeader(bool value) {
     model.rowHeader = value;
     calculateHeaderWidth();

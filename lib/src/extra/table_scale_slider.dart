@@ -37,6 +37,12 @@ class _TableScaleSliderState extends State<TableScaleSlider> {
     super.didUpdateWidget(oldWidget);
   }
 
+  @override
+  void dispose() {
+    scaleChangeNotifier.removeListener(changeScale);
+    super.dispose();
+  }
+
   changeScale() {
     setState(() {
       scale = widget.scaleChangeNotifier.scale;
