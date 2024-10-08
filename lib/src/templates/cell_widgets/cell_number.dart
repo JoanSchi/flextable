@@ -376,8 +376,8 @@ class _CellNumber extends StatelessWidget {
             child: child,
           ),
           Positioned(
-              left: 4.0 * tableScale,
-              top: 0.0 * tableScale,
+              left: 4.0,
+              top: 0.0,
               child: Text(
                 exceeded,
                 textAlign: TextAlign.left,

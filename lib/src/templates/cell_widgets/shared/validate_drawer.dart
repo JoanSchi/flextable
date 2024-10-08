@@ -41,8 +41,8 @@ class ValidationPainter extends CustomPainter {
         const Color.fromARGB(255, 206, 45, 9));
 
     canvas.drawCircle(
-      Offset(8.0 * tableScale, 8.0 * tableScale),
-      4.0 * tableScale,
+      const Offset(8.0, 8.0),
+      4.0,
       Paint()..color = color,
     );
   }

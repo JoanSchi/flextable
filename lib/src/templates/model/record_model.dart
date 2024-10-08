@@ -70,7 +70,7 @@ class RecordFtModel<C extends AbstractCell, Dto> extends AbstractFtModel<C> {
       required C cell,
       checkPreviousCell = false,
       bool updateBackend = true,
-      String? rowId,
+      Object? rowId,
       bool user = false}) {
     if (tableRows < ftIndex.row + rows) {
       tableRows = ftIndex.row + rows;
@@ -116,7 +116,7 @@ class RecordFtModel<C extends AbstractCell, Dto> extends AbstractFtModel<C> {
       C? previousCell,
       checkPreviousCell = false,
       bool updateBackend = true,
-      String? rowId,
+      Object? rowId,
       bool user = false}) {
     assert((previousCell != null && !checkPreviousCell) || !checkPreviousCell,
         'If checkPreviousCell is true, the function will find the previousCell. PreviousCell is expected to be null');
@@ -196,7 +196,7 @@ class RecordFtModel<C extends AbstractCell, Dto> extends AbstractFtModel<C> {
     if (linkedRowRibbons.indexed[ftIndex.row]
         case RecordRowRibbon<C, Dto> rowRibbon) {
       bool unKnownRowId = rowRibbon.rowId == null;
-      String? rowIdFromCell;
+      Object? rowIdFromCell;
 
       if (cell?.identifier case FtCellIdentifier id) {
         rowIdFromCell = id.rowId;
@@ -221,7 +221,7 @@ class RecordFtModel<C extends AbstractCell, Dto> extends AbstractFtModel<C> {
         } else {
           if (!insertIdRow.contains(rowRibbon)) {
             if (!updateIdRow.add(rowRibbon)) {
-              debugPrint('RowId already in updateIdRow :)');
+              // debugPrint('RowId already in updateIdRow :)');
             }
           }
         }
@@ -539,14 +539,14 @@ class RecordFtModel<C extends AbstractCell, Dto> extends AbstractFtModel<C> {
   ///
   ///
   Map<String, dynamic> retrieveRecordData(
-      {String? rowId, int? immutableIndex, int? rowIndex}) {
+      {Object? rowId, int? immutableIndex, int? rowIndex}) {
     assert(
         (rowId == null && rowIndex == null && immutableIndex != null) ||
             (rowId != null && rowIndex == null && immutableIndex == null) ||
             (rowId == null && rowIndex != null && immutableIndex == null),
         'Select one identifier rowId, rowIndex or ImmutableIndex');
 
-    if (rowId case String rowId) {
+    if (rowId case Object rowId) {
       for (RecordRowRibbon r in linkedRowRibbons.indexed) {
         if (r.rowId == rowId) {
           return recordToMap(r.columns, (_, __) => true);
@@ -669,12 +669,12 @@ class RecordFtModel<C extends AbstractCell, Dto> extends AbstractFtModel<C> {
   }
 
   @Deprecated('Use ValidateSaveInserts')
-  saveInserts({
+  saveInserts<T>({
     ///save
     ///
     ///
     required Future<bool> Function(
-            String rowId,
+            T rowId,
             Map<String, dynamic> map,
             Set<FtIndex> Function(Set<String> columnIds, String validation)
                 setValidation)
@@ -702,7 +702,7 @@ class RecordFtModel<C extends AbstractCell, Dto> extends AbstractFtModel<C> {
     insertIdRow.clear();
 
     for (RecordRowRibbon<C, Dto> rr in temp) {
-      if (rr.rowId case String rowId) {
+      if (rr.rowId case Object rowId) {
         if (cellValidation != null) {
           int rowIndex = linkedRowRibbons.rowIndex(rr.immutableRowIndex) ?? -1;
 
@@ -718,11 +718,17 @@ class RecordFtModel<C extends AbstractCell, Dto> extends AbstractFtModel<C> {
           }
         }
 
-        if (!(await save(rowId, recordToMap(rr.columns, include),
-            (Set<String> columnIds, String validation) {
-          return setValidation(
-              rowRibbon: rr, columnIds: columnIds, validation: validation);
-        }))) {
+        bool saved = false;
+
+        if (rowId case T rId) {
+          saved = await save(rId, recordToMap(rr.columns, include),
+              (Set<String> columnIds, String validation) {
+            return setValidation(
+                rowRibbon: rr, columnIds: columnIds, validation: validation);
+          });
+        }
+
+        if (!saved) {
           insertIdRow.add(rr);
         }
       }
@@ -730,12 +736,12 @@ class RecordFtModel<C extends AbstractCell, Dto> extends AbstractFtModel<C> {
   }
 
   @Deprecated('Use ValidateUpdateInserts')
-  saveUpdates({
+  saveUpdates<T>({
     ///save
     ///
     ///
     required Future<bool> Function(
-            String rowId,
+            T rowId,
             Map<String, dynamic> map,
             Set<FtIndex> Function(Set<String> columnIds, String validation)
                 setValidation)
@@ -763,7 +769,7 @@ class RecordFtModel<C extends AbstractCell, Dto> extends AbstractFtModel<C> {
     updateIdRow.clear();
 
     for (RecordRowRibbon<C, Dto> rr in temp) {
-      if (rr.rowId case String rowId) {
+      if (rr.rowId case Object rowId) {
         if (cellValidation != null) {
           int rowIndex = linkedRowRibbons.rowIndex(rr.immutableRowIndex) ?? -1;
 
@@ -778,20 +784,24 @@ class RecordFtModel<C extends AbstractCell, Dto> extends AbstractFtModel<C> {
             continue;
           }
         }
+        bool saved = false;
 
-        if (!(await save(rowId, recordToMap(rr.columns, include),
-            (Set<String> columnIds, String validation) {
-          return setValidation(
-              rowRibbon: rr, columnIds: columnIds, validation: validation);
-        }))) {
+        if (rowId case T rId) {
+          saved = await save(rId, recordToMap(rr.columns, include),
+              (Set<String> columnIds, String validation) {
+            return setValidation(
+                rowRibbon: rr, columnIds: columnIds, validation: validation);
+          });
+        }
+        if (!saved) {
           updateIdRow.add(rr);
         }
       }
     }
   }
 
-  saveDeletes({
-    required Future<bool> Function(String rowId, Map<String, dynamic> map) save,
+  saveDeletes<T>({
+    required Future<bool> Function(T rowId, Map<String, dynamic> map) save,
     bool Function(int, FtCellIdentifier c)? include,
   }) async {
     Set temp = Set.from(deletedIdRow);
@@ -800,8 +810,12 @@ class RecordFtModel<C extends AbstractCell, Dto> extends AbstractFtModel<C> {
     include ??= (_, __) => true;
 
     for (RecordRowRibbon<C, Dto> rr in temp) {
-      if (rr.rowId case String rowId) {
-        if (!(await save(rowId, recordToMap(rr.columns, include)))) {
+      if (rr.rowId case Object rowId) {
+        bool saved = false;
+        if (rowId case T rId) {
+          saved = await save(rId, recordToMap(rr.columns, include));
+        }
+        if (!saved) {
           deletedIdRow.add(rr);
         }
       }
@@ -1113,7 +1127,7 @@ class RecordFtModel<C extends AbstractCell, Dto> extends AbstractFtModel<C> {
     ];
   }
 
-  Map<String, Dto> dtoToMap({int startRow = 0, int? endRow}) {
+  Map<T, Dto> dtoToMap<T extends Object>({int startRow = 0, int? endRow}) {
     List<RecordRowRibbon<C, Dto>> list = linkedRowRibbons.indexed;
     if (endRow == null || endRow >= list.length) {
       endRow = list.length;
@@ -1121,7 +1135,7 @@ class RecordFtModel<C extends AbstractCell, Dto> extends AbstractFtModel<C> {
     return {
       for (int i = startRow; i < endRow; i++)
         if (list[i] case RecordRowRibbon<C, Dto> r)
-          if ((r.rowId, r.dto) case (String id, Dto o)) id: o
+          if ((r.rowId, r.dto) case (T id, Dto o)) id: o
     };
   }
 
@@ -1130,7 +1144,7 @@ class RecordFtModel<C extends AbstractCell, Dto> extends AbstractFtModel<C> {
 
 class RecordRowRibbon<C extends AbstractCell, Dto> {
   int immutableRowIndex;
-  String? rowId;
+  Object? rowId;
   Dto? dto;
 
   RecordRowRibbon({required this.immutableRowIndex, this.rowId});

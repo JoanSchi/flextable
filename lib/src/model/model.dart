@@ -1128,6 +1128,67 @@ abstract class AbstractFtModel<C extends AbstractCell> {
     }
   }
 
+  void initialScrollFromMainPosition(
+      {double scrollX = 0.0, double scrollY = 0.0}) {
+    //  FtIndex index = findCellIndexFromPosition(scrollX, scrollY);
+    if (scrollY > 0) {
+      assert(!calculationPositionsNeededY,
+          'calculationPositionsNeededY should be performed first');
+      switch ((stateSplitY, autoFreezeAreasY.isNotEmpty)) {
+        case (SplitState.noSplit || SplitState.autoFreezeSplit, true):
+          {
+            double deltaY = 0.0;
+            for (AutoFreezeArea area in autoFreezeAreasY) {
+              if (area.constains(scrollY)) {
+                deltaY = area.startPosition - area.freezePosition;
+                break;
+              }
+            }
+            mainScrollY = scrollY0pX0 = scrollY + deltaY;
+            break;
+          }
+        case (SplitState.noSplit, _):
+          {
+            mainScrollY = scrollY0pX0 = scrollY;
+            break;
+          }
+
+        default:
+          {
+            assert(false, 'No support for stateSplitY');
+          }
+      }
+    }
+
+    if (scrollX > 0) {
+      assert(!calculationPositionsNeededX,
+          'calculationPositionsNeededX should be performed first');
+      switch (stateSplitY) {
+        case SplitState.noSplit:
+          {
+            mainScrollX = scrollX0pY0 = scrollX;
+            break;
+          }
+        case SplitState.autoFreezeSplit:
+          {
+            double deltaX = 0.0;
+            for (AutoFreezeArea area in autoFreezeAreasX) {
+              if (area.constains(scrollX)) {
+                deltaX = area.startPosition - area.freezePosition;
+                break;
+              }
+            }
+            mainScrollX = scrollX + deltaX;
+            break;
+          }
+        default:
+          {
+            assert(false, 'No support for stateSplitX');
+          }
+      }
+    }
+  }
+
   calculatePositionsX() {
     if (!calculationPositionsNeededX) {
       return;

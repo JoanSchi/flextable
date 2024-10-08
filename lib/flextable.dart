@@ -101,7 +101,7 @@ export 'src/extra/selection_keep_alive.dart' show SelectionKeepAlive;
 
 // Edit
 export 'src/templates/builders/basic_table_builder.dart'
-    show BasicTableBuilder, FtTranslation;
+    show BasicTableBuilder, FtTranslation, CellWidgetBuilder;
 export 'src/builders/edit_text.dart'
     show
         FtEditText,

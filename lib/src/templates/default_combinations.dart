@@ -9,7 +9,7 @@ typedef DefaultFlexTable<I>
 typedef DefaultFtModel<I> = BasicFtModel<AbstractCell>;
 typedef DefaultFtViewModel<I>
     = FtViewModel<AbstractCell, BasicFtModel<AbstractCell>>;
-typedef DefaultFtController<I>
+typedef DefaultFtController
     = FtController<AbstractCell, BasicFtModel<AbstractCell>>;
 typedef DefaultTableBuilder<I, A>
     = BasicTableBuilder<AbstractCell, BasicFtModel<AbstractCell>, A>;

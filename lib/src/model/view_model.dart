@@ -1609,7 +1609,7 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
   }
 
   calculateAutoFreezeY({double? height}) {
-    if (!model.autoFreezePossibleY || firstLayout) return;
+    if (!model.autoFreezePossibleY) return;
 
     height ??= _heightMainPanel;
 
@@ -2481,27 +2481,57 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
       freeze <= index ? 2 : 1;
 
   _checkFirstLayout(double width, double height) {
-    bool layout = false;
+    bool layoutX = false;
+    bool layoutY = false;
     firstLayout = false;
-    switch (stateSplitY) {
+
+    switch (stateSplitX) {
       case (SplitState.noSplit ||
             SplitState.canceledFreezeSplit ||
             SplitState.autoFreezeSplit):
         {
-          layout = simpleYBoundery(0, 0);
+          layoutX = simpleXBoundery(0, 0);
         }
       default:
         {}
     }
 
-    if (layout) {
+    switch (stateSplitY) {
+      case (SplitState.noSplit ||
+            SplitState.canceledFreezeSplit ||
+            SplitState.autoFreezeSplit):
+        {
+          layoutY = simpleYBoundery(0, 0);
+        }
+      default:
+        {}
+    }
+
+    if (layoutX || layoutY) {
+      if (!modifySplit &&
+          tableScrollDirection != TableScrollDirection.horizontal) {
+        adjustSplitStateAfterWidthResize(width);
+      }
+
+      if (!modifySplit &&
+          tableScrollDirection != TableScrollDirection.vertical) {
+        adjustSplitStateAfterWidthResize(width);
+      }
+
+      if (!modifySplit) {
+        adjustSplitStateAfterHeightResize(height);
+      }
+
       final maxHeightNoSplit = computeMaxIntrinsicHeightNoSplit(width);
+
       _layoutY(
           maxHeightNoSplit:
               maxHeightNoSplit + sizeScrollBarBottom + bottomHeaderLayoutLength,
           height: height);
 
       findRowHeaderWidth();
+
+      //findRowHeaderWidth is peformed in LayoutY
 
       final maxWidthNoSplit = computeMaxIntrinsicWidthNoSplit(height);
 
@@ -2515,7 +2545,28 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
   /// Simple boundery for one panel use for the first layout
   ///
   ///
-  ///
+
+  bool simpleXBoundery(int scrollIndexX, int scrollIndexY) {
+    double scrollXscalled = mainScrollX * tableScale;
+    const min = 0.0;
+    final lengthPanels = twoPanelViewPortDimensionX();
+
+    final max = model.sheetWidth * tableScale - lengthPanels;
+    double scrollXScalledClamped = max < 0.0
+        ? 0.0
+        : clampDouble(
+            scrollXscalled,
+            min,
+            max,
+          );
+
+    if (scrollXscalled != scrollXScalledClamped) {
+      mainScrollX = scrollX0pY0 = scrollXScalledClamped / tableScale;
+      return true;
+    }
+    return false;
+  }
+
   bool simpleYBoundery(int scrollIndexX, int scrollIndexY) {
     double scrollYscalled = mainScrollY * tableScale;
     const min = 0.0;

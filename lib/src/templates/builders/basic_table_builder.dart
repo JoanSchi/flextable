@@ -93,6 +93,21 @@ class BasicTableBuilder<C extends AbstractCell, M extends AbstractFtModel<C>, A>
   ) {
     final bool useAccent =
         useCellAccent?.call(viewModel, cell, tableCellIndex) ?? false;
+
+    if (cellWidgetBuilder?.call(
+      cell: cell,
+      viewModel: viewModel,
+      layoutPanelIndex: layoutPanelIndex,
+      tableCellIndex: tableCellIndex,
+      tableScale: tableScale,
+      cellStatus: cellStatus,
+      useAccent: useAccent,
+      valueKey: valueKey,
+    )
+        case Widget w) {
+      return w;
+    }
+
     return switch (cell) {
       (DateTimeCell c) => CellDateWidget<C, M>(
           viewModel: viewModel,
@@ -167,24 +182,14 @@ class BasicTableBuilder<C extends AbstractCell, M extends AbstractFtModel<C>, A>
           formatCellNumber: formatCellNumber,
           useAccent: useAccent,
           viewModel: viewModel),
-      (AbstractCell c) => cellWidgetBuilder?.call(
-            cell: c,
-            viewModel: viewModel,
-            layoutPanelIndex: layoutPanelIndex,
-            tableCellIndex: tableCellIndex,
-            tableScale: tableScale,
-            cellStatus: cellStatus,
-            useAccent: useAccent,
-            valueKey: valueKey,
-          ) ??
-          switch (c) {
-            (Cell c) => TextDrawer(
-                cell: c,
-                tableScale: tableScale,
-                useAccent: useAccent,
-              ),
-            (_) => const Text(':(')
-          }
+      (AbstractCell c) => switch (c) {
+          (Cell c) => TextDrawer(
+              cell: c,
+              tableScale: tableScale,
+              useAccent: useAccent,
+            ),
+          (_) => const Text(':(')
+        }
     };
   }
 

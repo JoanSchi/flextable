@@ -1,7 +1,6 @@
 import 'package:flextable/flextable.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/widgets.dart';
 import 'package:intl/intl.dart';
 
 void main() {
@@ -28,7 +27,7 @@ class _RowChangeExampleState extends State<TextEditExample>
   final GlobalKey _globalKey = GlobalKey();
   final DefaultRecordFtController _ftController = DefaultRecordFtController();
   final rebuildNotifier = RebuildNotifier();
-  late RecordFtModel model;
+  late DefaultRecordFtModel model;
 
   @override
   void initState() {

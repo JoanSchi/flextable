@@ -35,7 +35,7 @@ class TextDrawer extends StatelessWidget {
       ),
       softWrap: true,
       textAlign: textCellStyle?.textAlign ?? TextAlign.start,
-      textScaler: TextScaler.linear(tableScale),
+      // textScaler: TextScaler.linear(tableScale),
     );
 
     if (textCellStyle?.rotation case double rotation) {
