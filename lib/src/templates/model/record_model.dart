@@ -562,33 +562,7 @@ class RecordFtModel<C extends AbstractCell, Dto> extends AbstractFtModel<C> {
     return {};
   }
 
-  // bool validate2(
-  //     {required bool Function(
-  //       RecordRowRibbon<C, Dto> rr,
-  //       Set<FtIndex> Function(Set<String> columnIds, String validation)
-  //           setValidation,
-  //     ) cellValidation,
-  //     required RecordToIterate recordsToValidate}) {
-  //   Iterable rowRibbons = switch (recordsToValidate) {
-  //     RecordToIterate.update => updateIdRow,
-  //     RecordToIterate.insert => insertIdRow,
-  //     (_) => linkedRowRibbons.indexed
-  //   };
-
-  //   bool cellsValidated = true;
-  //   for (RecordRowRibbon<C, Dto> rr in rowRibbons) {
-  //     if (rr.rowId != null) {
-  //       cellsValidated = cellsValidated ||
-  //           cellValidation(rr, (Set<String> columnIds, String validation) {
-  //             return setValidation(
-  //                 rowRibbon: rr, columnIds: columnIds, validation: validation);
-  //           });
-  //     }
-  //   }
-  //   return cellsValidated;
-  // }
-
-  @Deprecated('Use ValidateSaveInserts')
+  @Deprecated('')
   saveInserts<T>({
     ///save
     ///
@@ -655,7 +629,7 @@ class RecordFtModel<C extends AbstractCell, Dto> extends AbstractFtModel<C> {
     }
   }
 
-  @Deprecated('Use ValidateUpdateInserts')
+  @Deprecated('')
   saveUpdates<T>({
     ///save
     ///
@@ -715,6 +689,33 @@ class RecordFtModel<C extends AbstractCell, Dto> extends AbstractFtModel<C> {
         }
         if (!saved) {
           updateIdRow.add(rr);
+        }
+      }
+    }
+  }
+
+  @Deprecated('')
+  saveDeletes({
+    required Future<bool> Function(String rowId, Map<String, dynamic> map) save,
+    bool Function(int, FtCellIdentifier c)? include,
+  }) async {
+    Set temp = Set.from(deletedIdRow);
+    deletedIdRow.clear();
+
+    include ??= (_, __) => true;
+
+    for (RecordRowRibbon<C, Dto> rr in temp) {
+      if (rr.rowId case String rowId) {
+        if (!(await save(rowId, recordToMap(rr.columns, include)))) {
+          if (rr.rowId case Object rowId) {
+            bool saved = false;
+            if (rowId case String rId) {
+              saved = await save(rId, recordToMap(rr.columns, include));
+            }
+            if (!saved) {
+              deletedIdRow.add(rr);
+            }
+          }
         }
       }
     }
@@ -819,7 +820,7 @@ class RecordFtModel<C extends AbstractCell, Dto> extends AbstractFtModel<C> {
     return passed;
   }
 
-  Map<String, dynamic> recordToMap(List<AbstractCell?> columns,
+  static Map<String, dynamic> recordToMap(List<AbstractCell?> columns,
       bool Function(int, FtCellIdentifier c) include) {
     Map<String, dynamic> map = {};
     int length = columns.length;

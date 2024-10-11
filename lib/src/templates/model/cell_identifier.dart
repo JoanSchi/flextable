@@ -2,9 +2,9 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-class CellIdentifier<Rid> extends FtCellIdentifier<Rid> {
+class CellIdentifier extends FtCellIdentifier {
   @override
-  Rid rowId;
+  Object rowId;
   @override
   String columnId;
 
