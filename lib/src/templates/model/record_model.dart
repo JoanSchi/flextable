@@ -695,8 +695,8 @@ class RecordFtModel<C extends AbstractCell, Dto> extends AbstractFtModel<C> {
   }
 
   @Deprecated('')
-  saveDeletes({
-    required Future<bool> Function(String rowId, Map<String, dynamic> map) save,
+  saveDeletes<T>({
+    required Future<bool> Function(T rowId, Map<String, dynamic> map) save,
     bool Function(int, FtCellIdentifier c)? include,
   }) async {
     Set temp = Set.from(deletedIdRow);
@@ -705,11 +705,11 @@ class RecordFtModel<C extends AbstractCell, Dto> extends AbstractFtModel<C> {
     include ??= (_, __) => true;
 
     for (RecordRowRibbon<C, Dto> rr in temp) {
-      if (rr.rowId case String rowId) {
+      if (rr.rowId case T rowId) {
         if (!(await save(rowId, recordToMap(rr.columns, include)))) {
           if (rr.rowId case Object rowId) {
             bool saved = false;
-            if (rowId case String rId) {
+            if (rowId case T rId) {
               saved = await save(rId, recordToMap(rr.columns, include));
             }
             if (!saved) {
