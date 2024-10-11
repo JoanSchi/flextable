@@ -10,8 +10,6 @@ import 'package:flextable/flextable.dart';
 typedef UpdateRecordDto<Dto, C> = Dto? Function(
     {Dto? object, C? previousCell, C? cell});
 
-enum RecordToIterate { update, insert, all }
-
 class RecordFtModel<C extends AbstractCell, Dto> extends AbstractFtModel<C> {
   RecordFtModel({
     super.tableColumns,
@@ -564,109 +562,31 @@ class RecordFtModel<C extends AbstractCell, Dto> extends AbstractFtModel<C> {
     return {};
   }
 
-  validateSave({
-    required bool Function(
-            RecordRowRibbon<C, Dto> rr,
-            Set<FtIndex> Function(Set<String> columnIds, String validation)
-                setValidation)
-        cellValidation,
-    required Future<bool> Function(
-            Dto? dto,
-            Set<FtIndex> Function(Set<String> columnIds, String validation)
-                setValidation)
-        save,
-    required RecordToIterate recordToIterate,
-  }) async {
-    Set<RecordRowRibbon<C, Dto>> set;
-    Set<RecordRowRibbon<C, Dto>> temp;
+  // bool validate2(
+  //     {required bool Function(
+  //       RecordRowRibbon<C, Dto> rr,
+  //       Set<FtIndex> Function(Set<String> columnIds, String validation)
+  //           setValidation,
+  //     ) cellValidation,
+  //     required RecordToIterate recordsToValidate}) {
+  //   Iterable rowRibbons = switch (recordsToValidate) {
+  //     RecordToIterate.update => updateIdRow,
+  //     RecordToIterate.insert => insertIdRow,
+  //     (_) => linkedRowRibbons.indexed
+  //   };
 
-    switch (recordToIterate) {
-      case RecordToIterate.update:
-        {
-          temp = Set.from(updateIdRow);
-          set = updateIdRow..clear();
-          break;
-        }
-      case RecordToIterate.insert:
-        {
-          temp = Set.from(insertIdRow);
-          set = insertIdRow..clear();
-          break;
-        }
-      case RecordToIterate.all:
-        {
-          throw Exception(
-              'All records not supported only RecordToIterate.insert & RecordToIterate.update');
-        }
-    }
-
-    for (RecordRowRibbon<C, Dto> rr in temp) {
-      if (rr.rowId != null) {
-        if (cellValidation(rr, (Set<String> columnIds, String validation) {
-          return setValidation(
-              rowRibbon: rr, columnIds: columnIds, validation: validation);
-        })) {
-          /// Found problem insert RowRibbon back, instead to update to database
-          ///
-          set.add(rr);
-        } else {
-          if (!(await save(rr.dto, (Set<String> columnIds, String validation) {
-            return setValidation(
-                rowRibbon: rr, columnIds: columnIds, validation: validation);
-          }))) {
-            set.add(rr);
-          }
-        }
-      }
-    }
-  }
-
-  bool validate2(
-      {required bool Function(
-        RecordRowRibbon<C, Dto> rr,
-        Set<FtIndex> Function(Set<String> columnIds, String validation)
-            setValidation,
-      ) cellValidation,
-      required RecordToIterate recordsToValidate}) {
-    Iterable rowRibbons = switch (recordsToValidate) {
-      RecordToIterate.update => updateIdRow,
-      RecordToIterate.insert => insertIdRow,
-      (_) => linkedRowRibbons.indexed
-    };
-
-    bool cellsValidated = true;
-    for (RecordRowRibbon<C, Dto> rr in rowRibbons) {
-      if (rr.rowId != null) {
-        cellsValidated = cellsValidated ||
-            cellValidation(rr, (Set<String> columnIds, String validation) {
-              return setValidation(
-                  rowRibbon: rr, columnIds: columnIds, validation: validation);
-            });
-      }
-    }
-    return cellsValidated;
-  }
-
-  bool validate(
-      {required bool Function(
-        int rowId,
-        RecordRowRibbon<C, Dto> rr,
-      ) cellValidation,
-      required RecordToIterate recordsToValidate}) {
-    Iterable rowRibbons = switch (recordsToValidate) {
-      RecordToIterate.update => updateIdRow,
-      RecordToIterate.insert => insertIdRow,
-      (_) => linkedRowRibbons.indexed
-    };
-
-    bool passed = true;
-    for (RecordRowRibbon<C, Dto> rr in rowRibbons) {
-      if (linkedRowRibbons.rowIndex(rr.immutableRowIndex) case int rowIndex) {
-        passed = cellValidation(rowIndex, rr) && passed;
-      }
-    }
-    return passed;
-  }
+  //   bool cellsValidated = true;
+  //   for (RecordRowRibbon<C, Dto> rr in rowRibbons) {
+  //     if (rr.rowId != null) {
+  //       cellsValidated = cellsValidated ||
+  //           cellValidation(rr, (Set<String> columnIds, String validation) {
+  //             return setValidation(
+  //                 rowRibbon: rr, columnIds: columnIds, validation: validation);
+  //           });
+  //     }
+  //   }
+  //   return cellsValidated;
+  // }
 
   @Deprecated('Use ValidateSaveInserts')
   saveInserts<T>({
@@ -800,26 +720,103 @@ class RecordFtModel<C extends AbstractCell, Dto> extends AbstractFtModel<C> {
     }
   }
 
-  saveDeletes<T>({
-    required Future<bool> Function(T rowId, Map<String, dynamic> map) save,
-    bool Function(int, FtCellIdentifier c)? include,
+  processInsert({
+    required bool Function(
+            RecordRowRibbon<C, Dto> rr,
+            Set<FtIndex> Function(Set<String> columnIds, String validation)
+                setValidation)
+        cellValidation,
+    required Future<bool> Function(
+            RecordRowRibbon<C, Dto> rr,
+            Set<FtIndex> Function(Set<String> columnIds, String validation)
+                setValidation)
+        save,
+  }) {
+    _procesInsertOrUpdate(
+        set: insertIdRow, cellValidation: cellValidation, save: save);
+  }
+
+  processUpdate({
+    required bool Function(
+            RecordRowRibbon<C, Dto> rr,
+            Set<FtIndex> Function(Set<String> columnIds, String validation)
+                setValidation)
+        cellValidation,
+    required Future<bool> Function(
+            RecordRowRibbon<C, Dto> rr,
+            Set<FtIndex> Function(Set<String> columnIds, String validation)
+                setValidation)
+        save,
+  }) {
+    _procesInsertOrUpdate(
+        set: updateIdRow, cellValidation: cellValidation, save: save);
+  }
+
+  _procesInsertOrUpdate({
+    required Set<RecordRowRibbon<C, Dto>> set,
+    required bool Function(
+            RecordRowRibbon<C, Dto> rr,
+            Set<FtIndex> Function(Set<String> columnIds, String validation)
+                setValidation)
+        cellValidation,
+    required Future<bool> Function(
+            RecordRowRibbon<C, Dto> rr,
+            Set<FtIndex> Function(Set<String> columnIds, String validation)
+                setValidation)
+        save,
+  }) async {
+    Set<RecordRowRibbon<C, Dto>> temp = Set.from(insertIdRow);
+    set.clear();
+
+    for (RecordRowRibbon<C, Dto> rr in temp) {
+      if (cellValidation(rr, (Set<String> columnIds, String validation) {
+        return setValidation(
+            rowRibbon: rr, columnIds: columnIds, validation: validation);
+      })) {
+        /// Found problem insert RowRibbon back, instead to update to database
+        ///
+        set.add(rr);
+      } else {
+        if (!(await save(rr, (Set<String> columnIds, String validation) {
+          return setValidation(
+              rowRibbon: rr, columnIds: columnIds, validation: validation);
+        }))) {
+          set.add(rr);
+        }
+      }
+    }
+  }
+
+  processDeletes<T>({
+    required Future<bool> Function(RecordRowRibbon<C, Dto> rr)? save,
   }) async {
     Set temp = Set.from(deletedIdRow);
     deletedIdRow.clear();
 
-    include ??= (_, __) => true;
+    if (save case Future<bool> Function(RecordRowRibbon<C, Dto> rr) s) {
+      for (RecordRowRibbon<C, Dto> rr in temp) {
+        bool saved = await s(rr);
 
-    for (RecordRowRibbon<C, Dto> rr in temp) {
-      if (rr.rowId case Object rowId) {
-        bool saved = false;
-        if (rowId case T rId) {
-          saved = await save(rId, recordToMap(rr.columns, include));
-        }
         if (!saved) {
           deletedIdRow.add(rr);
         }
       }
     }
+  }
+
+  bool validate({
+    required bool Function(
+      int rowId,
+      RecordRowRibbon<C, Dto> rr,
+    ) cellValidation,
+  }) {
+    bool passed = true;
+    for (RecordRowRibbon<C, Dto> rr in {...updateIdRow, ...insertIdRow}) {
+      if (linkedRowRibbons.rowIndex(rr.immutableRowIndex) case int rowIndex) {
+        passed = cellValidation(rowIndex, rr) && passed;
+      }
+    }
+    return passed;
   }
 
   Map<String, dynamic> recordToMap(List<AbstractCell?> columns,

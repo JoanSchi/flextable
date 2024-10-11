@@ -1384,28 +1384,28 @@ class TablePanelRenderViewport<C extends AbstractCell,
         iterator.columnInfoList,
       );
 
-      assert(() {
-        Color color;
-        switch (panelIndex) {
-          case 5:
-            color = Colors.amber.withAlpha(155);
-            break;
-          case 6:
-            color = Colors.pinkAccent.withAlpha(155);
-            break;
-          case 9:
-            color = Colors.lightGreen.withAlpha(155);
-            break;
-          default:
-            color = Colors.blue.withAlpha(155);
-            break;
-        }
-        Paint paint = Paint();
-        paint.color = color;
-        context.canvas.drawCircle(
-            size.bottomRight(offset + const Offset(-25.0, -25.0)), 20, paint);
-        return true;
-      }());
+      // assert(() {
+      //   Color color;
+      //   switch (panelIndex) {
+      //     case 5:
+      //       color = Colors.amber.withAlpha(155);
+      //       break;
+      //     case 6:
+      //       color = Colors.pinkAccent.withAlpha(155);
+      //       break;
+      //     case 9:
+      //       color = Colors.lightGreen.withAlpha(155);
+      //       break;
+      //     default:
+      //       color = Colors.blue.withAlpha(155);
+      //       break;
+      //   }
+      //   Paint paint = Paint();
+      //   paint.color = color;
+      //   context.canvas.drawCircle(
+      //       size.bottomRight(offset + const Offset(-25.0, -25.0)), 20, paint);
+      //   return true;
+      // }());
     });
   }
 }
