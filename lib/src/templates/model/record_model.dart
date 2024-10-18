@@ -721,27 +721,27 @@ class RecordFtModel<C extends AbstractCell, Dto> extends AbstractFtModel<C> {
     }
   }
 
-  processInsert({
+  Future<bool> processInsert({
     required bool Function(RecordRowRibbon<C, Dto> rr, int? rowIndex)
         cellValidation,
     required Future<bool> Function(RecordRowRibbon<C, Dto> rr, int? rowIndex)
         save,
   }) {
-    _procesInsertOrUpdate(
+    return _procesInsertOrUpdate(
         set: insertIdRow, cellValidation: cellValidation, save: save);
   }
 
-  processUpdate({
+  Future<bool> processUpdate({
     required bool Function(RecordRowRibbon<C, Dto> rr, int? rowIndex)
         cellValidation,
     required Future<bool> Function(RecordRowRibbon<C, Dto> rr, int? rowIndex)
         save,
   }) {
-    _procesInsertOrUpdate(
+    return _procesInsertOrUpdate(
         set: updateIdRow, cellValidation: cellValidation, save: save);
   }
 
-  _procesInsertOrUpdate({
+  Future<bool> _procesInsertOrUpdate({
     required Set<RecordRowRibbon<C, Dto>> set,
     required bool Function(RecordRowRibbon<C, Dto> rr, int? rowIndex)
         cellValidation,
@@ -763,9 +763,10 @@ class RecordFtModel<C extends AbstractCell, Dto> extends AbstractFtModel<C> {
         }
       }
     }
+    return set.isEmpty;
   }
 
-  processDeletes<T>({
+  Future<bool> processDeletes<T>({
     required Future<bool> Function(RecordRowRibbon<C, Dto> rr)? save,
   }) async {
     Set temp = Set.from(deletedIdRow);
@@ -780,6 +781,7 @@ class RecordFtModel<C extends AbstractCell, Dto> extends AbstractFtModel<C> {
         }
       }
     }
+    return deletedIdRow.isEmpty;
   }
 
   bool validate({
