@@ -723,36 +723,37 @@ class RecordFtModel<C extends AbstractCell, Dto> extends AbstractFtModel<C> {
 
   Future<bool> processInsert({
     required bool Function(RecordRowRibbon<C, Dto> rr, int? rowIndex)
-        cellValidation,
+        isRowValidated,
     required Future<bool> Function(RecordRowRibbon<C, Dto> rr, int? rowIndex)
         save,
   }) {
     return _procesInsertOrUpdate(
-        set: insertIdRow, cellValidation: cellValidation, save: save);
+        set: insertIdRow, isRowValidated: isRowValidated, save: save);
   }
 
   Future<bool> processUpdate({
     required bool Function(RecordRowRibbon<C, Dto> rr, int? rowIndex)
-        cellValidation,
+        isRowValidated,
     required Future<bool> Function(RecordRowRibbon<C, Dto> rr, int? rowIndex)
         save,
   }) {
     return _procesInsertOrUpdate(
-        set: updateIdRow, cellValidation: cellValidation, save: save);
+        set: updateIdRow, isRowValidated: isRowValidated, save: save);
   }
 
   Future<bool> _procesInsertOrUpdate({
     required Set<RecordRowRibbon<C, Dto>> set,
     required bool Function(RecordRowRibbon<C, Dto> rr, int? rowIndex)
-        cellValidation,
+        isRowValidated,
     required Future<bool> Function(RecordRowRibbon<C, Dto> rr, int? rowIndex)
         save,
   }) async {
-    Set<RecordRowRibbon<C, Dto>> temp = Set.from(insertIdRow);
+    Set<RecordRowRibbon<C, Dto>> temp = Set.from(set);
     set.clear();
 
     for (RecordRowRibbon<C, Dto> rr in temp) {
-      if (cellValidation(rr, linkedRowRibbons.rowIndex(rr.immutableRowIndex))) {
+      if (!isRowValidated(
+          rr, linkedRowRibbons.rowIndex(rr.immutableRowIndex))) {
         /// Found problem insert RowRibbon back, instead to update to database
         ///
         set.add(rr);
