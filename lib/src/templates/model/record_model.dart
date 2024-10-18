@@ -722,15 +722,9 @@ class RecordFtModel<C extends AbstractCell, Dto> extends AbstractFtModel<C> {
   }
 
   processInsert({
-    required bool Function(
-            RecordRowRibbon<C, Dto> rr,
-            Set<FtIndex> Function(Set<String> columnIds, String validation)
-                setValidation)
+    required bool Function(RecordRowRibbon<C, Dto> rr, int? rowIndex)
         cellValidation,
-    required Future<bool> Function(
-            RecordRowRibbon<C, Dto> rr,
-            Set<FtIndex> Function(Set<String> columnIds, String validation)
-                setValidation)
+    required Future<bool> Function(RecordRowRibbon<C, Dto> rr, int? rowIndex)
         save,
   }) {
     _procesInsertOrUpdate(
@@ -738,15 +732,9 @@ class RecordFtModel<C extends AbstractCell, Dto> extends AbstractFtModel<C> {
   }
 
   processUpdate({
-    required bool Function(
-            RecordRowRibbon<C, Dto> rr,
-            Set<FtIndex> Function(Set<String> columnIds, String validation)
-                setValidation)
+    required bool Function(RecordRowRibbon<C, Dto> rr, int? rowIndex)
         cellValidation,
-    required Future<bool> Function(
-            RecordRowRibbon<C, Dto> rr,
-            Set<FtIndex> Function(Set<String> columnIds, String validation)
-                setValidation)
+    required Future<bool> Function(RecordRowRibbon<C, Dto> rr, int? rowIndex)
         save,
   }) {
     _procesInsertOrUpdate(
@@ -755,33 +743,22 @@ class RecordFtModel<C extends AbstractCell, Dto> extends AbstractFtModel<C> {
 
   _procesInsertOrUpdate({
     required Set<RecordRowRibbon<C, Dto>> set,
-    required bool Function(
-            RecordRowRibbon<C, Dto> rr,
-            Set<FtIndex> Function(Set<String> columnIds, String validation)
-                setValidation)
+    required bool Function(RecordRowRibbon<C, Dto> rr, int? rowIndex)
         cellValidation,
-    required Future<bool> Function(
-            RecordRowRibbon<C, Dto> rr,
-            Set<FtIndex> Function(Set<String> columnIds, String validation)
-                setValidation)
+    required Future<bool> Function(RecordRowRibbon<C, Dto> rr, int? rowIndex)
         save,
   }) async {
     Set<RecordRowRibbon<C, Dto>> temp = Set.from(insertIdRow);
     set.clear();
 
     for (RecordRowRibbon<C, Dto> rr in temp) {
-      if (cellValidation(rr, (Set<String> columnIds, String validation) {
-        return setValidation(
-            rowRibbon: rr, columnIds: columnIds, validation: validation);
-      })) {
+      if (cellValidation(rr, linkedRowRibbons.rowIndex(rr.immutableRowIndex))) {
         /// Found problem insert RowRibbon back, instead to update to database
         ///
         set.add(rr);
       } else {
-        if (!(await save(rr, (Set<String> columnIds, String validation) {
-          return setValidation(
-              rowRibbon: rr, columnIds: columnIds, validation: validation);
-        }))) {
+        if (!(await save(
+            rr, linkedRowRibbons.rowIndex(rr.immutableRowIndex)))) {
           set.add(rr);
         }
       }
