@@ -910,22 +910,46 @@ class RecordFtModel<C extends AbstractCell, Dto> extends AbstractFtModel<C> {
   ///
 
   Set<FtIndex> setValidation(
-      {required RecordRowRibbon<AbstractCell, Dto> rowRibbon,
+      {RecordRowRibbon<AbstractCell, Dto>? rowRibbon,
+      int? rowIndex,
       required Set<String> columnIds,
       required String validation}) {
     Set<FtIndex> updatedFtIndexes = {};
 
-    final rowIndex =
-        linkedRowRibbons.rowIndex(rowRibbon.immutableRowIndex) ?? -1;
+    assert(rowRibbon != null || rowIndex != null,
+        'Both rowRibbon and rowIndex are null');
 
-    final columns = rowRibbon.columns;
+    var (rRibbon, rIndex) = switch ((rowRibbon, rowIndex)) {
+      (null, int rowIndex) => (
+          linkedRowRibbons.indexed[rowIndex],
+          rowIndex,
+        ),
+      (RecordRowRibbon<AbstractCell, Dto> rowRibbon, null) => (
+          rowRibbon,
+          linkedRowRibbons.rowIndex(rowRibbon.immutableRowIndex)
+        ),
+      (RecordRowRibbon<AbstractCell, Dto> rowRibbon, int rowIndex) => (
+          rowRibbon,
+          rowIndex
+        ),
+      (_, _) => (null, null)
+    };
+
+    if (rIndex == null || rRibbon == null) {
+      return updatedFtIndexes;
+    }
+
+    assert(linkedRowRibbons.rowIndex(rRibbon.immutableRowIndex) == rIndex,
+        'RowIndex not eqaul to rowIndex obtained from immutableRowIndex');
+
+    final columns = rRibbon.columns;
     for (int column = 0; column < columns.length; column++) {
       final cell = columns[column];
       if ((cell, cell?.identifier) case (Cell c, FtCellIdentifier ci)
           when columnIds.contains(ci.columnId)) {
         if (c.validate != validation) {
           c.validate = validation;
-          updatedFtIndexes.add(FtIndex(row: rowIndex, column: column));
+          updatedFtIndexes.add(FtIndex(row: rIndex, column: column));
         }
       }
     }
