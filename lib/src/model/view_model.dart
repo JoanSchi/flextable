@@ -32,8 +32,10 @@ enum SplitChange { start, edit, no }
 
 typedef _SetPixels = Function(int scrollIndexX, int scrollIndexY, double value);
 
-typedef ChangedCellValueCallback<C extends AbstractCell> = Function(
-    FtIndex index, C? previous, C? next);
+typedef ChangedCellValueCallback<C extends AbstractCell,
+        M extends AbstractFtModel<C>>
+    = Function(
+        FtViewModel<C, M> viewModel, FtIndex index, C? previous, C? next);
 
 enum DrawScrollBar { left, top, right, bottom, multiple, none }
 
@@ -176,7 +178,7 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
   bool _mounted = true;
   bool get mounted => _mounted;
 
-  ChangedCellValueCallback? changedCellValue;
+  ChangedCellValueCallback<C, M>? changedCellValue;
   FtScaleChangeNotifier scaleChangeNotifier;
 
   changeScale() {
@@ -4853,7 +4855,7 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
     /// If only value is important for the user then compare the value in the function
     ///
     ///
-    changedCellValue?.call(ftIndex, previousCell, cell);
+    changedCellValue?.call(this, ftIndex, previousCell, cell);
 
     markNeedsLayout();
   }

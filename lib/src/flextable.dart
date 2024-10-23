@@ -33,7 +33,7 @@ FtViewModel<C, M> defaultCreateViewModel<C extends AbstractCell,
     InnerScrollChangeNotifier scrollChangeNotifier,
     List<TableChangeNotifier> tableChangeNotifiers,
     FtProperties properties,
-    ChangedCellValueCallback? changedCellValue,
+    ChangedCellValueCallback<C, M>? changedCellValue,
     FtScaleChangeNotifier scaleChangeNotifier,
     ScrollableState? sliverScrollable,
     bool softKeyboard) {
@@ -78,7 +78,7 @@ class FlexTable<C extends AbstractCell, M extends AbstractFtModel<C>>
   final AbstractTableBuilder<C, M> tableBuilder;
   final Color? backgroundColor;
   final List<TableChangeNotifier> tableChangeNotifiers;
-  final ChangedCellValueCallback? changeCellValue;
+  final ChangedCellValueCallback<C, M>? changeCellValue;
   final SelectedCellCallback<C, M>? selectedCell;
   final bool? softKeyboard;
 

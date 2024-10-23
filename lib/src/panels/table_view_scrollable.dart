@@ -26,7 +26,7 @@ typedef CreateViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
         InnerScrollChangeNotifier scrollChangeNotifier,
         List<TableChangeNotifier> tableChangeNotifiers,
         FtProperties properties,
-        ChangedCellValueCallback? changedCellValue,
+        ChangedCellValueCallback<C, M>? changedCellValue,
         FtScaleChangeNotifier scaleChangeNotifier,
         ScrollableState? sliverScrollable,
         bool softKeyboardDetected);
@@ -84,7 +84,7 @@ class TableViewScrollable<C extends AbstractCell, M extends AbstractFtModel<C>>
 
   final FtScaleChangeNotifier scaleChangeNotifier;
 
-  final ChangedCellValueCallback? changeCellValue;
+  final ChangedCellValueCallback<C, M>? changeCellValue;
 
   final List<TableChangeNotifier> tableChangeNotifiers;
 
