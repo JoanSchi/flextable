@@ -99,7 +99,7 @@ class FlexTableState<C extends AbstractCell, M extends AbstractFtModel<C>>
     extends State<FlexTable<C, M>> {
   FtController<C, M>? _ftController;
 
-  FtController<C, M> get ftController => _ftController ??= FtController();
+  FtController<C, M> get ftController => _ftController ??= FtController<C, M>();
 
   final InnerScrollChangeNotifier _innerScrollChangeNotifier =
       InnerScrollChangeNotifier();
