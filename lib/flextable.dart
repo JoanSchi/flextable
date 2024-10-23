@@ -129,11 +129,13 @@ export 'src/templates/default_combinations.dart'
         DefaultFtViewModel,
         DefaultTableBuilder,
         DefaultFlexTable,
+        DefaultChangedCellValueCallback,
         DefaultRecordFlexTable,
         DefaultRecordFtModel,
         DefaultRecordFtViewModel,
         DefaultRecordFtController,
-        DefaultRecordTableBuilder;
+        DefaultRecordTableBuilder,
+        DefaultRecordChangedCellValueCallback;
 
 export 'src/templates/cells/cell_styles.dart'
     show CellStyle, TextCellStyle, NumberCellStyle, ValidationCellStyle;
