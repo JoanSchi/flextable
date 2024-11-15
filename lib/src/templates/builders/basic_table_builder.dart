@@ -13,7 +13,8 @@ import '../cell_widgets/cell_text.dart';
 
 typedef CellWidgetBuilder<C extends AbstractCell, M extends AbstractFtModel<C>>
     = Widget? Function(
-        {required FtViewModel<C, M> viewModel,
+        {required BuildContext context,
+        required FtViewModel<C, M> viewModel,
         required AbstractCell cell,
         required double tableScale,
         required LayoutPanelIndex layoutPanelIndex,
@@ -95,6 +96,7 @@ class BasicTableBuilder<C extends AbstractCell, M extends AbstractFtModel<C>, A>
         useCellAccent?.call(viewModel, cell, tableCellIndex) ?? false;
 
     if (cellWidgetBuilder?.call(
+      context: context,
       cell: cell,
       viewModel: viewModel,
       layoutPanelIndex: layoutPanelIndex,

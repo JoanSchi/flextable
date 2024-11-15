@@ -7,6 +7,7 @@ import 'dart:async';
 import 'package:flextable/flextable.dart';
 import 'package:flextable/src/keys/escape.dart';
 import 'package:flextable/src/panels/flextable_context.dart';
+import 'package:flextable/src/widgets/ignore_pointer_callback.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'adjust/scale/combi_key.dart';
@@ -67,6 +68,7 @@ class FlexTable<C extends AbstractCell, M extends AbstractFtModel<C>>
       List<TableChangeNotifier>? tableChangeNotifiers,
       this.changeCellValue,
       this.selectedCell,
+      this.ignoreCell,
       this.scaleChangeNotifier,
       this.softKeyboard})
       : tableChangeNotifiers = tableChangeNotifiers ?? [];
@@ -80,6 +82,7 @@ class FlexTable<C extends AbstractCell, M extends AbstractFtModel<C>>
   final List<TableChangeNotifier> tableChangeNotifiers;
   final ChangedCellValueCallback<C, M>? changeCellValue;
   final SelectedCellCallback<C, M>? selectedCell;
+  final IgnoreCellCallback<C, M>? ignoreCell;
   final bool? softKeyboard;
 
   @override
@@ -203,12 +206,17 @@ class FlexTableState<C extends AbstractCell, M extends AbstractFtModel<C>>
           Widget m = MultiHitStack(children: [
             SelectCell(
               selectedCell: widget.selectedCell,
+              ignoreCell: widget.ignoreCell,
               viewModel: viewModel,
             ),
-            TableMultiPanel<C, M>(
+            IgnorePointerCallback(
+              ignoring: widget.ignoreCell,
               viewModel: viewModel,
-              tableBuilder: widget.tableBuilder,
-              tableScale: viewModel.tableScale,
+              child: TableMultiPanel<C, M>(
+                viewModel: viewModel,
+                tableBuilder: widget.tableBuilder,
+                tableScale: viewModel.tableScale,
+              ),
             ),
             if (fo != null)
               TableMoveFreeze(

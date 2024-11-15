@@ -4167,26 +4167,26 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
       return (panelCellIndex: const PanelCellIndex(), cell: null);
     }
 
-    ({
-      FtIndex ftIndex,
-      C? cell
-    }) y = model.isCellEditable(model.findCellIndexFromPosition(
+    FtIndex ftIndex = model.findCellIndexFromPosition(
         correctX / tableScale +
             getScrollX(panelIndexX <= 1 ? 0 : 1, panelIndexY <= 1 ? 0 : 1),
         correctY / tableScale +
-            getScrollY(panelIndexX <= 1 ? 0 : 1, panelIndexY <= 1 ? 0 : 1)));
+            getScrollY(panelIndexX <= 1 ? 0 : 1, panelIndexY <= 1 ? 0 : 1));
 
-    return y.ftIndex.isIndex
-        ? (
-            panelCellIndex: PanelCellIndex.from(
-              panelIndexX: panelIndexX,
-              panelIndexY: panelIndexY,
-              ftIndex: y.ftIndex,
-              cell: y.cell,
-            ),
-            cell: y.cell
-          )
-        : (panelCellIndex: const PanelCellIndex(), cell: null);
+    if (ftIndex.isIndex) {
+      final cell = model.cell(row: ftIndex.row, column: ftIndex.column);
+      return (
+        panelCellIndex: PanelCellIndex.from(
+          panelIndexX: panelIndexX,
+          panelIndexY: panelIndexY,
+          ftIndex: ftIndex,
+          cell: cell,
+        ),
+        cell: cell
+      );
+    } else {
+      return (panelCellIndex: const PanelCellIndex(), cell: null);
+    }
   }
 
   ///

@@ -1187,14 +1187,12 @@ class TablePanelRenderViewport<C extends AbstractCell,
         if (viewModel.cellsToRemove.contains(index) ||
             viewModel.cellsToUpdate.contains(index)) {
           _destroyChild(child);
-        }
-
-        /// Without render it is not possible to updateFromTableCellIndex, therefore destroy!
-        ///
-        ///
-        ///
-
-        if ((index != editCellIndex) || (index == editCellIndex && !hasFocus)) {
+        } else if ((index != editCellIndex) ||
+            (index == editCellIndex && !hasFocus)) {
+          /// Without render it is not possible to updateFromTableCellIndex, therefore destroy!
+          ///
+          ///
+          ///
           _destroyChild(child);
         }
       }

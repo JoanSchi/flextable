@@ -70,6 +70,7 @@ class _RowChangeExampleState extends State<TextEditExample>
                   backgroundColor: Colors.white,
                   controller: _ftController,
                   model: model,
+                  // ignoreCell: ignoreCellCallBack,
                   selectedCell: selectedCellCallBack,
                   tableBuilder: DefaultRecordTableBuilder<dynamic, String>(
                       formatCellDate: (format, date) {
@@ -102,7 +103,12 @@ class _RowChangeExampleState extends State<TextEditExample>
   bool selectedCellCallBack(FtViewModel viewModel,
       PanelCellIndex panelCellIndex, AbstractCell? cell) {
     debugPrint('selectedCellCallBack: $panelCellIndex');
-    return false;
+    return panelCellIndex.row < 3;
+  }
+
+  bool ignoreCellCallBack(FtViewModel viewModel, PanelCellIndex panelCellIndex,
+      AbstractCell? cell) {
+    return panelCellIndex.row < 3;
   }
 
   makeModel({required int tableRows, required int tableColumns}) {

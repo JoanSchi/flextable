@@ -8,7 +8,7 @@ library flextable;
 export 'src/model/model.dart' show AbstractFtModel, SplitState;
 export 'src/templates/model/basic_model.dart' show BasicFtModel, RowRibbon;
 export 'src/templates/model/record_model.dart'
-    show RecordFtModel, RecordRowRibbon, UpdateRecordDto, RecordToIterate;
+    show RecordFtModel, RecordRowRibbon, UpdateRecordDto;
 export 'src/templates/model/validation.dart'
     show ModelValidation, CellValidation;
 export 'src/templates/model/cell_identifier.dart'
@@ -152,6 +152,7 @@ export 'src/keys/escape.dart' show EscapeIntent;
 
 export 'src/templates/builders/ft_scaled_cell.dart' show FtScaledCell;
 
-export 'src/adjust/select_cell/select_cell.dart' show SelectedCellCallback;
+export 'src/adjust/select_cell/select_cell.dart'
+    show SelectedCellCallback, IgnoreCellCallback;
 
 export 'src/utilities/text_measurement.dart' show measureTextCellDimension;
