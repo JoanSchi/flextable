@@ -746,7 +746,7 @@ class TablePanelRenderViewport<C extends AbstractCell,
         assert(
             iterator.editCellIndex == tableCellIndex ||
                 find(tableCellIndex) == null,
-            'Renderbox should be removed, but not yet implemented! EditCellIndex  ${iterator.editCellIndex} IndexCellIndex: $tableCellIndex  find(tableCellIndex) ${find(tableCellIndex)}');
+            'Did you forget to use setState, when the row/column dimensions where changed?. Renderbox removal on layout is not supported. Additional info: EditCellIndex ${iterator.editCellIndex} IndexCellIndex: $tableCellIndex  find(tableCellIndex) ${find(tableCellIndex)}');
       }
     }
 
@@ -1014,8 +1014,6 @@ class TablePanelRenderViewport<C extends AbstractCell,
       }());
       _keepAliveBucket[childParentData.tableCellIndex] = child;
       //childManager.moveKeepAlive(oldIndex, childParentData.tableCellIndex);
-
-      //print('gek $oldIndex ${childParentData.tableCellIndex}');
     }
   }
 

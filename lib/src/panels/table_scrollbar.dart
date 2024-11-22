@@ -70,7 +70,7 @@ class _TableScrollbarState extends State<TableScrollbar>
   TableScrollDirection _lastScrollDirection = TableScrollDirection.unknown;
   bool _lastCanDrag = false;
   late Color _thumbColor;
-  late Color _trackColor;
+  Color? _trackColor;
   late Color _highligtedThumbColor;
   late AnimationController _fadeoutAnimationController;
   late Animation<double> _fadeoutOpacityAnimation;
@@ -150,9 +150,9 @@ class _TableScrollbarState extends State<TableScrollbar>
 
     if (widget.platformIndependent) {
       _isAlwaysShown = widget.isAlwaysShown;
-      _thumbSize = _viewModel.thumbSize;
+      _thumbSize = _viewModel.properties.thumbSize;
 
-      _paddingOutside = _viewModel.paddingOutside;
+      _paddingOutside = _viewModel.properties.paddingOutside;
 
       final scrollBarTrack = widget.scrollBarTrack;
 
@@ -168,8 +168,7 @@ class _TableScrollbarState extends State<TableScrollbar>
       if (widget.roundedCorners) {
         radius = widget.radius ?? Radius.circular(_thumbSize / 2.0);
       }
-      _trackColor =
-          _viewModel.properties.trackColor ?? theme.colorScheme.surfaceVariant;
+      _trackColor = _viewModel.properties.trackColor;
       _thumbColor = _viewModel.properties.thumbColor ??
           theme.colorScheme.onSurfaceVariant.withOpacity(0.5);
       _highligtedThumbColor = _viewModel.properties.highlightedThumbColor ??
@@ -182,8 +181,8 @@ class _TableScrollbarState extends State<TableScrollbar>
           {
             _fadeoutAnimationController.value = 0.0;
             _isAlwaysShown = false;
-            _thumbSize = _viewModel.thumbSize;
-            _paddingOutside = _viewModel.paddingOutside;
+            _thumbSize = _viewModel.properties.thumbSize;
+            _paddingOutside = _viewModel.properties.paddingOutside;
 
             _paddingTrackOutside = widget.paddingTrackOutside ??
                 _paddingOutside +
@@ -194,8 +193,7 @@ class _TableScrollbarState extends State<TableScrollbar>
             if (widget.roundedCorners) {
               radius = widget.radius ?? Radius.circular(_thumbSize / 2.0);
             }
-            _trackColor = _viewModel.properties.trackColor ??
-                theme.colorScheme.surfaceVariant;
+            _trackColor = _viewModel.properties.trackColor;
 
             _thumbColor = _viewModel.properties.thumbColor ??
                 theme.colorScheme.onSurfaceVariant.withOpacity(0.5);
@@ -210,8 +208,8 @@ class _TableScrollbarState extends State<TableScrollbar>
               TargetPlatform.windows:
           {
             _isAlwaysShown = true;
-            _thumbSize = _viewModel.thumbSize;
-            _paddingOutside = _viewModel.paddingOutside;
+            _thumbSize = _viewModel.properties.thumbSize;
+            _paddingOutside = _viewModel.properties.paddingOutside;
 
             _paddingTrackOutside =
                 widget.paddingTrackOutside ?? _kPaddingSeparateTrackOutside;
@@ -224,8 +222,7 @@ class _TableScrollbarState extends State<TableScrollbar>
 
             _fadeoutAnimationController.animateTo(1.0);
 
-            _trackColor = _viewModel.properties.trackColor ??
-                theme.colorScheme.surfaceVariant;
+            _trackColor = _viewModel.properties.trackColor;
             _thumbColor = _viewModel.properties.thumbColor ??
                 theme.colorScheme.onSurfaceVariant.withOpacity(0.5);
             _highligtedThumbColor =
@@ -288,7 +285,7 @@ class _TableScrollbarState extends State<TableScrollbar>
       scrollBarSelection: scrollBarSelection,
       paddingTrackOutside: _paddingTrackOutside,
       paddingTrackInside: _paddingTrackInside,
-      hitThickness: _viewModel.properties.hitScrollBarThickness,
+      extentScrollBarHit: _viewModel.properties.extentScrollBarHit,
     );
   }
 
@@ -464,7 +461,7 @@ class ScrollbarPainter extends ChangeNotifier implements CustomPainter {
     required FtViewModel viewModel,
     required Color color,
     required Color highligtedThumbColor,
-    required Color trackColor,
+    required Color? trackColor,
     required this.thickness,
     required this.padding,
     required double paddingTrackOutside,
@@ -474,7 +471,7 @@ class ScrollbarPainter extends ChangeNotifier implements CustomPainter {
     this.radius,
     this.minThumbLength = _kMinThumbExtent,
     this.mimimalThumbHitLength = _kMinThumbHitExtent,
-    required this.hitThickness,
+    required this.extentScrollBarHit,
     double? minOverscrollLength,
   })  : _viewModel = viewModel,
         _thumbColor = color,
@@ -512,10 +509,10 @@ class ScrollbarPainter extends ChangeNotifier implements CustomPainter {
     notifyListeners();
   }
 
-  Color _trackColor;
-  Color get trackColor => _trackColor;
+  Color? _trackColor;
+  Color? get trackColor => _trackColor;
 
-  set trackColor(Color value) {
+  set trackColor(Color? value) {
     if (_trackColor == value) return;
     _trackColor = value;
     notifyListeners();
@@ -554,7 +551,7 @@ class ScrollbarPainter extends ChangeNotifier implements CustomPainter {
   /// Thickness of the scrollbar in its cross-axis in logical pixels. Mustn't be null.
   double padding;
   double thickness;
-  double hitThickness = 48.0;
+  double extentScrollBarHit;
 
   /// An opacity [Animation] that dictates the opacity of the thumb.
   /// Changes in value of this [Listenable] will automatically trigger repaints.
@@ -610,10 +607,6 @@ class ScrollbarPainter extends ChangeNotifier implements CustomPainter {
           ? _highligtedThumbColor
           : _thumbColor.withOpacity(
               _thumbColor.opacity * fadeoutOpacityAnimation.value));
-  }
-
-  Paint get _paintTrack {
-    return Paint()..color = _trackColor;
   }
 
   void _paintThumbCrossAxis(Canvas canvas, Size size, double thumbOffset,
@@ -682,7 +675,9 @@ class ScrollbarPainter extends ChangeNotifier implements CustomPainter {
         y = (direction == DrawScrollBar.bottom) ? size.height - height : 0.0;
     }
     final rect = Rect.fromLTWH(x, y, width, height);
-    canvas.drawRect(rect, _paintTrack);
+    if (_trackColor case Color color) {
+      canvas.drawRect(rect, Paint()..color = color);
+    }
   }
 
   @override
@@ -815,16 +810,19 @@ class ScrollbarPainter extends ChangeNotifier implements CustomPainter {
       switch (it.drawVerticalScrollBar) {
         case DrawScrollBar.right:
           {
-            if (_size.width - hitThickness < position.dx) {
+            if (_size.width - thickness - padding - extentScrollBarHit <
+                position.dx) {
               if (it.hitThumbY(position.dy)) {
                 scrollBarSelection.vertical = DrawScrollBar.right;
+              } else if (it.hitTrackY(position.dy)) {
+                // print('blbu');
               }
             }
             break;
           }
         case DrawScrollBar.left:
           {
-            if (position.dx < hitThickness) {
+            if (position.dx < padding + thickness + extentScrollBarHit) {
               if (it.hitThumbY(position.dy)) {
                 scrollBarSelection.vertical = DrawScrollBar.left;
               }
@@ -837,7 +835,8 @@ class ScrollbarPainter extends ChangeNotifier implements CustomPainter {
       switch (it.drawHorizontalScrollBar) {
         case DrawScrollBar.bottom:
           {
-            if (_size.height - hitThickness < position.dy) {
+            if (_size.height - thickness - padding - extentScrollBarHit <
+                position.dy) {
               if (it.hitThumbX(position.dx)) {
                 scrollBarSelection.horizontal = DrawScrollBar.bottom;
               }
@@ -846,7 +845,7 @@ class ScrollbarPainter extends ChangeNotifier implements CustomPainter {
           }
         case DrawScrollBar.top:
           {
-            if (position.dy < hitThickness) {
+            if (position.dy < padding + thickness + extentScrollBarHit) {
               if (it.hitThumbX(position.dx)) {
                 scrollBarSelection.horizontal = DrawScrollBar.top;
               }
@@ -1033,6 +1032,11 @@ class IterateScrollable {
     final thumbOffset = trackPositionY + paddingTrackBeginY + thumbOffsetLocal;
 
     return thumbOffset <= position && position <= thumbOffset + thumbExtent;
+  }
+
+  bool hitTrackY(double position) {
+    return paddingTrackBeginY <= position &&
+        position <= viewportDimensionY - paddingTrackEndY;
   }
 
   DrawScrollBar get drawVerticalScrollBar =>

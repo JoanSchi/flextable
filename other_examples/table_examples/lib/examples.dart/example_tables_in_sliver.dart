@@ -131,42 +131,22 @@ class _ExampleSliverInTablesState extends State<ExampleSliverInTables> {
                         Expanded(child: TextField()),
                       ]),
                     ),
-                    // TextButton(
-                    //   child: const Text('Scroll'),
-                    //   onPressed: () {
-                    //     final position = Scrollable.of(context).position;
-                    //     final to = position.pixels + 200;
-                    //     final time = DateTime.now();
-                    //     for (int i = 0; i < 20; i++) {
-                    //       Future.delayed(Duration(milliseconds: 100 * i))
-                    //           .then((value) {
-                    //         scheduleMicrotask(() {
-                    //           debugPrint(
-                    //               'blub ${position.pixels} ${DateTime.now().difference(time).inMilliseconds}');
-                    //           position.animateTo(to,
-                    //               duration: const Duration(milliseconds: 2000),
-                    //               curve: Curves.ease);
-                    //         });
-                    //       });
-                    //     }
-                    //   },
-                    // ),
                   ],
                 );
               })),
-              makeTable(
-                  id: 'Mortgage',
-                  ftModel: MortgageTableModel(horizontalTables: 2).makeTable(
-                    autoFreezeListX: true,
-                    autoFreezeListY: true,
-                  ),
-                  tableBuilder: BasicTableBuilder()),
-              const InfoBox(
-                title: 'Stress table',
-                info: 'Manual freeze\nVertical split\nzoom',
-              ),
-              makeTable(
-                  id: 'Basic', ftModel: DataModelBasic.makeTable(rows: 300)),
+              // makeTable(
+              //     id: 'Mortgage',
+              //     ftModel: MortgageTableModel(horizontalTables: 2).makeTable(
+              //       autoFreezeListX: true,
+              //       autoFreezeListY: true,
+              //     ),
+              //     tableBuilder: BasicTableBuilder()),
+              // const InfoBox(
+              //   title: 'Stress table',
+              //   info: 'Manual freeze\nVertical split\nzoom',
+              // ),
+              // makeTable(
+              //     id: 'Basic', ftModel: DataModelBasic.makeTable(rows: 300)),
             ],
           )),
     );

@@ -10,7 +10,6 @@ import 'package:flextable/src/panels/flextable_context.dart';
 import 'package:flextable/src/widgets/ignore_pointer_callback.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'adjust/scale/combi_key.dart';
 import 'adjust/select_cell/select_cell.dart';
 import 'adjust/split/adjust_table_split.dart';
 import 'adjust/freeze/adjust_table_freeze.dart';

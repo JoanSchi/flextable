@@ -4,6 +4,7 @@ import 'package:flutter/rendering.dart';
 
 import '../../flextable.dart';
 import 'panel_viewport.dart';
+import 'dart:math' as math;
 
 class SliverToTableAdapter extends SingleChildRenderObjectWidget {
   /// Creates a sliver that contains a single box widget.
@@ -59,7 +60,7 @@ class RenderSliverToTableAdapter extends RenderSliverSingleBoxAdapter {
 
     final SliverConstraints constraints = this.constraints;
 
-    viewModel.setSliverConstraints(constraints);
+    viewModel.setAdapterOffset(constraints.scrollOffset);
     double maxExtent = child!.getMaxIntrinsicHeight(0);
 
     child!.layout(constraints.asBoxConstraints(maxExtent: maxExtent),
@@ -191,11 +192,13 @@ class RenderVisibleTableArea extends RenderShiftedBox {
     }
     final BoxConstraints constraints = this.constraints;
 
-    final maxExtent = child!.getMaxIntrinsicHeight(0);
-    final innerConstraints =
-        constraints.tighten(height: _viewModel.remainingExtent);
+    final maxExtent = constraints.maxHeight; // child!.getMaxIntrinsicHeight(0);
 
-    child!.layout(innerConstraints, parentUsesSize: true);
+    child!.layout(
+        BoxConstraints(
+            maxWidth: constraints.maxWidth,
+            maxHeight: math.max(maxExtent - _viewModel.adapterOffset, 0.0)),
+        parentUsesSize: true);
     final BoxParentData childParentData = child!.parentData! as BoxParentData;
     childParentData.offset = Offset(0.0, _viewModel.adapterOffset);
     size = constraints.constrain(Size(constraints.maxWidth, maxExtent));

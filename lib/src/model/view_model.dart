@@ -155,7 +155,9 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
       case TargetPlatform.macOS:
       case TargetPlatform.windows:
         scrollBarTrack = true;
-        sizeScrollBarTrack = thumbSize + paddingOutside + paddingInside;
+        sizeScrollBarTrack = properties.paddingOutside +
+            properties.thumbSize +
+            properties.paddingInside;
         break;
     }
 
@@ -368,9 +370,6 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
 
   bool scrollBarTrack = false;
   double sizeScrollBarTrack = 0.0;
-  double thumbSize = 6.0;
-  double paddingOutside = 2.0;
-  double paddingInside = 2.0;
 
   bool scheduleCorrectOffScroll = false;
   double? correctSliverOffset;
@@ -1539,7 +1538,7 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
   }
 
   double adapterOffset = 0.0;
-  double remainingExtent = 0.0;
+
   void setScrollWithSliver(double scaledScroll) {
     adapterOffset = scaledScroll;
 
@@ -1550,15 +1549,13 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
     }
   }
 
-  void setSliverConstraints(SliverConstraints sliverConstraints) {
-    adapterOffset = sliverConstraints.scrollOffset;
-    remainingExtent = sliverConstraints.remainingPaintExtent;
-    print('remainingExtent $sliverConstraints');
+  void setAdapterOffset(double scrollOffset) {
+    adapterOffset = scrollOffset;
 
     if (stateSplitY == SplitState.freezeSplit) {
-      setScrollScaledY(0, 1, adapterOffset + getMinScrollScaledY(1));
+      setScrollScaledY(0, 1, scrollOffset + getMinScrollScaledY(1));
     } else {
-      setScrollScaledY(0, 0, adapterOffset);
+      setScrollScaledY(0, 0, scrollOffset);
     }
   }
 
@@ -3293,16 +3290,18 @@ class FtViewModel<C extends AbstractCell, M extends AbstractFtModel<C>>
   }
 
   double get leftScrollBarHit {
-    return protectedScrollUnlockY ? properties.hitScrollBarThickness : 0.0;
+    return protectedScrollUnlockY ? properties.scrollBarHit : 0.0;
   }
 
   double get topScrollBarHit {
-    return protectedScrollUnlockX ? properties.hitScrollBarThickness : 0.0;
+    return protectedScrollUnlockX ? properties.scrollBarHit : 0.0;
   }
 
-  double get rightScrollBarHit => properties.hitScrollBarThickness;
+  double get rightScrollBarHit =>
+      properties.scrollBarHit + properties.extentScrollBarHit;
 
-  double get bottomScrollBarHit => properties.hitScrollBarThickness;
+  double get bottomScrollBarHit =>
+      properties.scrollBarHit + properties.extentScrollBarHit;
 
   double get leftHeaderPanelLength => digitsToWidth(leftRowHeaderProperty);
 

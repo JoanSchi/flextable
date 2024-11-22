@@ -67,6 +67,10 @@ class _RowChangeExampleState extends State<TextEditExample>
                 height: 500.0,
               )),
               DefaultRecordFlexTable(
+                  properties: const FtProperties(
+                      thumbSize: 8,
+                      extentScrollBarHit: 0.0,
+                      trackColor: Colors.white),
                   backgroundColor: Colors.white,
                   controller: _ftController,
                   model: model,
@@ -78,7 +82,14 @@ class _RowChangeExampleState extends State<TextEditExample>
                   }, actionCallBack: (v, i, c, String a) {
                     debugPrint('Specific action: $a');
                     return true;
-                  }))
+                  })),
+              SliverToBoxAdapter(
+                  child: Container(
+                color: Colors.white,
+                height: 500.0,
+                child: const Align(
+                    alignment: Alignment.topCenter, child: Text('test')),
+              ))
             ],
           );
         }),

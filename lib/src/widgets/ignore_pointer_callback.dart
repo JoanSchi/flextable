@@ -76,10 +76,12 @@ class RenderIgnorePointerCallback<C extends AbstractCell,
       case (IgnoreCellCallback<C, M> ignoreCallBack):
         {
           final indexAndCell = viewModel.findCell(position);
-
-          ignore = ignoreCallBack(
-              viewModel, indexAndCell.panelCellIndex, indexAndCell.cell);
-
+          if (indexAndCell.panelCellIndex.isIndex) {
+            ignore = ignoreCallBack(
+                viewModel, indexAndCell.panelCellIndex, indexAndCell.cell);
+          } else {
+            ignore = true;
+          }
           break;
         }
       default:
