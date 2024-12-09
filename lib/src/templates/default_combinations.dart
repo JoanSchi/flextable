@@ -4,16 +4,15 @@
 
 import 'package:flextable/flextable.dart';
 
-typedef DefaultFlexTable<I>
-    = FlexTable<AbstractCell, BasicFtModel<AbstractCell>>;
-typedef DefaultFtModel<I> = BasicFtModel<AbstractCell>;
-typedef DefaultFtViewModel<I>
+typedef DefaultFlexTable = FlexTable<AbstractCell, BasicFtModel<AbstractCell>>;
+typedef DefaultFtModel = BasicFtModel<AbstractCell>;
+typedef DefaultFtViewModel
     = FtViewModel<AbstractCell, BasicFtModel<AbstractCell>>;
 typedef DefaultFtController
     = FtController<AbstractCell, BasicFtModel<AbstractCell>>;
-typedef DefaultTableBuilder<I, A>
+typedef DefaultTableBuilder<A>
     = BasicTableBuilder<AbstractCell, BasicFtModel<AbstractCell>, A>;
-typedef DefaultChangedCellValueCallback<Dto>
+typedef DefaultChangedCellValueCallback
     = ChangedCellValueCallback<AbstractCell, BasicFtModel<AbstractCell>>;
 
 typedef DefaultRecordFlexTable<Dto>
