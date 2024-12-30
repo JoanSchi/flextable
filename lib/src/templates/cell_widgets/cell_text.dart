@@ -5,7 +5,6 @@
 import 'package:flextable/flextable.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'shared/text_drawer.dart';
 
 class CellTextWidget<C extends AbstractCell, M extends AbstractFtModel<C>>
     extends StatelessWidget {
@@ -128,7 +127,7 @@ class _CellTextEditorState extends State<CellTextEditor> {
 
     TextCellStyle? textCellStyle;
 
-    if (cell.style case TextCellStyle style) {
+    if (cell.themedStyle case TextCellStyle style) {
       textCellStyle = style;
     }
 

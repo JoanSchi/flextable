@@ -2,18 +2,14 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-import 'dart:async';
-
 import 'package:flextable/flextable.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../about/about_dialog.dart';
 import '../about/about_sliver_tables.dart';
-import '../data_model/data_model_basic.dart';
 import '../data_model/data_model_energy.dart';
 import '../data_model/data_model_fruit.dart';
 import '../data_model/data_model_international_trade.dart';
-import '../data_model/data_model_mortgage.dart';
 
 class ExampleSliverInTables extends StatefulWidget {
   const ExampleSliverInTables({super.key, required this.openDrawer});

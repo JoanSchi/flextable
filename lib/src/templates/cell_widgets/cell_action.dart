@@ -3,17 +3,14 @@
 // license that can be found in the LICENSE file.
 
 import 'package:flextable/flextable.dart';
+import 'package:flextable/src/templates/cell_widgets/shared/message_callback.dart';
 import 'package:flutter/material.dart';
 
-typedef ActionCallBack<C extends AbstractCell, M extends AbstractFtModel<C>, A>
-    = bool Function(
-        FtViewModel<C, M> viewModel, ActionCell cell, FtIndex index, A action);
-
-class CellActionWidget<C extends AbstractCell, M extends AbstractFtModel<C>, A>
+class CellActionWidget<C extends AbstractCell, M extends AbstractFtModel<C>>
     extends StatelessWidget {
   const CellActionWidget({
     super.key,
-    required this.actionCallBack,
+    required this.messageCallback,
     required this.tableScale,
     required this.cell,
     required this.layoutPanelIndex,
@@ -24,7 +21,7 @@ class CellActionWidget<C extends AbstractCell, M extends AbstractFtModel<C>, A>
     this.translate,
   });
 
-  final ActionCallBack<C, M, A> actionCallBack;
+  final MessageCallback<C, M> messageCallback;
   final double tableScale;
   final ActionCell cell;
   final LayoutPanelIndex layoutPanelIndex;
@@ -50,19 +47,16 @@ class CellActionWidget<C extends AbstractCell, M extends AbstractFtModel<C>, A>
 
   @override
   Widget build(BuildContext context) {
-    final value = cell.value;
+    final items = cell.items;
 
-    String? text = switch (cell.cellValue) {
-      (int o) => '$o',
-      (String o) => o,
-      (_) => null
-    };
+    String? text =
+        switch (cell.value) { (int o) => '$o', (String o) => o, (_) => null };
 
-    return switch ((value, text, cell.style)) {
-      (ActionCellItem<A> item, Object? _, CellStyle? style) => FtScaledCell(
+    return switch ((items, text, cell.themedStyle)) {
+      (ActionCellItem item, Object? _, CellStyle? style) => FtScaledCell(
           scale: tableScale,
           child: BackgroundDrawer(
-              style: cell.style,
+              style: cell.themedStyle,
               tableScale: 1.0,
               useAccent: useAccent,
               child: SizedBox.expand(
@@ -70,14 +64,15 @@ class CellActionWidget<C extends AbstractCell, M extends AbstractFtModel<C>, A>
                 color: style?.foreground,
                 iconSize: 24.0 * 1.0,
                 onPressed: () {
-                  actionCallBack(viewModel, cell, tableCellIndex, item.action);
+                  messageCallback(
+                      viewModel, cell as C, tableCellIndex, item.action);
                 },
                 icon: item.widget!,
               )))),
       (List<ActionCellItem> items, Object? _, CellStyle? style) => FtScaledCell(
           scale: tableScale,
           child: BackgroundDrawer(
-              style: cell.style,
+              style: cell.themedStyle,
               tableScale: 1.0,
               useAccent: useAccent,
               child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
@@ -86,23 +81,24 @@ class CellActionWidget<C extends AbstractCell, M extends AbstractFtModel<C>, A>
                     color: style?.foreground,
                     iconSize: 24.0 * 1.0,
                     onPressed: () {
-                      actionCallBack(viewModel, cell, tableCellIndex, i.action);
+                      messageCallback(
+                          viewModel, cell as C, tableCellIndex, i.action);
                     },
                     icon: i.widget!,
                   )
               ]))),
-      (List<A> list, String? text, CellStyle? _) => PopupMenuButton<A>(
+      (List list, String? text, CellStyle? _) => PopupMenuButton(
           onOpened: () {
             viewModel.clearEditCell();
           },
           tooltip: '',
           // Callback that sets the selected popup menu item.
           onSelected: (a) {
-            actionCallBack(viewModel, cell, tableCellIndex, a);
+            messageCallback(viewModel, cell as C, tableCellIndex, a);
           },
-          itemBuilder: (BuildContext context) => list.map<PopupMenuEntry<A>>(
-                (A value) {
-                  return PopupMenuItem<A>(
+          itemBuilder: (BuildContext context) => list.map<PopupMenuEntry>(
+                (value) {
+                  return PopupMenuItem(
                       value: value, child: Text(translateItem(value)));
                 },
               ).toList(),
@@ -116,17 +112,17 @@ class CellActionWidget<C extends AbstractCell, M extends AbstractFtModel<C>, A>
                     useAccent: useAccent,
                   ))
               : null),
-      (A a, String? text, TextCellStyle? style) => FtScaledCell(
+      (Object a, String? text, TextCellStyle? style) => FtScaledCell(
           scale: tableScale,
           child: BackgroundDrawer(
-              style: cell.style,
+              style: cell.themedStyle,
               tableScale: 1.0,
               useAccent: useAccent,
               child: SizedBox.expand(
                 child: TextButton(
                     onPressed: () {
                       viewModel.clearEditCell();
-                      actionCallBack(viewModel, cell, tableCellIndex, a);
+                      messageCallback(viewModel, cell as C, tableCellIndex, a);
                     },
                     child: Text(
                       translateItem(text ?? ':{'),

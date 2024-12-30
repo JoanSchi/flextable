@@ -10,8 +10,8 @@ typedef DefaultFtViewModel
     = FtViewModel<AbstractCell, BasicFtModel<AbstractCell>>;
 typedef DefaultFtController
     = FtController<AbstractCell, BasicFtModel<AbstractCell>>;
-typedef DefaultTableBuilder<A>
-    = BasicTableBuilder<AbstractCell, BasicFtModel<AbstractCell>, A>;
+typedef DefaultTableBuilder
+    = BasicTableBuilder<AbstractCell, BasicFtModel<AbstractCell>>;
 typedef DefaultChangedCellValueCallback
     = ChangedCellValueCallback<AbstractCell, BasicFtModel<AbstractCell>>;
 
@@ -22,7 +22,7 @@ typedef DefaultRecordFtViewModel<Dto>
     = FtViewModel<AbstractCell, RecordFtModel<AbstractCell, Dto>>;
 typedef DefaultRecordFtController<Dto>
     = FtController<AbstractCell, RecordFtModel<AbstractCell, Dto>>;
-typedef DefaultRecordTableBuilder<Dto, A>
-    = BasicTableBuilder<AbstractCell, RecordFtModel<AbstractCell, Dto>, A>;
+typedef DefaultRecordTableBuilder<Dto>
+    = BasicTableBuilder<AbstractCell, RecordFtModel<AbstractCell, Dto>>;
 typedef DefaultRecordChangedCellValueCallback<Dto>
     = ChangedCellValueCallback<AbstractCell, RecordFtModel<AbstractCell, Dto>>;

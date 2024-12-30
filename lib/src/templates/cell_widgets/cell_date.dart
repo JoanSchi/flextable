@@ -194,7 +194,7 @@ class _CellDateEditorState extends State<_CellDateEditor> {
     ));
     child = BackgroundDrawer(
         useAccent: widget.useAccent,
-        style: cell.style,
+        style: cell.themedStyle,
         tableScale: 1.0,
         child: child);
 

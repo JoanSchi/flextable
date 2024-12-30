@@ -34,17 +34,18 @@ typedef FtTranslation = String Function(String value);
 
 String _cellDateFormat(String format, DateTime dateTime) => '??dateFormat??';
 
-bool _noAction<C, M extends AbstractFtModel<AbstractCell>, A>(
-    viewModel, cell, index, action) {
-  debugPrint(
-      'Set the actionCallback in TableBuilder!, index: $index action: $action');
+bool _noValueCallBack<C, M extends AbstractFtModel<AbstractCell>>(
+    viewModel, cell, index, message) {
+  assert(false,
+      'BasicTableBuilder: ValueCallBack function is needed, but not set! (Triggered by cell: $index)');
+
   return true;
 }
 
 String _formNumber({identifier, format, value, dif}) =>
     value == null ? '' : '$value';
 
-class BasicTableBuilder<C extends AbstractCell, M extends AbstractFtModel<C>, A>
+class BasicTableBuilder<C extends AbstractCell, M extends AbstractFtModel<C>>
     extends AbstractTableBuilder<C, M> {
   BasicTableBuilder(
       {this.singleDigitWidth = 10.0,
@@ -55,7 +56,7 @@ class BasicTableBuilder<C extends AbstractCell, M extends AbstractFtModel<C>, A>
       this.headerTextStyle,
       FormatCellDate? formatCellDate,
       this.dateFormat = 'dd-MM-yy',
-      ActionCallBack<C, M, A>? actionCallBack,
+      MessageCallback<C, M>? messageCallback,
       FormatCellNumber? formatCellNumber,
       this.useCellAccent,
       this.cellWidgetBuilder,
@@ -63,7 +64,7 @@ class BasicTableBuilder<C extends AbstractCell, M extends AbstractFtModel<C>, A>
       this.showSplitLines = true})
       : formatCellDate = formatCellDate ?? _cellDateFormat,
         formatCellNumber = formatCellNumber ?? _formNumber,
-        actionCallBack = actionCallBack ?? _noAction<C, M, A>;
+        messageCallback = messageCallback ?? _noValueCallBack<C, M>;
 
   final double singleDigitWidth;
   final double digitPadding;
@@ -74,7 +75,7 @@ class BasicTableBuilder<C extends AbstractCell, M extends AbstractFtModel<C>, A>
   final TextStyle? headerTextStyle;
   final String dateFormat;
   final FormatCellDate formatCellDate;
-  final ActionCallBack<C, M, A> actionCallBack;
+  final MessageCallback<C, M> messageCallback;
   final FormatCellNumber formatCellNumber;
   CellWidgetBuilder<C, M>? cellWidgetBuilder;
   UseCellAccent<C, M>? useCellAccent;
@@ -155,6 +156,16 @@ class BasicTableBuilder<C extends AbstractCell, M extends AbstractFtModel<C>, A>
           valueKey: valueKey,
           translation: translation,
         ),
+      (HeaderCell c) => HeaderCellWidget(
+          cell: c,
+          viewModel: viewModel,
+          layoutPanelIndex: layoutPanelIndex,
+          tableCellIndex: tableCellIndex,
+          tableScale: tableScale,
+          cellStatus: cellStatus,
+          useAccent: useAccent,
+          translate: translation,
+        ),
       (SelectionCell c) => CellSelectionWidget<C, M>(
           viewModel: viewModel,
           cell: c,
@@ -165,10 +176,20 @@ class BasicTableBuilder<C extends AbstractCell, M extends AbstractFtModel<C>, A>
           useAccent: useAccent,
           translate: translation,
         ),
-      (ActionCell c) => CellActionWidget<C, M, A>(
+      (CustomCell c) => CustomCellWidget<C, M>(
           cell: c,
           viewModel: viewModel,
-          actionCallBack: actionCallBack,
+          messageCallback: messageCallback,
+          layoutPanelIndex: layoutPanelIndex,
+          tableCellIndex: tableCellIndex,
+          tableScale: tableScale,
+          cellStatus: cellStatus,
+          useAccent: useAccent,
+        ),
+      (ActionCell c) => CellActionWidget<C, M>(
+          cell: c,
+          viewModel: viewModel,
+          messageCallback: messageCallback,
           layoutPanelIndex: layoutPanelIndex,
           tableCellIndex: tableCellIndex,
           tableScale: tableScale,

@@ -34,7 +34,10 @@ export 'src/templates/cells/advanced_cells.dart'
         ActionCell,
         ActionCellItem,
         FtCalculationFunction,
-        CalculationCell;
+        CalculationCell,
+        HeaderCell,
+        SortHeaderCell,
+        CustomCell;
 export 'src/model/mergable_lines.dart'
     show
         TableLinesOneDirection,
@@ -64,14 +67,15 @@ export 'src/listeners/flextable_change_notifier.dart'
 
 export 'src/templates/cell_widgets/cell_date.dart' show FormatCellDate;
 export 'src/templates/cell_widgets/cell_number.dart' show FormatCellNumber;
+export 'src/templates/cell_widgets/cell_header.dart' show HeaderCellWidget;
+export 'src/templates//cell_widgets/cell_custom_widget.dart'
+    show CustomCellWidget;
 export 'src/templates/cell_widgets/shared/background_drawer.dart'
     show BackgroundDrawer;
 export 'src/templates/cell_widgets/shared/text_drawer.dart' show TextDrawer;
 
 export 'src/function_listeners/scroll_change_notifier.dart'
     show FlexTableScrollChangeNotifier, FlexTableScrollNotification;
-
-export 'src/panels/table_to_sliver_box.dart' show FlexTableToSliverBox;
 
 //Properties
 export 'src/properties.dart' show FtProperties;
@@ -138,11 +142,17 @@ export 'src/templates/default_combinations.dart'
         DefaultRecordChangedCellValueCallback;
 
 export 'src/templates/cells/cell_styles.dart'
-    show CellStyle, TextCellStyle, NumberCellStyle, ValidationCellStyle;
+    show
+        CellStyle,
+        TextCellStyle,
+        NumberCellStyle,
+        ValidationCellStyle,
+        HeaderCellStyle;
 
 ///
 ///
-export 'src/templates/cell_widgets/cell_action.dart' show ActionCallBack;
+export 'src/templates/cell_widgets/shared/message_callback.dart'
+    show MessageCallback;
 
 export 'src/model/change/model_change.dart' show ChangeRange;
 

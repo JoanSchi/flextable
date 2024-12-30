@@ -137,13 +137,13 @@ class _CellNumberEditorState extends State<_CellNumberEditor> {
     switch (cell) {
       case (DigitCell c):
         {
-          numberCellStyle = c.style;
+          numberCellStyle = c.themedStyle;
           textEditInputType = FtTextEditInputType.digits;
           break;
         }
       case (DecimalCell c):
         {
-          numberCellStyle = c.style;
+          numberCellStyle = c.themedStyle;
           textEditInputType = FtTextEditInputType.decimal;
           break;
         }
@@ -295,58 +295,32 @@ class _CellNumber extends StatelessWidget {
   final FormatCellNumber formatCellNumber;
   final bool useAccent;
 
-  (String?, String?) decimalInputCellToString(DecimalCell decimalInputCell) {
-    if ((
-      decimalInputCell.value,
-      decimalInputCell.format,
-      decimalInputCell.exceeded
-    )
-        case (double value, String format, double? exceeded)) {
-      return (
-        formatCellNumber(
-          identifier: cell.identifier,
-          format: format,
-          value: value,
-        ),
-        switch (exceeded) {
-          (double v) when v.abs() > 0.1 && v.abs() < 1 => formatCellNumber(
-              identifier: cell.identifier,
-              format: '+0.0;-0.0',
-              value: v,
-              dif: true),
-          (double v) => formatCellNumber(
-              identifier: cell.identifier,
-              format: '+#0;-#0',
-              value: v,
-              dif: true),
-          (_) => null
-        }
-      );
-    } else {
-      return (null, null);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     NumberCellStyle? numberCellStyle;
 
-    if (cell.style case NumberCellStyle style) {
+    if (cell.themedStyle case NumberCellStyle style) {
       numberCellStyle = style;
     }
-    var (value, exceeded) = switch (cell) {
-      (DecimalCell v) => decimalInputCellToString(v),
-      (DigitCell v) => (
-          v.value?.toString(),
-          v.exceeded == null
-              ? null
-              : formatCellNumber(format: '+#0;-#0', value: v.exceeded!)
+    String value = switch (cell) {
+      (DecimalCell(value: null)) => '',
+      (DecimalCell(
+        identifier: dynamic id,
+        format: String format,
+        value: double? v
+      )) =>
+        formatCellNumber(
+          identifier: id,
+          format: format,
+          value: v,
         ),
-      (_) => (cell.value, null)
+      (DigitCell(value: null)) => '',
+      (DigitCell(value: int v)) => '$v',
+      (_) => '${cell.value}'
     };
     Widget child = RichText(
       text: TextSpan(
-        text: value ?? '',
+        text: value,
         style: numberCellStyle?.textStyle,
       ),
       textAlign: numberCellStyle?.textAlign ?? TextAlign.start,
@@ -368,28 +342,6 @@ class _CellNumber extends StatelessWidget {
             ? (numberCellStyle?.backgroundAccent ?? numberCellStyle?.background)
             : numberCellStyle?.background,
         child: child);
-
-    if (exceeded != null) {
-      child = Stack(
-        children: [
-          Positioned.fill(
-            child: child,
-          ),
-          Positioned(
-              left: 4.0,
-              top: 0.0,
-              child: Text(
-                exceeded,
-                textAlign: TextAlign.left,
-                style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 10.0,
-                    color: Color.fromARGB(255, 183, 156, 34)),
-                textScaler: TextScaler.linear(tableScale),
-              )),
-        ],
-      );
-    }
 
     return ValidationDrawer(
       cell: cell,

@@ -24,7 +24,7 @@ class TextDrawer extends StatelessWidget {
   Widget build(BuildContext context) {
     TextCellStyle? textCellStyle;
 
-    if (cell.style case TextCellStyle style) {
+    if (cell.themedStyle case TextCellStyle style) {
       textCellStyle = style;
     }
 

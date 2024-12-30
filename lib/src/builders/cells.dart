@@ -32,6 +32,8 @@ class Cell<T, I, S extends CellStyle> extends AbstractCell<I> {
     super.identifier,
     this.noBlank = false,
     this.validate = '',
+    this.theme,
+    this.getThemeStyle,
     Set<FtIndex>? ref,
   }) : ref = ref ?? {};
 
@@ -42,8 +44,22 @@ class Cell<T, I, S extends CellStyle> extends AbstractCell<I> {
   final bool noBlank;
   String validate;
   final Set<FtIndex> ref;
+  Object? theme;
+  S? Function(Object? theme)? getThemeStyle;
 
   bool get editable => false;
+
+  S? get themedStyle => switch ((style, getThemeStyle?.call(theme))) {
+        (S s, S t) => t.copyWith(
+            alignment: s.alignment,
+            background: s.background,
+            backgroundAccent: s.backgroundAccent,
+            foreground: s.foreground,
+            padding: s.padding,
+            validationCellStyle: s.validationCellStyle) as S,
+        (S s, null) => s,
+        (null, S? t) => t
+      };
 
   @override
   Cell<T, I, S> copyWith(
@@ -54,7 +70,9 @@ class Cell<T, I, S extends CellStyle> extends AbstractCell<I> {
       I? identifier,
       bool? noBlank,
       String? validate,
-      Set<FtIndex>? ref}) {
+      Set<FtIndex>? ref,
+      String? theme,
+      S? Function(Object? theme)? getThemeStyle}) {
     return Cell(
         groupState: groupState ?? this.groupState,
         style: style ?? this.style,
@@ -63,7 +81,8 @@ class Cell<T, I, S extends CellStyle> extends AbstractCell<I> {
         identifier: identifier ?? this.identifier,
         noBlank: noBlank ?? this.noBlank,
         validate: validate ?? this.validate,
-        ref: ref ?? this.ref);
+        ref: ref ?? this.ref,
+        getThemeStyle: getThemeStyle ?? this.getThemeStyle);
   }
 
   @override
@@ -76,7 +95,6 @@ class Cell<T, I, S extends CellStyle> extends AbstractCell<I> {
         other.identifier == identifier &&
         other.style == style &&
         other.merged == merged &&
-        // other.groupState == groupState &&
         other.noBlank == noBlank;
   }
 

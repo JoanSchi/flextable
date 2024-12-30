@@ -76,10 +76,13 @@ class _RowChangeExampleState extends State<TextEditExample>
                   model: model,
                   // ignoreCell: ignoreCellCallBack,
                   selectedCell: selectedCellCallBack,
-                  tableBuilder: DefaultRecordTableBuilder<dynamic, String>(
+                  changeCellValue: (viewModel, index, previous, next) {
+                    print('tt');
+                  },
+                  tableBuilder: DefaultRecordTableBuilder<dynamic>(
                       formatCellDate: (format, date) {
                     return DateFormat(format).format(date);
-                  }, actionCallBack: (v, i, c, String a) {
+                  }, messageCallback: (v, i, c, a) {
                     debugPrint('Specific action: $a');
                     return true;
                   })),
@@ -124,19 +127,23 @@ class _RowChangeExampleState extends State<TextEditExample>
 
   makeModel({required int tableRows, required int tableColumns}) {
     final model = DefaultRecordFtModel(
-      columnHeader: true,
-      rowHeader: true,
-      defaultWidthCell: 120.0,
-      defaultHeightCell: 50.0,
-      tableColumns: tableColumns,
-      tableRows: tableRows,
-      // autoFreezeAreasX: [
-      //   AutoFreezeArea(startIndex: 0, freezeIndex: 1, endIndex: 10000)
-      // ],
-      // autoFreezeAreasY: [
-      //   AutoFreezeArea(startIndex: 0, freezeIndex: 1, endIndex: 10000)
-      // ]
-    );
+        columnHeader: true,
+        rowHeader: true,
+        defaultWidthCell: 120.0,
+        defaultHeightCell: 50.0,
+        tableColumns: tableColumns,
+        tableRows: tableRows,
+        // autoFreezeAreasX: [
+        //   AutoFreezeArea(startIndex: 0, freezeIndex: 1, endIndex: 10000)
+        // ],
+        autoFreezeAreasY: [
+          AutoFreezeArea(startIndex: 0, freezeIndex: 1, endIndex: 5),
+          AutoFreezeArea(startIndex: 6, freezeIndex: 7, endIndex: 11)
+        ],
+        specificWidth: [
+          RangeProperties(start: 1, size: 150),
+          RangeProperties(start: 2, last: 3, size: 200),
+        ]);
 
     const line = Line(width: 0.5, color: Color.fromARGB(255, 70, 78, 38));
     const color2 = Color.fromARGB(255, 249, 250, 245);
@@ -180,6 +187,12 @@ class _RowChangeExampleState extends State<TextEditExample>
           TextStyle(fontSize: 20, color: Color.fromARGB(255, 70, 78, 38)),
     );
 
+    const themeStyle = TextCellStyle(
+      background: Color.fromARGB(255, 152, 215, 228),
+      textStyle:
+          TextStyle(fontSize: 20, color: Color.fromARGB(255, 70, 78, 38)),
+    );
+
     const styleNumber = NumberCellStyle(
       background: color1,
       textStyle:
@@ -195,7 +208,9 @@ class _RowChangeExampleState extends State<TextEditExample>
     ///
     model.insertCell(
       ftIndex: FtIndex(row: 0, column: column),
-      cell: TextCell(value: 'Select', style: style, editable: false),
+      cell: SortHeaderCell(
+        text: 'tt',
+      ),
     );
 
     const values = ['pig', 'chicken', 'cow', 'dog', 'vis', 'egel', 'vogel'];
@@ -340,7 +355,7 @@ class _RowChangeExampleState extends State<TextEditExample>
             action: 'actie blub 2',
             widget: Icon(Icons.architecture),
           ),
-        ], style: style, cellValue: 'Action :)'),
+        ], style: style, items: 'Action :)'),
       );
     }
 

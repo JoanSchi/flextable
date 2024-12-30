@@ -51,6 +51,7 @@ class MortgageTableModel {
   int horizontalTables;
 
   int initialYear = 2020;
+  final myTextStyle = const TextStyle(color: Color.fromARGB(255, 8, 39, 53));
 
   add(
       {required double morgage,
@@ -116,7 +117,8 @@ class MortgageTableModel {
         ftIndex: FtIndex(row: row, column: columnStart + 2),
         columns: 2,
         cell: TextCell(
-            value: 'Per maand', style: TextCellStyle(background: bc2)));
+            value: 'Per maand',
+            style: TextCellStyle(textStyle: myTextStyle, background: bc2)));
 
     var rowColor = row % 2 == 0 ? bc2 : bc1;
 
@@ -125,43 +127,60 @@ class MortgageTableModel {
     flexTableModel.insertCell(
         ftIndex: FtIndex(row: row, column: column++),
         cell: TextCell(
-            value: 'Datum', style: TextCellStyle(background: rowColor)));
+            value: 'Datum',
+            style:
+                TextCellStyle(background: rowColor, textStyle: myTextStyle)));
 
     flexTableModel.insertCell(
       ftIndex: FtIndex(row: row, column: column++),
-      cell:
-          TextCell(value: 'Lening', style: TextCellStyle(background: rowColor)),
+      cell: TextCell(
+          value: 'Lening',
+          style: TextCellStyle(background: rowColor, textStyle: myTextStyle)),
     );
 
     flexTableModel.insertCell(
         ftIndex: FtIndex(row: row, column: column++),
         cell: TextCell(
-            value: 'Rente', style: TextCellStyle(background: rowColor)));
+            value: 'Rente',
+            style:
+                TextCellStyle(background: rowColor, textStyle: myTextStyle)));
 
     flexTableModel.insertCell(
         ftIndex: FtIndex(row: row, column: column++),
         cell: TextCell(
-            value: 'Aflossen', style: TextCellStyle(background: rowColor)));
+            value: 'Aflossen',
+            style:
+                TextCellStyle(background: rowColor, textStyle: myTextStyle)));
     flexTableModel.insertCell(
         ftIndex: FtIndex(row: row, column: column++),
         cell: TextCell(
-            value: 'Totaal', style: TextCellStyle(background: rowColor)));
+            value: 'Totaal',
+            style:
+                TextCellStyle(background: rowColor, textStyle: myTextStyle)));
     flexTableModel.insertCell(
         ftIndex: FtIndex(row: row, column: column++),
         cell: TextCell(
-            value: 'Rente', style: TextCellStyle(background: rowColor)));
+            value: 'Rente',
+            style:
+                TextCellStyle(background: rowColor, textStyle: myTextStyle)));
     flexTableModel.insertCell(
         ftIndex: FtIndex(row: row, column: column++),
         cell: TextCell(
-            value: 'Teruggave', style: TextCellStyle(background: rowColor)));
+            value: 'Teruggave',
+            style:
+                TextCellStyle(background: rowColor, textStyle: myTextStyle)));
     flexTableModel.insertCell(
         ftIndex: FtIndex(row: row, column: column++),
         cell: TextCell(
-            value: 'Netto', style: TextCellStyle(background: rowColor)));
+            value: 'Netto',
+            style:
+                TextCellStyle(background: rowColor, textStyle: myTextStyle)));
     flexTableModel.insertCell(
         ftIndex: FtIndex(row: row, column: column++),
         cell: TextCell(
-            value: 'N. e/m', style: TextCellStyle(background: rowColor)));
+            value: 'N. e/m',
+            style:
+                TextCellStyle(background: rowColor, textStyle: myTextStyle)));
 
     for (int i = 0; i < years; i++) {
       double interestYear = 0;
@@ -185,22 +204,26 @@ class MortgageTableModel {
             ftIndex: FtIndex(row: row, column: column++),
             cell: TextCell(
                 value: df.format(DateTime(currentYear, month + 1)),
-                style: TextCellStyle(background: rowColor)));
+                style: TextCellStyle(
+                    background: rowColor, textStyle: myTextStyle)));
         flexTableModel.insertCell(
             ftIndex: FtIndex(row: row, column: column++),
             cell: TextCell(
                 value: nf.format(morgage),
-                style: TextCellStyle(background: rowColor)));
+                style: TextCellStyle(
+                    background: rowColor, textStyle: myTextStyle)));
         flexTableModel.insertCell(
             ftIndex: FtIndex(row: row, column: column++),
             cell: TextCell(
                 value: nf.format(monthlyInterest),
-                style: TextCellStyle(background: rowColor)));
+                style: TextCellStyle(
+                    background: rowColor, textStyle: myTextStyle)));
         flexTableModel.insertCell(
             ftIndex: FtIndex(row: row, column: column++),
             cell: TextCell(
                 value: nf.format(repay),
-                style: TextCellStyle(background: rowColor)));
+                style: TextCellStyle(
+                    background: rowColor, textStyle: myTextStyle)));
 
         if (month == 0) {
           h.addLineRange(
@@ -221,32 +244,37 @@ class MortgageTableModel {
               rows: 12,
               cell: TextCell(
                   value: nf.format(interestYear + repay),
-                  style: TextCellStyle(background: yearColorBlock)));
+                  style: TextCellStyle(
+                      background: yearColorBlock, textStyle: myTextStyle)));
           flexTableModel.insertCell(
               ftIndex: FtIndex(row: row - 11, column: column++),
               rows: 12,
               cell: TextCell(
                   value: nf.format(interestYear),
-                  style: TextCellStyle(background: yearColorBlockNext)));
+                  style: TextCellStyle(
+                      background: yearColorBlockNext, textStyle: myTextStyle)));
           flexTableModel.insertCell(
               ftIndex: FtIndex(row: row - 11, column: column++),
               rows: 12,
               cell: TextCell(
                   value: nf.format(back),
-                  style: TextCellStyle(background: yearColorBlock)));
+                  style: TextCellStyle(
+                      background: yearColorBlock, textStyle: myTextStyle)));
           flexTableModel.insertCell(
               ftIndex: FtIndex(row: row - 11, column: column++),
               rows: 12,
               cell: TextCell(
                   value: nf.format(total - back),
-                  style: TextCellStyle(background: yearColorBlockNext)));
+                  style: TextCellStyle(
+                      background: yearColorBlockNext, textStyle: myTextStyle)));
           flexTableModel.insertCell(
               ftIndex: FtIndex(row: row - 11, column: column++),
               rows: 12,
               cell: TextCell(
                   value:
                       'T: ${nf.format(total / 12.0)}\nB: ${nf.format(back / 12.0)}\nN: ${nf.format((total - back) / 12.0)}',
-                  style: TextCellStyle(background: yearColorBlock)));
+                  style: TextCellStyle(
+                      background: yearColorBlock, textStyle: myTextStyle)));
         }
 
         morgage -= repay;

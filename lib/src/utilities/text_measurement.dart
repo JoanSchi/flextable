@@ -25,17 +25,22 @@ Size measureTextCellDimension(
     {required BuildContext context,
     required String text,
     TextScaler? textScaler,
-    required TextCellStyle? textCellStyle,
+    required CellStyle? cellStyle,
     double? preferredWidth,
     double? maxWidth,
-    bool twoLines = true}) {
+    bool twoLines = true,
+    double inaccuracyCompensation = 0.1}) {
   textScaler ??= MediaQuery.textScalerOf(context);
-  Size paddingSize = textCellStyle?.padding?.collapsedSize ?? Size.zero;
+  Size paddingSize = cellStyle?.padding?.collapsedSize ?? Size.zero;
   preferredWidth ??= 0.0;
 
   Size measureSegment(String textSegment) {
     final textSpan = TextSpan(
-      style: textCellStyle?.textStyle,
+      style: switch (cellStyle) {
+        (HeaderCellStyle(textStyle: TextStyle t)) => t,
+        (TextCellStyle(textStyle: TextStyle t)) => t,
+        (_) => null
+      },
       text: textSegment,
     );
 
@@ -55,7 +60,8 @@ Size measureTextCellDimension(
       width;
       math.min(width, m);
     }
-    return Size(width + paddingSize.width, size.height + paddingSize.height);
+    return Size(width + paddingSize.width + inaccuracyCompensation,
+        size.height + paddingSize.height + inaccuracyCompensation);
   }
 
   List<String> textSegments = _textToSegments(text);

@@ -39,11 +39,7 @@ class CellCalculation extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    NumberCellStyle? numberCellStyle;
-
-    if (cell.style case NumberCellStyle style) {
-      numberCellStyle = style;
-    }
+    NumberCellStyle? numberCellStyle = cell.themedStyle;
 
     if (!cell.evaluted) {
       viewModel.model.calculateCell(cell: cell, index: tableCellIndex);

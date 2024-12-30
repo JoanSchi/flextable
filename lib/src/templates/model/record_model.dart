@@ -850,7 +850,7 @@ class RecordFtModel<C extends AbstractCell, Dto> extends AbstractFtModel<C> {
           }
         case (ActionCell c):
           {
-            map[columnId] = c.cellValue;
+            map[columnId] = c.items;
 
             break;
           }
@@ -1307,7 +1307,7 @@ class LinkedRowRibbons<C extends AbstractCell, Dto> {
   }
 
   removeCell(FtIndex ftIndex) {
-    indexed[ftIndex.row].columns.remove(ftIndex.column);
+    indexed[ftIndex.row].columns.removeAt(ftIndex.column);
   }
 
   insertRow(int rowIndex, RecordRowRibbon<C, Dto> ribbon) {
