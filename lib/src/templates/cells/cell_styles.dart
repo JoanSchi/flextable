@@ -14,7 +14,7 @@ class CellStyle {
       {this.background,
       this.backgroundAccent,
       this.foreground,
-      this.padding,
+      this.padding = const EdgeInsets.all(4.0),
       this.alignment,
       this.validationCellStyle});
 
