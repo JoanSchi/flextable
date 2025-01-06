@@ -1164,7 +1164,9 @@ class RecordRowRibbon<C extends AbstractCell, Dto> {
   }
 
   removeColumn(int index) {
-    columns[index] = null;
+    if (index < columns.length) {
+      columns[index] = null;
+    }
   }
 
   List<C?> columns = [];
@@ -1307,7 +1309,7 @@ class LinkedRowRibbons<C extends AbstractCell, Dto> {
   }
 
   removeCell(FtIndex ftIndex) {
-    indexed[ftIndex.row].columns.removeAt(ftIndex.column);
+    indexed[ftIndex.row].removeColumn(ftIndex.column);
   }
 
   insertRow(int rowIndex, RecordRowRibbon<C, Dto> ribbon) {
